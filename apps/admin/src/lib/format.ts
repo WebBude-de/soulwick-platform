@@ -46,6 +46,8 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   "admin.create": "Admin angelegt",
   "admin.disable": "Admin deaktiviert",
   "admin.enable": "Admin aktiviert",
+  "admin.password_change": "Eigenes Passwort geändert",
+  "admin.email_change": "Eigene E-Mail geändert",
   // Legacy: retired actions (legal.* with P-025, deletion requests with P-026); old audit
   // entries stay readable.
   "legal.refresh": "Rechtstexte aktualisiert",
@@ -162,6 +164,8 @@ const AUDIT_DETAIL_LABEL: Record<string, string> = {
   guildId: "Gilde",
   guildDisbanded: "Gilde aufgelöst",
   wasBanned: "war gesperrt",
+  revokedSessions: "andere Sitzungen beendet",
+  source: "Quelle",
   // Legacy: player.delete entries from the time of deletion requests (before P-026).
   deletionRequestId: "Löschantrag",
 };

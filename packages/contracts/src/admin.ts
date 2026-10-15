@@ -69,6 +69,42 @@ export const AdminLoginResponse = z.object({
 });
 export type AdminLoginResponse = z.infer<typeof AdminLoginResponse>;
 
+/**
+ * Own account of the signed-in admin or moderator (both roles, only for themselves):
+ * - `POST /admin/me/password` `AdminChangePasswordRequest` -> 200 `AdminChangePasswordResponse`.
+ *   Ends all other sessions of this account; the calling session stays valid (same token, same
+ *   `expiresAt`). Audit `admin.password_change` (never the password).
+ * - `POST /admin/me/email` `AdminChangeEmailRequest` -> 200 `AdminSelf` with the new address,
+ *   normalised like `AdminEmail` (trimmed, lower case). No confirmation mail (no mail delivery
+ *   yet); sessions stay. Audit `admin.email_change` with `from` / `to`.
+ * Errors: 400 `invalid_current_password` (wrong current password, nothing else is told),
+ * 400 `password_unchanged` / `email_unchanged`, 409 `email_taken` (checked only after the
+ * password), 400 `validation_error` (e.g. new password shorter than 12 characters), 429
+ * `rate_limited`: 10 requests per minute and IP, and 5 wrong current passwords per 15 minutes and
+ * account (both TESTWERT, also counted across both routes).
+ */
+export const AdminChangePasswordRequest = z.object({
+  currentPassword: z.string().min(1).max(256),
+  newPassword: AdminPassword,
+});
+export type AdminChangePasswordRequest = z.infer<
+  typeof AdminChangePasswordRequest
+>;
+
+export const AdminChangePasswordResponse = z.object({
+  /** Number of other sessions of this account that were ended. */
+  revokedSessions: z.number().int().min(0),
+});
+export type AdminChangePasswordResponse = z.infer<
+  typeof AdminChangePasswordResponse
+>;
+
+export const AdminChangeEmailRequest = z.object({
+  email: AdminEmail,
+  currentPassword: z.string().min(1).max(256),
+});
+export type AdminChangeEmailRequest = z.infer<typeof AdminChangeEmailRequest>;
+
 export const RunModeCounts = z.object({
   solo: z.number().int().min(0),
   quick: z.number().int().min(0),
@@ -470,6 +506,8 @@ export const AuditAction = z.enum([
   "guild.transfer",
   "relay.room_close",
   "relay.kick",
+  "admin.password_change",
+  "admin.email_change",
 ]);
 export type AuditAction = z.infer<typeof AuditAction>;
 

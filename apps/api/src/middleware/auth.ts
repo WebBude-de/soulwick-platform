@@ -3,7 +3,7 @@ import type { MiddlewareHandler } from "hono";
 import { PLAYER_ROLE } from "../auth/player-plugin.ts";
 import { ApiError } from "../lib/errors.ts";
 import { isoOrNull } from "../lib/validate.ts";
-import { adminFromAuthorization } from "../services/admin-users.ts";
+import { adminSessionFromAuthorization } from "../services/admin-users.ts";
 import { findActiveBan } from "../services/bans.ts";
 import { sessionFromAuthorization } from "../services/sessions.ts";
 import type { AppEnv, Deps } from "../types.ts";
@@ -88,14 +88,15 @@ export function optionalPlayer(deps: Deps): MiddlewareHandler<AppEnv> {
  */
 export function requireAdmin(deps: Deps): MiddlewareHandler<AppEnv> {
   return async (c, next) => {
-    const admin = await adminFromAuthorization(
+    const found = await adminSessionFromAuthorization(
       deps,
       c.req.header("authorization")
     );
-    if (!admin) {
+    if (!found) {
       throw new ApiError(401, "unauthorized", "Valid admin token required");
     }
-    c.set("admin", admin);
+    c.set("admin", found.admin);
+    c.set("adminSessionId", found.sessionId);
     await next();
   };
 }

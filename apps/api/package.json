@@ -9,7 +9,7 @@
     "start": "bun src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
-    "admin:create": "bun --env-file=../../.env.local --env-file=.env.local src/scripts/create-admin.ts",
+    "seed": "bun --env-file=../../.env.local --env-file=.env.local src/scripts/seed.ts",
     "seed:dev": "bun --env-file=../../.env.local --env-file=.env.local src/scripts/seed-dev.ts"
   },
   "dependencies": {

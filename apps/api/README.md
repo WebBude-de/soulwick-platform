@@ -21,8 +21,8 @@ bun run services:up                                  # lokale Dienste (infra/doc
 cp .env.example .env.local                           # gemeinsame Werte (Wurzel): BETTER_AUTH_SECRET, DEV_AUTH_KEY …
 cp apps/api/.env.example apps/api/.env.local         # Werte nur der API
 bun run db:deploy                                    # Migrationen anwenden (neue Migration: bun run db:migrate --name <name>)
-bun run db:seed:dev                                  # Testdaten (siehe unten) – oder ein echter Admin:
-bun run --cwd apps/api admin:create admin@example.com "ein-langes-passwort" admin
+bun run db:seed                                      # Basis-Seed: Admin aus DEFAULT_ADMIN_EMAIL/-PASSWORD (siehe unten)
+bun run db:seed:dev                                  # Testdaten (siehe unten)
 bun run dev:api                                      # http://localhost:8787/health
 bun run services:down                                # Dienste stoppen (Daten bleiben im Volume)
 ```
@@ -31,6 +31,35 @@ Ist Port 5432 belegt, in `infra/.env.local` `DB_PORT=<freier Port>` setzen und d
 `DATABASE_URL` (Wurzel-`.env.local`) anpassen. Benutzer, Passwort und Datenbankname kommen aus
 `POSTGRES_*` in `infra/.env.local` (Standard `soulwick` / `soulwick-local-only` / `soulwick`).
 
+## Basis-Seed (Start-Admin)
+
+`bun run db:seed` (Root) bzw. `bun run --cwd apps/api seed` (`src/scripts/seed.ts`, wie `seed` in
+DapItUp) ist für **jede** Umgebung gedacht und **idempotent**. Er legt den Admin aus
+`DEFAULT_ADMIN_EMAIL` und `DEFAULT_ADMIN_PASSWORD` an (Rolle `admin`, Protokoll `admin.create` mit
+`source: "seed"`), **nur wenn es diese E-Mail noch nicht gibt**:
+
+- Ein vorhandenes Konto mit der Adresse wird **nie** verändert (kein Passwort-Reset, keine
+  Rollenänderung, kein Wiederaktivieren), auch wenn die Variablen gesetzt bleiben.
+- Wurde die Adresse unter „Mein Konto“ geändert (Protokoll `admin.email_change` mit dieser Adresse
+  als `from`), legt der Seed sie **nicht** neu an, sondern warnt nur.
+- Fehlen beide Variablen: nur ein Hinweis, Exit 0. Ist eine ungültig (E-Mail nach `AdminEmail`,
+  Passwort mind. 12 Zeichen) oder ist in `NODE_ENV=production` das Passwort der lokale Standard
+  `soulwick-admin-local`: Warnung, nichts angelegt, Exit 0. Nur unerwartete Fehler (z. B. Datenbank
+  nicht erreichbar) enden mit Exit 1.
+- Das **API-Image** führt den Basis-Seed bei jedem Start nach `prisma migrate deploy` aus; schlägt er
+  fehl, startet die API trotzdem (Fehler im Log).
+
+**Nach dem ersten Login** das Passwort im Admin-Panel unter „Mein Konto“ ändern und
+`DEFAULT_ADMIN_PASSWORD` aus der Umgebung entfernen (die E-Mail darf stehen bleiben).
+**Notfall** (kein Admin kommt mehr hinein): `DEFAULT_ADMIN_EMAIL` auf eine **neue**, noch nicht
+vorhandene Adresse setzen, `DEFAULT_ADMIN_PASSWORD` dazu, Container neu starten; danach wie oben.
+Sonst legt ein anderer Admin im Panel unter „Admins“ einen Zugang an. Ein Zurücksetzen per E-Mail
+gibt es nicht (kein Mailversand).
+
+Lokal nutzen Basis-Seed und Dev-Seed dieselben Variablen (`apps/api/.env.example`:
+`admin@soulwick.local` / `soulwick-admin-local`): Beide legen dasselbe Konto an, keiner setzt das
+Passwort des anderen zurück.
+
 ## Entwicklungsdaten (Dev-Seed)
 
 `bun run db:seed:dev` (Root) bzw. `bun run --cwd apps/api seed:dev` legt an, was Website und
@@ -38,7 +67,7 @@ Admin-Bereich lokal zum Anzeigen brauchen:
 
 | Was | Inhalt |
 | --- | --- |
-| Admin-Zugänge | `admin@soulwick.local` (Rolle `admin`), `moderator@soulwick.local` (`moderator`); Passwort aus `DEFAULT_ADMIN_PASSWORD` (mind. 12 Zeichen), Standard `soulwick-admin-local` |
+| Admin-Zugänge | `admin@soulwick.local` (Rolle `admin`), `moderator@soulwick.local` (`moderator`); neue Zugänge bekommen das Passwort aus `DEFAULT_ADMIN_PASSWORD` (mind. 12 Zeichen), Standard `soulwick-admin-local`; vorhandene behalten ihres |
 | Spieler | 10 Testspieler mit Geräte-IDs `dev-device-00000001` … `dev-device-00000010` (9 und 10 erst vor wenigen Tagen angelegt, für „neue Spieler“) (je eine Identität `device`; „Lumen“ zusätzlich eine erfundene Steam-ID `76561190000000001`); damit funktioniert `POST /auth/dev` (z. B. `{ "name": "Lumen", "deviceId": "dev-device-00000001" }`) als dieser Spieler |
 | Gilde | „Dochtwächter“ `[DOCHT]`, Einladungscode `DOCHT2345`, 4 Mitglieder (Gründer, Offizier, 2 Mitglieder), Gildenkasse und Schmiede-Stufen |
 | Runs | 20 Runs (`solo`, `quick`, `guild`) über die aktuelle und die vorige Saison, Seeds `dev-seed-01` … `dev-seed-20`; einer ist markiert (`too_fast`), zwei Spieler teilen sich einen Rang; dazu 14 Runs über die letzten zwei Wochen (`dev-seed-21` … `dev-seed-34`) für die Admin-Statistik |
@@ -49,7 +78,8 @@ Admin-Bereich lokal zum Anzeigen brauchen:
 
 Der Seed ist **idempotent**: Jeder Datensatz hat einen festen Schlüssel (E-Mail, Geräte-ID,
 Gilden-Kürzel, Run-Seed, Sperrgrund, Notiztext, ID der Löschprotokoll-Zeile). Ein zweiter Lauf ergänzt nur Fehlendes und überschreibt keine
-Änderungen aus dem Admin-Bereich (Ausnahme: die Passwörter der beiden Zugänge werden neu gesetzt).
+Änderungen aus dem Admin-Bereich (auch die Passwörter vorhandener Zugänge bleiben, z. B. nach
+„Mein Konto“).
 Komplett neu aufsetzen: `bun run db:reset` (löscht die lokale Datenbank, spielt alle Migrationen und den
 Seed neu ein). Nur auf ausdrücklichen Wunsch – Agenten setzen die Datenbank des Projektmitglieds nie zurück.
 
@@ -94,7 +124,8 @@ Der Seed **verweigert `NODE_ENV=production`**. Im Docker-Image ist er nur für d
 | `RELAY_INTERNAL_TIMEOUT_MS` | nein | `3000` | TESTWERT: Zeitlimit je Aufruf an den Relay |
 | `ERECHT24_API_KEY` | nein | leer | Projekt-Schlüssel der eRecht24 Rechtstexte-API v2 (P-025); ohne ihn oder ohne `ERECHT24_PLUGIN_KEY` meldet `GET /legal/:type` `missing`, die Website zeigt den Platzhalter |
 | `ERECHT24_PLUGIN_KEY` | nein | leer | Plugin-/Entwickler-Schlüssel von eRecht24 (Header `eRecht24-plugin-key`); wie bei DapItUp Pflicht für den Abruf |
-| `DEFAULT_ADMIN_PASSWORD` | nein | `soulwick-admin-local` | Nur Dev-Seed: Passwort der Zugänge `admin@soulwick.local` und `moderator@soulwick.local` (≥ 12 Zeichen) |
+| `DEFAULT_ADMIN_EMAIL` | nein | leer | Basis-Seed (`db:seed`, jeder Container-Start): E-Mail des Start-Admins; nur angelegt, solange es die Adresse nicht gibt, nie überschrieben |
+| `DEFAULT_ADMIN_PASSWORD` | nein | leer (Dev-Seed: `soulwick-admin-local`) | Basis-Seed: Passwort des Start-Admins (≥ 12 Zeichen; in production nicht der lokale Standard); nach dem ersten Login unter „Mein Konto“ ändern und die Variable entfernen. Dev-Seed: Passwort neu angelegter Zugänge `admin@soulwick.local` und `moderator@soulwick.local` |
 
 ## Befehle
 
@@ -107,16 +138,16 @@ Der Seed **verweigert `NODE_ENV=production`**. Im Docker-Image ist er nur für d
 | `bun run db:deploy` | Vorhandene Migrationen auf `DATABASE_URL` anwenden (wie beim Start des Images) |
 | `bun run db:status` / `bun run db:verify` | Zustand der Datenbank ansehen / alle Migrationen in einer Wegwerf-Datenbank prüfen |
 | `bun run db:generate` | Prisma-Client erzeugen (läuft vor `typecheck` und `build` automatisch) |
-| `bun run --cwd apps/api admin:create <email> <passwort> [admin\|moderator]` | Admin anlegen bzw. Passwort zurücksetzen |
+| `bun run db:seed` (oder `bun run --cwd apps/api seed`) | Basis-Seed: Start-Admin aus `DEFAULT_ADMIN_EMAIL`/`DEFAULT_ADMIN_PASSWORD`, nur wenn die Adresse fehlt (idempotent, jede Umgebung) |
 | `bun run db:seed:dev` (oder `bun run --cwd apps/api seed:dev`) | Entwicklungsdaten einspielen (idempotent, nicht in Produktion) |
 
 Lint und Formatierung laufen für das ganze Repo aus dem Root: `bun run fix`, `bun run check`. Einen
 Build-Schritt gibt es nicht: Die API startet direkt aus der Quelle (`bun src/index.ts`).
 
 Docker: `docker build -f apps/api/Dockerfile -t soulwick-api .` (aus dem Repo-Wurzelordner). Das Image
-führt **beim Start** `prisma migrate deploy` aus und startet dann die API; deshalb genau eine Replica.
-Im Container (Arbeitsordner `/app`): `bun apps/api/src/scripts/create-admin.ts <email> <passwort> [rolle]`
-und (nur Entwicklungsumgebung) `NODE_ENV=development bun apps/api/src/scripts/seed-dev.ts`.
+führt **beim Start** `prisma migrate deploy` und den Basis-Seed (`src/scripts/seed.ts`) aus und
+startet dann die API; deshalb genau eine Replica. Im Container (Arbeitsordner `/app`, nur
+Entwicklungsumgebung): `NODE_ENV=development bun apps/api/src/scripts/seed-dev.ts`.
 Betrieb auf dem Server: [infra/DOKPLOY.md](../../infra/DOKPLOY.md).
 
 ## Endpunkte (Kurzüberblick)
@@ -142,10 +173,27 @@ Spieler (Header `Authorization: Bearer <token>`):
 Gesperrte Spieler erhalten auf jeder angemeldeten Route `403 {"error":"banned","reason","expiresAt"}`.
 
 Admin (Präfix `/admin`, Session-Token eines Admins oder Moderators als Bearer; Spieler-Sessions → 401):
-`POST /admin/auth/login` (`{token, expiresAt, admin}`, 8 h), `POST /admin/auth/logout` (204), `me`, `stats`, Spieler, Gilden, Runs,
+`POST /admin/auth/login` (`{token, expiresAt, admin}`, 8 h), `POST /admin/auth/logout` (204), `me`, „Mein Konto“ (siehe unten), `stats`, Spieler, Gilden, Runs,
 Löschprotokoll (`account-deletions`, nur lesen), Protokoll (`audit`), Admin-Zugänge, Live-Räume (`relay`). Moderatoren dürfen sperren/entsperren, umbenennen und Runs
 markieren; nur Admins dürfen Gilden auflösen, Runs und Spielerkonten löschen und Admins verwalten. Jede Änderung
 landet im Protokoll. Die genauen Schemas stehen in `packages/contracts`.
+
+„Mein Konto“ (jede Admin-Rolle, nur für sich selbst; Schemas `AdminChangePasswordRequest`,
+`AdminChangeEmailRequest` in `packages/contracts/src/admin.ts`):
+
+| Route | Antwort und Fehler |
+| --- | --- |
+| `POST /admin/me/password` `{ currentPassword, newPassword }` | `{ revokedSessions }`: neues Passwort (mind. 12 Zeichen), **alle anderen Sitzungen** des Kontos beendet, die aufrufende bleibt (gleiches Token, gleiches `expiresAt`); Protokoll `admin.password_change` (ohne Passwort, nur Anzahl beendeter Sitzungen) |
+| `POST /admin/me/email` `{ email, currentPassword }` | `AdminSelf` mit der neuen Adresse (normalisiert wie `AdminEmail`); **ohne Bestätigungsmail** (kein Mailversand eingerichtet), Sitzungen bleiben; Protokoll `admin.email_change` mit `from`/`to` |
+
+Fehler beider Routen: `400 invalid_current_password` (aktuelles Passwort falsch, ohne weitere
+Details), `400 password_unchanged` bzw. `400 email_unchanged`, `409 email_taken` (erst nach richtigem
+Passwort geprüft), `400 validation_error`, `429 rate_limited`: 10 Anfragen je IP und Minute für beide
+Routen zusammen und 5 falsche aktuelle Passwörter je Konto in 15 Minuten (beides TESTWERT).
+Umgesetzt direkt auf den Better-Auth-Tabellen mit denselben Hash-Funktionen statt über
+`auth.api.changePassword`/`changeEmail`: Better Auth beendet mit `revokeOtherSessions` auch die
+aufrufende Sitzung (neues Token, neue Laufzeit), sein E-Mail-Wechsel braucht Mailversand, und das
+Protokoll läge nicht in derselben Transaktion.
 
 Admin-API v2 (P18, P-023/P-024; Schemas in `packages/contracts/src/admin.ts`):
 

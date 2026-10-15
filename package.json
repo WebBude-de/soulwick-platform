@@ -31,6 +31,7 @@
     "db:studio": "bun run --cwd packages/db studio",
     "db:status": "bun run --cwd packages/db status",
     "db:verify": "bun run --cwd packages/db verify",
+    "db:seed": "bun run --cwd apps/api seed",
     "db:seed:dev": "bun run --cwd apps/api seed:dev",
     "prepare": "husky"
   },

@@ -33,5 +33,7 @@ export interface AppEnv {
     /** Set by optionalPlayer when a valid player token was sent. */
     maybePlayer: Player | null;
     admin: AdminAccount;
+    /** Id of the admin session of this request (set by requireAdmin). */
+    adminSessionId: string;
   };
 }

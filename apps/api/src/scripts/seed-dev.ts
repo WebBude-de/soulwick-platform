@@ -8,8 +8,13 @@
  *
  * Idempotent: every record has a fixed key (email, device id, steam id, guild tag, run seed, ban
  * reason, note text, deletion log id);
- * re-running only adds what is missing and never overwrites changes made through the admin panel.
+ * re-running only adds what is missing and never overwrites changes made through the admin panel
+ * (existing admin accounts keep their password, e.g. one changed under "Mein Konto").
  * Refuses to run with NODE_ENV=production.
+ *
+ * DEFAULT_ADMIN_PASSWORD is the password of the two seeded accounts when they are created (default
+ * soulwick-admin-local). The same variable feeds the base seed (seed.ts, DEFAULT_ADMIN_EMAIL);
+ * locally both use admin@soulwick.local, so they create the same account and neither resets it.
  *
  *   bun run db:seed:dev                   (repo root; DATABASE_URL from the root .env.local)
  *   DEFAULT_ADMIN_PASSWORD=<min. 12 chars> bun run db:seed:dev   (default: soulwick-admin-local)
@@ -22,8 +27,9 @@ import {
   createPrisma,
   type Player,
   type Tx,
+  type User,
 } from "@soulwick/db";
-import { saveAdminAccount } from "../services/admin-users.ts";
+import { createAdminAccount } from "../services/admin-users.ts";
 import { writeAudit } from "../services/audit.ts";
 
 if (process.env.NODE_ENV === "production") {
@@ -495,20 +501,32 @@ const seasonId = (d: Date) =>
 interface Summary {
   banCreated: boolean;
   guildCreated: boolean;
+  newAdmins: number;
   newDeletions: number;
   newPlayers: number;
   newRuns: number;
   noteCreated: boolean;
 }
 
-/** Better Auth user + credential account (P-027); password, role and "enabled" are reset. */
-function upsertAdmin(tx: Tx, email: string, role: "admin" | "moderator") {
-  return saveAdminAccount(tx, {
+/**
+ * Better Auth user + credential account (P-027), created with PASSWORD when missing. An existing
+ * account is left as it is (password, role, enabled), like everything else in this seed.
+ */
+async function ensureAdmin(
+  tx: Tx,
+  email: string,
+  role: "admin" | "moderator"
+): Promise<{ user: User; created: boolean }> {
+  const existing = await tx.user.findUnique({ where: { email } });
+  if (existing) {
+    return { user: existing, created: false };
+  }
+  const user = await createAdminAccount(tx, {
     email,
     password: PASSWORD,
     role,
-    mode: "upsert",
   });
+  return { user, created: true };
 }
 
 /** Finds a seeded player through its device identity or creates player and identity together. */
@@ -554,11 +572,16 @@ async function seed(tx: Tx): Promise<Summary> {
     banCreated: false,
     noteCreated: false,
     newDeletions: 0,
+    newAdmins: 0,
   };
 
   // --- admins --------------------------------------------------------------------------------
-  const admin = await upsertAdmin(tx, ADMIN_EMAIL, "admin");
-  const moderator = await upsertAdmin(tx, MODERATOR_EMAIL, "moderator");
+  const adminResult = await ensureAdmin(tx, ADMIN_EMAIL, "admin");
+  const moderatorResult = await ensureAdmin(tx, MODERATOR_EMAIL, "moderator");
+  const admin = adminResult.user;
+  const moderator = moderatorResult.user;
+  summary.newAdmins =
+    Number(adminResult.created) + Number(moderatorResult.created);
   const moderatorAudit = await tx.auditLog.findFirst({
     where: { action: "admin.create", targetId: moderator.id },
     select: { id: true },
@@ -761,7 +784,7 @@ try {
   console.log(
     [
       "Dev seed applied.",
-      `  Admins:   ${ADMIN_EMAIL} (admin), ${MODERATOR_EMAIL} (moderator), password ${passwordInfo}`,
+      `  Admins:   ${ADMIN_EMAIL} (admin), ${MODERATOR_EMAIL} (moderator), ${summary.newAdmins} new; new accounts get the password ${passwordInfo}, existing ones keep theirs`,
       `  Players:  ${PLAYERS.length} (${summary.newPlayers} new); device ids ${deviceIdOf(1)} ... ${deviceIdOf(PLAYERS.length)}; player ${STEAM_PLAYER} also has the fake Steam id ${FAKE_STEAM_ID}`,
       `  Guild:    ${GUILD.name} [${GUILD.tag}], invite code ${GUILD.inviteCode}, ${GUILD.members.length} members${summary.guildCreated ? "" : " (existed)"}`,
       `  Runs:     ${RUNS.length + RECENT_RUNS.length} (${summary.newRuns} new), 1 flagged, seasons ${seasonId(seasonTime(1, 0))} and ${seasonId(now)}, ${RECENT_RUNS.length} in the last two weeks`,

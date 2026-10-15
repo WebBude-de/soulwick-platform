@@ -1,10 +1,12 @@
 "use server";
 
 import type {
+  AdminChangePasswordResponse,
   AdminDeletePlayerResponse,
   AdminLoginResponse,
   AdminRelayCloseRoomResponse,
   AdminRelayKickResponse,
+  AdminSelf,
   BanResponse,
   TransferGuildResponse,
 } from "@soulwick/contracts";
@@ -117,6 +119,92 @@ export async function logout() {
   }
   await clearSession();
   redirect("/login?abgemeldet=1");
+}
+
+// --- own account ("Mein Konto") -------------------------------------------------------------
+
+const ACCOUNT_PATH = "/konto";
+const MIN_PASSWORD = 12;
+/** Texts of this page that differ from the general ones in lib/api.ts. */
+const ACCOUNT_ERROR_TEXT: Record<string, string> = {
+  email_taken: "Diese E-Mail-Adresse ist bereits vergeben.",
+  validation_error:
+    "Eingabe ungültig – bitte E-Mail-Adresse bzw. Passwort prüfen.",
+  rate_limited:
+    "Zu viele Versuche – bitte warte etwas (nach mehreren falschen Passwörtern bis zu 15 Minuten).",
+};
+
+function backAccount(
+  result: { ok: true } | { ok: false; error: string; message: string },
+  okText: string
+): never {
+  // The sidebar shows the e-mail as well, so the whole panel is revalidated.
+  revalidatePath("/", "layout");
+  const query = result.ok
+    ? `ok=${encodeURIComponent(okText)}`
+    : `fehler=${encodeURIComponent(ACCOUNT_ERROR_TEXT[result.error] ?? result.message)}`;
+  redirect(`${ACCOUNT_PATH}?${query}`);
+}
+
+const accountFail = (message: string) => ({
+  ok: false as const,
+  error: "",
+  message,
+});
+
+export async function changeOwnEmail(form: FormData) {
+  const email = str(form, "email");
+  const currentPassword = String(form.get("currentPassword") ?? "");
+  if (!(email && currentPassword)) {
+    backAccount(
+      accountFail("Bitte neue E-Mail-Adresse und aktuelles Passwort angeben."),
+      ""
+    );
+  }
+  const result = await api<AdminSelf>("/admin/me/email", {
+    method: "POST",
+    body: { email, currentPassword },
+  });
+  backAccount(
+    result,
+    result.ok
+      ? `E-Mail-Adresse geändert. Du meldest dich ab jetzt mit ${result.data.email} an.`
+      : ""
+  );
+}
+
+export async function changeOwnPassword(form: FormData) {
+  const currentPassword = String(form.get("currentPassword") ?? "");
+  const newPassword = String(form.get("newPassword") ?? "");
+  const repeatPassword = String(form.get("repeatPassword") ?? "");
+  if (!currentPassword) {
+    backAccount(accountFail("Bitte das aktuelle Passwort angeben."), "");
+  }
+  if (newPassword.length < MIN_PASSWORD) {
+    backAccount(
+      accountFail(
+        `Das neue Passwort braucht mindestens ${MIN_PASSWORD} Zeichen.`
+      ),
+      ""
+    );
+  }
+  if (newPassword !== repeatPassword) {
+    backAccount(
+      accountFail("Die beiden neuen Passwörter stimmen nicht überein."),
+      ""
+    );
+  }
+  const result = await api<AdminChangePasswordResponse>("/admin/me/password", {
+    method: "POST",
+    body: { currentPassword, newPassword },
+  });
+  const revoked = result.ok ? result.data.revokedSessions : 0;
+  backAccount(
+    result,
+    revoked === 0
+      ? "Passwort geändert. Diese Sitzung bleibt angemeldet."
+      : `Passwort geändert. ${revoked === 1 ? "Eine andere Sitzung wurde" : `${revoked} andere Sitzungen wurden`} abgemeldet, diese bleibt angemeldet.`
+  );
 }
 
 // --- players ---------------------------------------------------------------------------------

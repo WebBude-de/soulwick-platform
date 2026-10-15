@@ -59,7 +59,7 @@
       "javascript": { "globals": ["Bun"] }
     },
     {
-      // Scripts (create-admin, seed, migration verify/status) run sequentially on purpose.
+      // Scripts (seed, dev seed, migration verify/status) run sequentially on purpose.
       "includes": ["apps/api/src/scripts/**", "packages/db/scripts/**"],
       "linter": { "rules": { "performance": { "noAwaitInLoops": "off" } } }
     },

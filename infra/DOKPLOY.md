@@ -77,8 +77,9 @@ Reihenfolge einhalten; jeder Schritt verweist auf den Abschnitt mit den Details.
 
 ### D. Deployen und prüfen
 
-- [ ] **API deployen.** Der Container spielt beim Start die Migrationen ein (`prisma migrate deploy`) und
-  startet dann die API (§6). Logs in Dokploy ansehen, bis eine Zeile mit `"msg":"listening"` erscheint.
+- [ ] **API deployen.** Der Container spielt beim Start die Migrationen ein (`prisma migrate deploy`), legt
+  über den Basis-Seed den Start-Admin aus `DEFAULT_ADMIN_EMAIL`/`DEFAULT_ADMIN_PASSWORD` an (nur wenn es die
+  Adresse noch nicht gibt, §7) und startet dann die API (§6). Logs in Dokploy ansehen, bis eine Zeile mit `"msg":"listening"` erscheint.
 - [ ] **API prüfen:**
 
   ```bash
@@ -89,8 +90,8 @@ Reihenfolge einhalten; jeder Schritt verweist auf den Abschnitt mit den Details.
   ```
 
   `relayUrl` muss auf den Dev-Relay zeigen (mit `/v1`), `guestAuth` muss `true` sein.
-- [ ] **Ersten Admin anlegen** (§7) im Terminal des API-Containers:
-  `bun apps/api/src/scripts/create-admin.ts <deine-email> "<langes-passwort>" admin`.
+- [ ] **Ersten Admin prüfen** (§7): Im Log steht `Seed admin: <adresse> created`; nach dem ersten Login
+  im Admin-Panel unter **Mein Konto** das Passwort ändern und `DEFAULT_ADMIN_PASSWORD` entfernen.
 - [ ] Optional: **Demo-Daten** für die Dev-Website (§7).
 - [ ] **Relay deployen** und prüfen: `curl https://play-dev.playsoulwick.com/health` liefert `"status":"ok"`.
 - [ ] **WebSocket-Test** (§6, „Relay testen“): `bunx wscat -c wss://play-dev.playsoulwick.com/v1` verbindet
@@ -360,6 +361,10 @@ ERECHT24_PLUGIN_KEY=
 SUPPORT_EMAIL=${{environment.SUPPORT_EMAIL}}
 
 LOG_LEVEL=info
+
+# Seed: admin account created by `bun run db:seed`
+DEFAULT_ADMIN_EMAIL=<deine-email>
+DEFAULT_ADMIN_PASSWORD=<langes-passwort-min-12-zeichen>
 ```
 
 - **Steam:** `STEAM_WEB_API_KEY` ist der Publisher-Schlüssel (Steamworks → Users & Permissions → Manage
@@ -372,7 +377,10 @@ LOG_LEVEL=info
   Neustart von `soulwick-api`.
 - **Support-Adresse (P-026):** Die API liefert `SUPPORT_EMAIL` über `GET /public/config` als
   `supportEmail`; die Website zeigt sie auf `/delete-account` für Spieler ohne Zugang zum Spiel.
-- **`DEFAULT_ADMIN_PASSWORD`** gehört **nicht** in die Variablen (nur Dev-Seed, §7).
+- **Start-Admin (§7):** `DEFAULT_ADMIN_EMAIL` und `DEFAULT_ADMIN_PASSWORD` (mind. 12 Zeichen, je Umgebung
+  ein eigenes, in `production` nie `soulwick-admin-local`). Der Basis-Seed legt das Konto beim
+  Container-Start an, solange es die Adresse nicht gibt, und ändert ein vorhandenes nie. Nach dem ersten
+  Login das Passwort unter **Mein Konto** ändern und `DEFAULT_ADMIN_PASSWORD` hier löschen.
 - `PORT` setzt das Image selbst (8787).
 
 ### `soulwick-relay` → Environment
@@ -499,9 +507,10 @@ Admin ca. 412 MB, Relay ca. 326 MB.
 
 - Image `oven/bun:1.3.14`, Start aus der Quelle (`bun apps/api/src/index.ts`).
 - **Migrationen beim Start:** Der Container führt `cd packages/db && bunx prisma migrate deploy` aus
-  (`packages/db/prisma/migrations`) und startet danach die API (P-003). Einen eigenen Migrationsschritt
-  in Dokploy braucht es nicht. Schlägt die Migration fehl, startet der Container nicht (Logs ansehen);
-  der alte Container läuft weiter.
+  (`packages/db/prisma/migrations`), dann den Basis-Seed (`bun apps/api/src/scripts/seed.ts`, Start-Admin,
+  §7) und startet danach die API (P-003). Einen eigenen Migrationsschritt in Dokploy braucht es nicht.
+  Schlägt die Migration fehl, startet der Container nicht (Logs ansehen); der alte Container läuft
+  weiter. Ein Fehler im Basis-Seed hält den Start nicht auf (nur ein Eintrag im Log).
 - **Genau 1 Replica:** Rate-Limits zählen im Speicher des Prozesses, und zwei gleichzeitig startende
   Container würden gleichzeitig migrieren.
 - Prüfen: `/health` liefert `{"status":"ok","apiVersion":…,"db":"ok","time":…,"minGameVersion":…,"protocolVersion":…}`
@@ -565,21 +574,32 @@ Raum.
 
 ## 7. Erste Inbetriebnahme: Admin und Demo-Daten
 
-Reihenfolge je Umgebung: Datenbank → API (Migrationen) → Admin anlegen → Relay → Web und Admin
-(siehe §0 D).
+Reihenfolge je Umgebung: Datenbank → API (Migrationen, Start-Admin) → Relay → Web und Admin (siehe §0 D).
 
-**Terminal des API-Containers:** in Dokploy bei `soulwick-api` → **Docker** → **Terminal** (bzw.
-Schaltfläche *Terminal*), Shell `sh`, Arbeitsordner `/app`. Alternativ per SSH auf dem VPS:
+**Start-Admin (Basis-Seed, wie DapItUp):** Bei `soulwick-api` → **Environment** `DEFAULT_ADMIN_EMAIL` und
+`DEFAULT_ADMIN_PASSWORD` setzen (§4, mind. 12 Zeichen, je Umgebung ein eigenes Passwort). Bei jedem
+Container-Start läuft nach den Migrationen `bun apps/api/src/scripts/seed.ts` (lokal `bun run db:seed`):
+
+- Gibt es die Adresse noch nicht, legt er einen Admin (Rolle `admin`) an und schreibt `admin.create`
+  (Quelle `seed`) ins Protokoll; im Log steht `Seed admin: <adresse> created`.
+- Gibt es sie schon, passiert **nichts**: kein Passwort-Reset, keine Rollenänderung, kein Wiederaktivieren,
+  auch wenn die Variablen stehen bleiben (`Seed admin: … exists, left unchanged`).
+- Wurde die Adresse unter **Mein Konto** geändert, legt er sie nicht neu an (nur eine Warnung im Log).
+- Fehlen die Variablen oder sind sie ungültig (in `production` auch: Passwort `soulwick-admin-local`), steht
+  ein Hinweis bzw. eine Warnung im Log; die API startet trotzdem.
+
+**Nach dem ersten Login:** im Admin-Panel unter **Mein Konto** das Passwort ändern und
+`DEFAULT_ADMIN_PASSWORD` aus dem Environment löschen (die E-Mail darf bleiben). Weitere Zugänge
+(Moderatoren) im Admin-Panel unter **Admins** anlegen.
+
+**Notfall, kein Admin kommt mehr hinein** (Passwort vergessen, alle deaktiviert): `DEFAULT_ADMIN_EMAIL` auf
+eine **neue**, noch nicht vorhandene Adresse setzen, `DEFAULT_ADMIN_PASSWORD` dazu, `soulwick-api` neu
+starten (Redeploy); mit dem neuen Zugang anmelden, dann wie oben. Solange noch ein Admin hineinkommt, legt
+er den Zugang einfacher unter **Admins** an. Ein Zurücksetzen per E-Mail gibt es nicht (kein Mailversand).
+
+**Terminal des API-Containers** (nur für die Demo-Daten unten): in Dokploy bei `soulwick-api` → **Docker** →
+**Terminal** (bzw. Schaltfläche *Terminal*), Shell `sh`, Arbeitsordner `/app`. Alternativ per SSH auf dem VPS:
 `docker ps | grep soulwick-api`, dann `docker exec -it <container-id> sh`.
-
-**Ersten Admin anlegen:**
-
-```bash
-bun apps/api/src/scripts/create-admin.ts admin@playsoulwick.com "<langes-passwort-min-12-zeichen>" admin
-```
-
-Weitere Zugänge (Moderatoren) danach im Admin-Panel unter **Admins** anlegen. Der Befehl setzt bei einer
-vorhandenen E-Mail das Passwort zurück und aktiviert den Zugang wieder.
 
 **Nur in `development`, optional:** Demo-Daten (Testspieler, Gilde „Dochtwächter“, Runs, Sperre,
 Einträge im Löschprotokoll), damit Website und Admin-Panel etwas zeigen:
@@ -588,8 +608,9 @@ Einträge im Löschprotokoll), damit Website und Admin-Panel etwas zeigen:
 NODE_ENV=development DEFAULT_ADMIN_PASSWORD="<eigenes-langes-passwort>" bun apps/api/src/scripts/seed-dev.ts
 ```
 
-Das legt zusätzlich `admin@soulwick.local` und `moderator@soulwick.local` an. Auf einem öffentlichen Server
-**immer** ein eigenes `DEFAULT_ADMIN_PASSWORD` mitgeben, nie den lokalen Standard `soulwick-admin-local`.
+Das legt zusätzlich `admin@soulwick.local` und `moderator@soulwick.local` an (vorhandene Zugänge bleiben
+unverändert). Auf einem öffentlichen Server **immer** ein eigenes `DEFAULT_ADMIN_PASSWORD` mitgeben, nie den
+lokalen Standard `soulwick-admin-local`.
 Der Seed verweigert `NODE_ENV=production`; in `production` nie ausführen.
 
 Danach Web und Admin prüfen: Admin-Login, Ranglisten, `/delete-account`, `/imprint` und `/privacy`

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { ReactNode } from "react";
 import { type IconName, PixelIcon } from "./pixel-icon";
 
 export interface NavItem {
@@ -14,6 +15,28 @@ const isCurrent = (pathname: string, href: string) =>
   href === "/"
     ? pathname === "/"
     : pathname === href || pathname.startsWith(`${href}/`);
+
+/** A single link styled as a button, marked with aria-current on its own page (account link). */
+export function CurrentLink({
+  href,
+  className,
+  children,
+}: {
+  href: string;
+  className: string;
+  children: ReactNode;
+}) {
+  const pathname = usePathname();
+  return (
+    <Link
+      aria-current={isCurrent(pathname, href) ? "page" : undefined}
+      className={className}
+      href={href}
+    >
+      {children}
+    </Link>
+  );
+}
 
 /**
  * Sidebar links with the current page marked (aria-current). Only the pathname is read here; it is

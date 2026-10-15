@@ -77,13 +77,17 @@ function toAdminUserDto(u: User): AdminUserDto {
 const invalidCredentials = () =>
   new ApiError(401, "invalid_credentials", "Email or password wrong");
 
-/** The admin of a bearer token, or null (no, expired or ended session, player, disabled). */
-export async function adminFromAuthorization(
+/**
+ * The admin of a bearer token and the id of that session, or null (no, expired or ended
+ * session, player, disabled).
+ */
+export async function adminSessionFromAuthorization(
   deps: Deps,
   authorization: string | undefined
-): Promise<AdminAccount | null> {
+): Promise<{ admin: AdminAccount; sessionId: string } | null> {
   const session = await sessionFromAuthorization(deps, authorization);
-  return session ? toAdminAccount(session.user) : null;
+  const admin = session ? toAdminAccount(session.user) : null;
+  return session && admin ? { admin, sessionId: session.session.id } : null;
 }
 
 /**
@@ -141,51 +145,19 @@ export async function listAdminUsers(db: Db): Promise<AdminUserDto[]> {
 }
 
 /**
- * Creates or updates an admin account with a credential row (Better Auth: `provider_id`
- * `credential`, `account_id` = user id). Refuses e-mails of player users. For POST /admin/admins
- * (`create` only), `admin:create` and the dev seed (`upsert`: new password, role, enabled again).
+ * Creates an admin account with a credential row (Better Auth: `provider_id` `credential`,
+ * `account_id` = user id). An existing e-mail (admin or player user) is never changed: 409
+ * `email_taken`. For POST /admin/admins, the base seed (`DEFAULT_ADMIN_EMAIL`) and the dev seed.
  */
-export async function saveAdminAccount(
+export async function createAdminAccount(
   tx: DbOrTx,
-  input: {
-    email: string;
-    password: string;
-    role: AdminRole;
-    mode: "create" | "upsert";
-  }
+  input: { email: string; password: string; role: AdminRole }
 ): Promise<User> {
-  const passwordHash = await hashPassword(input.password);
   const existing = await tx.user.findUnique({ where: { email: input.email } });
   if (existing) {
-    if (input.mode === "create" || existing.playerId) {
-      throw new ApiError(409, "email_taken", "An admin with this email exists");
-    }
-    const user = await tx.user.update({
-      where: { id: existing.id },
-      data: {
-        role: input.role,
-        banned: false,
-        banReason: null,
-        banExpires: null,
-        disabledAt: null,
-      },
-    });
-    const updated = await tx.account.updateMany({
-      where: { userId: user.id, providerId: "credential" },
-      data: { password: passwordHash },
-    });
-    if (updated.count === 0) {
-      await tx.account.create({
-        data: {
-          userId: user.id,
-          accountId: user.id,
-          providerId: "credential",
-          password: passwordHash,
-        },
-      });
-    }
-    return user;
+    throw new ApiError(409, "email_taken", "An admin with this email exists");
   }
+  const passwordHash = await hashPassword(input.password);
   const user = await tx.user.create({
     data: {
       email: input.email,
@@ -213,7 +185,7 @@ export async function createAdminUser(
 ): Promise<AdminUserDto> {
   try {
     const created = await db.$transaction(async (tx) => {
-      const user = await saveAdminAccount(tx, { ...input, mode: "create" });
+      const user = await createAdminAccount(tx, input);
       await writeAudit(tx, {
         adminId: actorId,
         action: "admin.create",

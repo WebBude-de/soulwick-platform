@@ -71,7 +71,7 @@ export function createAuth(
     },
     emailAndPassword: {
       enabled: true,
-      // Admins are created by admins (POST /admin/admins) or `admin:create`, never by sign-up.
+      // Admins are created by admins (POST /admin/admins) or the seeds, never by sign-up.
       disableSignUp: true,
       minPasswordLength: 12,
       maxPasswordLength: 256,

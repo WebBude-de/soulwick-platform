@@ -65,7 +65,9 @@ API, Relay und Prisma laden erst die Wurzel-`.env.local`, dann die eigene darüb
 `POST /auth/device` mit `{ "deviceId": "<UUID>", "name": "Lumen" }` (Gast, ohne Schlüssel) oder
 `POST /auth/dev` mit Header `x-dev-auth-key: <DEV_AUTH_KEY>` und
 `{ "name": "Lumen", "deviceId": "dev-device-00000001" }` (Seed-Spieler). Ersten echten Admin anlegen:
-`bun run --cwd apps/api admin:create <email> <passwort> admin`.
+`DEFAULT_ADMIN_EMAIL` und `DEFAULT_ADMIN_PASSWORD` in `apps/api/.env.local` setzen, dann `bun run db:seed`
+(legt ihn nur an, wenn es die Adresse noch nicht gibt; im API-Image läuft das bei jedem Start). Das eigene
+Passwort und die E-Mail ändert man im Admin-Panel unter „Mein Konto“.
 
 Das Spiel im Godot-Editor spricht automatisch mit `localhost:8787` (API) und `localhost:8790` (Relay).
 

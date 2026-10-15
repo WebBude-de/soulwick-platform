@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1
 # API image (Hono on Bun). Build context: repository root.
 #   docker build -f apps/api/Dockerfile -t soulwick-api .
-# On start the container applies pending Prisma migrations (prisma migrate deploy) and then
-# serves the API. Configuration comes from the platform at runtime (see apps/api/.env.example).
+# On start the container applies pending Prisma migrations (prisma migrate deploy), runs the base
+# seed (admin from DEFAULT_ADMIN_EMAIL / DEFAULT_ADMIN_PASSWORD, only if missing) and then serves
+# the API. Configuration comes from the platform at runtime (see apps/api/.env.example).
 FROM oven/bun:1.3.14 AS build
 WORKDIR /app
 # Manifests first, so the install layer stays cached until dependencies change.
@@ -39,5 +40,7 @@ USER bun
 EXPOSE 8787
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD bun -e "fetch('http://127.0.0.1:' + (process.env.PORT ?? 8787) + '/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
-# Apply pending migrations, then start (exec: bun gets the stop signal directly).
-CMD ["sh", "-c", "cd packages/db && bunx prisma migrate deploy && cd /app && exec bun apps/api/src/index.ts"]
+# Apply pending migrations, run the idempotent base seed, then start (exec: bun gets the stop
+# signal directly). A failed migration stops the start; a failed seed does not (`|| echo`): it only
+# adds the first admin, its error is in the log, and the API must still come up.
+CMD ["sh", "-c", "cd packages/db && bunx prisma migrate deploy && cd /app && (bun apps/api/src/scripts/seed.ts || echo 'Base seed failed, starting the API anyway') && exec bun apps/api/src/index.ts"]

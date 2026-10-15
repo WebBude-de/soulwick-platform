@@ -7,7 +7,7 @@ import { createPrisma } from "@soulwick/db";
 import pg from "pg";
 import { createApp } from "../src/app.ts";
 import { type Config, loadConfig } from "../src/config.ts";
-import { saveAdminAccount } from "../src/services/admin-users.ts";
+import { createAdminAccount } from "../src/services/admin-users.ts";
 import type { BaseDeps } from "../src/types.ts";
 
 export const DEV_KEY = "test-dev-auth-key-0123456789";
@@ -182,12 +182,7 @@ export async function createTestContext(
   async function createAdmin(role: AdminRole = "admin") {
     const email = `${role}-${randomUUID().slice(0, 8)}@example.com`;
     const password = "correct-horse-battery";
-    const row = await saveAdminAccount(db, {
-      email,
-      password,
-      role,
-      mode: "create",
-    });
+    const row = await createAdminAccount(db, { email, password, role });
     const res = await req("POST", "/admin/auth/login", {
       body: { email, password },
     });
@@ -233,6 +228,8 @@ export async function createTestContext(
   return {
     app,
     db,
+    /** Connection string of the test database (for scripts started as a subprocess). */
+    databaseUrl: url,
     /** node-postgres client on the test database, for raw checks. */
     client,
     config,

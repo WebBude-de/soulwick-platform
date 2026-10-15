@@ -1,15 +1,22 @@
 import {
+  AdminChangeEmailRequest,
+  AdminChangePasswordRequest,
   AdminLoginRequest,
   AuditQuery,
   CreateAdminUserRequest,
   Uuid,
 } from "@soulwick/contracts";
 import type { Prisma } from "@soulwick/db";
-import { Hono } from "hono";
-import { rateLimit } from "../../lib/rate-limit.ts";
+import { Hono, type MiddlewareHandler } from "hono";
+import { ApiError } from "../../lib/errors.ts";
+import { fixedWindowCounter, rateLimit } from "../../lib/rate-limit.ts";
 import { timeRangeFilter } from "../../lib/time-range.ts";
 import { iso, parseBody, parseParam, parseQuery } from "../../lib/validate.ts";
 import { requireAdmin, requireRole } from "../../middleware/auth.ts";
+import {
+  changeOwnEmail,
+  changeOwnPassword,
+} from "../../services/admin-account.ts";
 import {
   createAdminUser,
   listAdminUsers,
@@ -25,6 +32,12 @@ import { adminPlayerRoutes } from "./players.ts";
 import { adminRelayRoutes } from "./relay.ts";
 import { adminRunRoutes } from "./runs.ts";
 import { adminStatsRoutes } from "./stats.ts";
+
+/** TESTWERT: POST /admin/me/password|email per IP and minute (both routes together). */
+const OWN_ACCOUNT_REQUESTS_PER_MINUTE = 10;
+/** TESTWERT: wrong current passwords per account before both routes answer 429. */
+const WRONG_PASSWORDS_PER_ACCOUNT = 5;
+const WRONG_PASSWORD_WINDOW_MS = 15 * 60_000;
 
 export function adminRoutes(deps: Deps) {
   const app = new Hono<AppEnv>();
@@ -55,6 +68,53 @@ export function adminRoutes(deps: Deps) {
   });
 
   app.get("/me", (c) => c.json(toAdminSelf(c.get("admin"))));
+
+  // --- own account ("Mein Konto"): every role, only for itself ------------------------------
+  const ownAccountLimit = rateLimit({
+    limit: OWN_ACCOUNT_REQUESTS_PER_MINUTE,
+    trustProxy: deps.config.TRUST_PROXY,
+    name: "admin-own-account",
+  });
+  const wrongPasswords = fixedWindowCounter({
+    limit: WRONG_PASSWORDS_PER_ACCOUNT,
+    windowMs: WRONG_PASSWORD_WINDOW_MS,
+  });
+  /** Blocks an account after too many wrong current passwords (guessing from a stolen session). */
+  const passwordGuard: MiddlewareHandler<AppEnv> = async (c, next) => {
+    const retryAfter = wrongPasswords.blockedFor(c.get("admin").id);
+    if (retryAfter !== null) {
+      c.header("Retry-After", String(retryAfter));
+      throw new ApiError(429, "rate_limited", "Too many wrong passwords");
+    }
+    await next();
+  };
+
+  app.post("/me/password", ownAccountLimit, passwordGuard, async (c) => {
+    const body = await parseBody(c, AdminChangePasswordRequest);
+    const admin = c.get("admin");
+    return c.json(
+      await changeOwnPassword(deps.db, {
+        admin,
+        sessionId: c.get("adminSessionId"),
+        currentPassword: body.currentPassword,
+        newPassword: body.newPassword,
+        onWrongPassword: () => wrongPasswords.hit(admin.id),
+      })
+    );
+  });
+
+  app.post("/me/email", ownAccountLimit, passwordGuard, async (c) => {
+    const body = await parseBody(c, AdminChangeEmailRequest);
+    const admin = c.get("admin");
+    return c.json(
+      await changeOwnEmail(deps.db, {
+        admin,
+        email: body.email,
+        currentPassword: body.currentPassword,
+        onWrongPassword: () => wrongPasswords.hit(admin.id),
+      })
+    );
+  });
 
   app.route("/stats", adminStatsRoutes(deps));
   app.route("/players", adminPlayerRoutes(deps));

@@ -34,6 +34,13 @@ Verwaltungsoberfläche für Admins und Moderatoren:
   Ziel und Ziel-ID; alte Einträge entfallener Aktionen (`legal.*`, `deletion_request.resolve`)
   bleiben mit ihrer Beschriftung lesbar, sind aber nicht mehr filterbar
 - **Admins:** Zugänge anlegen und deaktivieren (nur Rolle Admin)
+- **Mein Konto** (`/konto`, jede Rolle; Link „Mein Konto“ bzw. die eigene E-Mail unten in der
+  Seitenleiste): eigene E-Mail-Adresse ändern (neue Adresse + aktuelles Passwort, ohne
+  Bestätigungsmail, gilt sofort; die Seitenleiste zeigt danach die neue Adresse) und eigenes Passwort
+  ändern (aktuelles, neues mit mind. 12 Zeichen, Wiederholung; die Server Action prüft Länge und
+  Wiederholung vor dem API-Aufruf). Nach dem Passwortwechsel sind alle anderen Sitzungen abgemeldet,
+  die aktuelle bleibt (gleiches Cookie). Fehler wie „Das aktuelle Passwort ist falsch.“, „Diese
+  E-Mail-Adresse ist bereits vergeben.“ oder zu viele Versuche erscheinen als Meldung oben.
 
 Destruktive Aktionen laufen einheitlich über `components/danger-action.tsx`: Aufklappen, Grund
 (Pflicht, wo die API einen Grund speichert), Bestätigung per Häkchen oder eingetipptem Kürzel/Namen;
@@ -68,8 +75,9 @@ bun run dev:admin                                  # http://localhost:3001 (alle
 
 Die API muss laufen (`bun run services:up`, `bun run db:deploy`, `bun run db:seed:dev`,
 `bun run dev:api`). Dev-Zugänge aus dem Seed: `admin@soulwick.local` und `moderator@soulwick.local`,
-Passwort `soulwick-admin-local` (oder `DEFAULT_ADMIN_PASSWORD`). Einen echten Admin legt man in der API an:
-`bun run --cwd apps/api admin:create admin@example.com "ein-langes-passwort" admin`
+Passwort `soulwick-admin-local` (oder `DEFAULT_ADMIN_PASSWORD`). Einen echten Admin legt der Basis-Seed der
+API an (`DEFAULT_ADMIN_EMAIL`/`DEFAULT_ADMIN_PASSWORD`, `bun run db:seed`, siehe
+[apps/api/README.md](../api/README.md)); danach Passwort unter „Mein Konto“ ändern.
 
 ## Umgebungsvariablen
 

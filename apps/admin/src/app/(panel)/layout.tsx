@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { logout } from "@/app/actions";
-import { type NavItem, NavLinks } from "@/components/nav-links";
+import { CurrentLink, type NavItem, NavLinks } from "@/components/nav-links";
 import { Chip, ErrorBox } from "@/components/ui";
 import { getMeResult, isAdmin } from "@/lib/api";
 import { ADMIN_ROLE_LABEL } from "@/lib/format";
@@ -74,16 +74,27 @@ export default async function PanelLayout({
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-line border-t-2 px-4 py-3 text-sm md:block md:space-y-3 md:border-t-0 md:px-5 md:pb-6">
           <div className="min-w-0 space-y-1">
-            <div className="break-all text-soft">{me.email}</div>
+            <Link
+              className="block break-all text-soft hover:text-text"
+              href="/konto"
+              title="Mein Konto"
+            >
+              {me.email}
+            </Link>
             <Chip tone={isAdmin(me) ? "flagged" : "muted"}>
               {ADMIN_ROLE_LABEL[me.role]}
             </Chip>
           </div>
-          <form action={logout}>
-            <button className="btn btn-sm" type="submit">
-              Abmelden
-            </button>
-          </form>
+          <div className="flex flex-wrap gap-2">
+            <CurrentLink className="btn btn-sm" href="/konto">
+              Mein Konto
+            </CurrentLink>
+            <form action={logout}>
+              <button className="btn btn-sm" type="submit">
+                Abmelden
+              </button>
+            </form>
+          </div>
         </div>
       </aside>
       <main

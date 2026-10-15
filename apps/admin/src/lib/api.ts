@@ -33,6 +33,10 @@ const ERROR_TEXTS: Record<string, string> = {
   player_not_in_room: "Der Spieler ist nicht mehr in diesem Raum.",
   note_not_found: "Die Notiz gibt es nicht (mehr).",
   already_founder: "Der Spieler leitet die Gilde bereits.",
+  // Own account ("Mein Konto")
+  invalid_current_password: "Das aktuelle Passwort ist falsch.",
+  password_unchanged: "Das neue Passwort ist dasselbe wie das aktuelle.",
+  email_unchanged: "Das ist bereits deine E-Mail-Adresse.",
 };
 
 export function errorText(code: string, fallback?: string): string {
