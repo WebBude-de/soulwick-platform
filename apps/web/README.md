@@ -28,6 +28,7 @@ Für echte Daten muss die API laufen (`bun run services:up`, `bun run db:deploy`
 | --- | --- | --- |
 | `API_URL` | `http://localhost:8787` | Adresse der API (nur serverseitig genutzt) |
 | `SITE_URL` | `https://playsoulwick.com` | Öffentliche Basis-URL für Canonical, Sitemap und Open Graph |
+| `LIVE_FEATURES` | `true` | Online-Teile an/aus (`src/lib/features.ts`). `false` = reiner Teaser: `/leaderboards` und `/guilds/[tag]` liefern 404, Ranglisten-Teaser, Header-Knopf, Nav-/Footer-Link und Sitemap-Eintrag fallen weg, keine Ranglisten-Aufrufe an die API. Wird pro Anfrage auf dem Server gelesen (kein `NEXT_PUBLIC_`), Umschalten ohne Neubau. Dokploy: development `true`, production `false` |
 
 ## Befehle
 
@@ -37,6 +38,7 @@ Für echte Daten muss die API laufen (`bun run services:up`, `bun run db:deploy`
 | `bun run --cwd apps/web build` | Produktions-Build (`output: "standalone"`) |
 | `bun run --cwd apps/web start` | Produktions-Build starten |
 | `bun run --cwd apps/web typecheck` | Routen-Typen erzeugen und TypeScript prüfen |
+| `bun test apps/web` | Unit-Tests der Website (Schalter `LIVE_FEATURES`, Sitemap, Seiten, Rechtstext-Rückfall; ohne API und Datenbank) |
 | `bunx biome check apps/web` | Lint und Formatierung nur für die Website (ganzes Repo: `bun run check`, Fixes: `bun run fix`) |
 | `bun apps/web/scripts/sync-sprites.ts` | Spiel-Grafiken aus `../soulwick/art` als verlustfreies WebP nach `public/sprites/` kopieren und `src/lib/sprite-manifest.ts` schreiben (`--force` kodiert alles neu) |
 | `bun apps/web/scripts/sync-brand.ts` | PNGs in `public/brand/**` nach WebP konvertieren (Originale werden gelöscht, `--keep-png` behält sie) |
@@ -78,7 +80,7 @@ nicht. Die `sync-*`-Skripte laufen nur lokal, wenn sich Grafiken oder Musik im S
 | Pfad | Inhalt |
 | --- | --- |
 | `/` | Landingpage (Anker `#spiel`, `#waffen`, `#biome`, `#dorf`, `#koop`, `#ranglisten`) |
-| `/leaderboards` | Ranglisten (Query: `art`, `zeitraum`, `saison`) |
-| `/guilds/[tag]` | Öffentliche Gildenseite |
-| `/privacy`, `/imprint` | Rechtstexte (eRecht24, Platzhalter solange keiner vorliegt) |
+| `/leaderboards` | Ranglisten (Query: `art`, `zeitraum`, `saison`); 404 bei `LIVE_FEATURES=false` |
+| `/guilds/[tag]` | Öffentliche Gildenseite; 404 bei `LIVE_FEATURES=false` |
+| `/privacy`, `/imprint` | Rechtstexte (eRecht24 über die API; ohne Text die optionale Datei aus `content/legal/`, sonst Platzhalter mit Support-Adresse aus `GET /public/config`) |
 | `/delete-account` | Konto löschen ohne Anmeldung (Google Play „Datensicherheit“, P15, P-026): Spielername + Einmal-Löschcode aus dem Spiel → `POST /account-deletion/verify`, Bestätigungsschritt → `POST /account-deletion/confirm`, alles über eine Server-Action (läuft ohne JavaScript). Abschnitt „Kein Zugang mehr zum Spiel?“ immer sichtbar: mit `supportEmail` aus `GET /public/config` ein mailto-Link, sonst Verweis aufs Impressum (`SUPPORT_EMAIL` ist in Produktion Pflicht) |

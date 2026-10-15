@@ -21,10 +21,10 @@ Prod haben je eine eigene Datenbank, eigene Geheimnisse und einen **eigenen Rela
 | Service | Port | `development` (Präfix `dev.`) | `production` (ohne Präfix) | Healthcheck |
 | --- | --- | --- | --- | --- |
 | `soulwick-postgres` | 5432 (nur intern) | – | – | – |
-| `soulwick-api` | 8787 | `api.dev.playsoulwick.com` | `api.playsoulwick.com` | `GET /health` |
-| `soulwick-relay` | 8790 | `play.dev.playsoulwick.com` | `play.playsoulwick.com` | `GET /health` |
+| `soulwick-api` | 8787 | `api-dev.playsoulwick.com` | `api.playsoulwick.com` | `GET /health` |
+| `soulwick-relay` | 8790 | `play-dev.playsoulwick.com` | `play.playsoulwick.com` | `GET /health` |
 | `soulwick-web` | 3000 | `dev.playsoulwick.com` | `playsoulwick.com` (+ `www.` → Weiterleitung) | `GET /` |
-| `soulwick-admin` | 3001 | `admin.dev.playsoulwick.com` | `admin.playsoulwick.com` | `GET /login` |
+| `soulwick-admin` | 3001 | `admin-dev.playsoulwick.com` | `admin.playsoulwick.com` | `GET /login` |
 
 Die Healthchecks stehen als `HEALTHCHECK` in den Dockerfiles; Dokploy zeigt den Zustand am Container.
 
@@ -38,16 +38,16 @@ Reihenfolge einhalten; jeder Schritt verweist auf den Abschnitt mit den Details.
 
 - [ ] **Code auf GitHub:** Das Repo `WebBude-de/soulwick-platform` (privat) enthält den Stand. Commit und
   Push macht das Projektmitglied selbst (Agenten pushen nicht). Vorher `git status` prüfen: Es darf
-  **keine** `.env`, `.env.local` oder `.env.prod` dabei sein (nur `.env.example`; `.gitignore` deckt das ab).
+  **keine** `.env.local`, `.env.dev` oder `.env.prod` dabei sein (nur `.env.example`; `.gitignore` deckt das ab).
 - [ ] **Branch für `development` festlegen:** vorerst `feature/platform-foundation` (der einzige Branch
   mit Code). Später, sobald `main` existiert, auf `main` umstellen (Application → Provider → Branch).
 - [ ] **Dokploy mit GitHub verbinden:** *Settings → Git → GitHub → Create GitHub App*, die App für die
   Organisation **`WebBude-de`** installieren und Zugriff auf `soulwick-platform` geben.
-- [ ] **Let's-Encrypt-E-Mail** in Dokploy gesetzt (*Settings → Web Server / Traefik*), sonst gibt es
-  keine Zertifikate.
-- [ ] **DNS** (§2): A-Records (bei IPv6 zusätzlich AAAA) auf die VPS-IP für `dev`, `api.dev`,
-  `admin.dev`, `play.dev` (oder ein Wildcard `*.dev`). **Keine Cloudflare-Proxy-Wolke** (graue Wolke /
-  „DNS only“). Prüfen: `nslookup api.dev.playsoulwick.com` zeigt die VPS-IP.
+- [ ] **Cloudflare-Ursprungszertifikat** (§2): in Cloudflare erzeugen und in Dokploy unter
+  *Settings → Certificates* hinterlegen; Cloudflare auf **Full (strict)**. Kein Let's Encrypt nötig.
+- [ ] **DNS** (§2): A-Records (bei IPv6 zusätzlich AAAA) auf die VPS-IP für `dev`, `api-dev`,
+  `admin-dev`, `play-dev`, **mit Cloudflare-Proxy** (orange Wolke). Nur eine Ebene unter der Domain:
+  `api.dev` hätte kein Cloudflare-Zertifikat.
 - [ ] **Geheimnisse erzeugen** (§3): `BETTER_AUTH_SECRET`, `RELAY_INTERNAL_KEY`, `DEV_AUTH_KEY`,
   Datenbank-Passwort, alle nur für `development`. In einem Passwort-Manager ablegen, nirgends committen.
 
@@ -68,11 +68,12 @@ Reihenfolge einhalten; jeder Schritt verweist auf den Abschnitt mit den Details.
 ### C. Variablen und Domains
 
 - [ ] **Umgebungs-Variablen** von `development` setzen (§4, Block „`development`“), mit den echten App
-  Names in `API_INTERNAL_URL` und `RELAY_INTERNAL_URL` und `RELAY_PUBLIC_URL=wss://play.dev.playsoulwick.com`.
+  Names in `API_INTERNAL_URL` und `RELAY_INTERNAL_URL` und `RELAY_PUBLIC_URL=wss://play-dev.playsoulwick.com`.
 - [ ] **Service-Variablen** je Application aus §4 einfügen (`soulwick-api`, `soulwick-relay`,
   `soulwick-web`, `soulwick-admin`); darin u. a. `GUEST_AUTH_ENABLED=true` bei der API.
 - [ ] **Domains** je Application (§6): Host aus der Tabelle oben, Path `/`, Container Port
-  `8787` / `8790` / `3000` / `3001`, HTTPS an, Zertifikat **Let's Encrypt**.
+  `8787` / `8790` / `3000` / `3001`, HTTPS an, Certificate Provider **None** (Traefik nimmt das
+  Ursprungszertifikat aus §2, weil es zum Host passt).
 
 ### D. Deployen und prüfen
 
@@ -81,22 +82,22 @@ Reihenfolge einhalten; jeder Schritt verweist auf den Abschnitt mit den Details.
 - [ ] **API prüfen:**
 
   ```bash
-  curl https://api.dev.playsoulwick.com/health
+  curl https://api-dev.playsoulwick.com/health
   # {"status":"ok","apiVersion":…,"db":"ok","time":…,"minGameVersion":null,"protocolVersion":1}
-  curl https://api.dev.playsoulwick.com/public/config
-  # … "relayUrl":"wss://play.dev.playsoulwick.com/v1", … "guestAuth":true
+  curl https://api-dev.playsoulwick.com/public/config
+  # … "relayUrl":"wss://play-dev.playsoulwick.com/v1", … "guestAuth":true
   ```
 
   `relayUrl` muss auf den Dev-Relay zeigen (mit `/v1`), `guestAuth` muss `true` sein.
 - [ ] **Ersten Admin anlegen** (§7) im Terminal des API-Containers:
   `bun apps/api/src/scripts/create-admin.ts <deine-email> "<langes-passwort>" admin`.
 - [ ] Optional: **Demo-Daten** für die Dev-Website (§7).
-- [ ] **Relay deployen** und prüfen: `curl https://play.dev.playsoulwick.com/health` liefert `"status":"ok"`.
-- [ ] **WebSocket-Test** (§6, „Relay testen“): `bunx wscat -c wss://play.dev.playsoulwick.com/v1` verbindet
+- [ ] **Relay deployen** und prüfen: `curl https://play-dev.playsoulwick.com/health` liefert `"status":"ok"`.
+- [ ] **WebSocket-Test** (§6, „Relay testen“): `bunx wscat -c wss://play-dev.playsoulwick.com/v1` verbindet
   sich und wird nach 5 s ohne `hello` geschlossen; mit Gast-Token antwortet der Relay `welcome` und auf
   `create` mit einem Raumcode.
 - [ ] **Web und Admin deployen.** `https://dev.playsoulwick.com` zeigt die Startseite,
-  `https://admin.dev.playsoulwick.com` die Anmeldung; mit dem Admin aus D einloggen, „Live-Räume“ öffnen
+  `https://admin-dev.playsoulwick.com` die Anmeldung; mit dem Admin aus D einloggen, „Live-Räume“ öffnen
   (darf nicht „Relay nicht konfiguriert“ melden).
 - [ ] **Admin-Bereich schützen** (§8), am einfachsten Basic Auth. Vor dem Teilen der Adressen erledigen.
 
@@ -130,48 +131,66 @@ derzeit im Worktree `soulwick-mp`: `online/online_config.gd`, `online/environmen
    `env_production` der Export-Vorlage, sonst aus `online/environment.cfg` (`[build] env="development"`
    oder `"production"`), sonst `development`. Das Skript `tools/export_build.ps1 -Env …` schreibt die
    Datei für den Export und stellt sie danach wieder her.
-3. **API-URL je Umgebung** steht im Spiel: `https://api.dev.playsoulwick.com` bzw.
+3. **API-URL je Umgebung** steht im Spiel: `https://api-dev.playsoulwick.com` bzw.
    `https://api.playsoulwick.com`.
 4. **Relay-URL ist nicht fest:** Das Spiel fragt `GET /public/config` der API und nimmt `relayUrl`
    (aus `RELAY_PUBLIC_URL`). Nur wenn die API keinen Relay meldet, gilt der Standard der Umgebung
-   (`wss://play.dev.playsoulwick.com/v1` bzw. `wss://play.playsoulwick.com/v1`). Ein Relay-Umzug
+   (`wss://play-dev.playsoulwick.com/v1` bzw. `wss://play.playsoulwick.com/v1`). Ein Relay-Umzug
    braucht also nur eine geänderte Variable, keinen neuen Build.
 5. Zum Testen lässt sich alles überschreiben: Kommandozeile `-- env=development`, `-- api=…`,
    `-- relay=…` oder `user://online.cfg`.
 6. Das **Hauptmenü** zeigt unten rechts Version und Umgebung: „v0.9.0 dev“ in `development`, in
    `production` nur die Version; darunter „Online bereit“ oder den Offline-Hinweis.
 
-### Warum die Dev-Domains unter `dev.playsoulwick.com` liegen
+### Cookies der Dev- und Prod-Hosts
 
 Das Admin-Panel setzt sein Sitzungs-Cookie `soulwick_admin` ohne `Domain`-Attribut (Host-only); der
-Browser schickt es nur an genau den Host, der es gesetzt hat. Der eigene Teilbaum `*.dev.playsoulwick.com`
-sorgt dafür, dass das so bleibt, auch wenn später ein Cookie mit `Domain` gesetzt würde: Ein Dev-Cookie
-für `.dev.playsoulwick.com` erreicht die Produktions-Hosts nie. Umgekehrt ginge ein Produktions-Cookie für
-`.playsoulwick.com` an **alle** Dev-Hosts, deshalb Cookies nie auf die Apex-Domain setzen und Dev- und
-Prod-Admin nicht gleichzeitig im selben Browser-Profil eingeloggt lassen. Nebeneffekt: `CORS_ORIGINS`,
-Zertifikate und ein Wildcard-Eintrag `*.dev.playsoulwick.com` bleiben je Umgebung getrennt.
+Browser schickt es nur an genau den Host, der es gesetzt hat, also nie von `admin-dev` an `admin`.
+Seit die Dev-Hosts flach unter der Domain liegen (`api-dev`, `admin-dev`, `play-dev`, P-029), teilen
+Dev und Prod dieselbe Elternebene: **Cookies nie mit `Domain=.playsoulwick.com` setzen**, sonst gingen
+sie an beide Umgebungen.
 
-## 2. DNS
+## 2. DNS und TLS (Cloudflare, P-029)
 
-A-Records (bei IPv6 zusätzlich AAAA) auf die VPS-IP:
+Die Domain liegt bei Cloudflare. A-Records (bei IPv6 zusätzlich AAAA) auf die VPS-IP, **alle mit
+Proxy** (orange Wolke):
 
 | Umgebung | Einträge |
 | --- | --- |
-| `development` | `dev`, `api.dev`, `admin.dev`, `play.dev` (oder Wildcard `*.dev` plus `dev`) |
-| `production` | `@` (`playsoulwick.com`), `www`, `api`, `admin`, `play` |
+| `development` | `dev`, `api-dev`, `admin-dev`, `play-dev` |
+| `production` | `@` (`playsoulwick.com`), `api`, `admin`, `play` |
+| Weiterleitung | `www` als Platzhalter (z. B. A `192.0.2.1` oder AAAA `100::`, mit Proxy) plus Redirect Rule |
 
-TLS macht Traefik mit Let's Encrypt; dafür muss der Name schon auf den VPS zeigen.
+**Nur eine Ebene unter der Domain:** Das kostenlose Cloudflare-Zertifikat gilt für `playsoulwick.com`
+und `*.playsoulwick.com`, nicht für `*.dev.playsoulwick.com`. Deshalb `api-dev` statt `api.dev`.
 
-**Keinen Cloudflare-Proxy (orange Wolke) davor**, weder vor der API noch vor dem Relay:
+**TLS:**
 
-- Das Rate-Limit der API und das Verbindungs-Limit des Relays lesen die Client-IP aus
-  `X-Forwarded-For`, das Traefik setzt (`TRUST_PROXY=true`, P-005). Hinter Cloudflare stünde dort die
-  IP des Cloudflare-Knotens, alle Spieler teilten sich ein Limit.
-- Der Relay hält lange WebSocket-Verbindungen; ein zusätzlicher Proxy bringt eigene Zeitlimits und
-  Latenz mit.
+1. Cloudflare → *SSL/TLS → Übersicht*: **Full (strict)**.
+2. Cloudflare → *SSL/TLS → Ursprungsserver → Zertifikat erstellen*: RSA 2048, Hostnamen
+   `playsoulwick.com` und `*.playsoulwick.com`, 15 Jahre. Zertifikat und privaten Schlüssel sichern
+   (der Schlüssel wird nur einmal angezeigt, Passwort-Manager).
+3. Dokploy → *Settings → Certificates → Add Certificate*: Zertifikat und Schlüssel einfügen.
+4. Domains in Dokploy: HTTPS an, Certificate Provider **None**; Traefik nimmt das passende
+   Ursprungszertifikat. Kein Let's Encrypt (hinter dem Proxy scheitert dessen HTTP-Prüfung, sobald
+   Cloudflare HTTP auf HTTPS umleitet).
+5. Cloudflare → *SSL/TLS → Edge-Zertifikate*: **Always Use HTTPS** an.
+6. Cloudflare → *Regeln → Redirect Rules*: Hostname gleich `www.playsoulwick.com` → dynamisch
+   `concat("https://playsoulwick.com", http.request.uri.path)`, 301, Query-String beibehalten.
+   In Dokploy dann **keine** `www`-Domain.
 
-Liegt die Domain bei Cloudflare, die Einträge auf „DNS only“ (graue Wolke) stellen. Einzige mögliche
-Ausnahme: Cloudflare Access nur vor dem Admin-Host (§8).
+**Was der Proxy für API und Relay bedeutet:**
+
+- **Client-IP:** API und Relay lesen hinter dem Proxy zuerst `CF-Connecting-IP`, dann
+  `X-Forwarded-For` (`TRUST_PROXY=true`). Ohne das teilten sich alle Spieler das Limit eines
+  Cloudflare-Knotens.
+- **WebSocket:** Cloudflare leitet WebSockets weiter (*Netzwerk → WebSockets* an, Standard). Eine
+  Verbindung ohne Daten trennt Cloudflare nach 100 s; der Relay sendet alle 15 s einen Herzschlag,
+  das hält sie offen. Cloudflare kann Verbindungen bei eigenen Wartungen trennen; das Spiel verbindet
+  dann neu.
+- **Direkter Zugriff:** Wer die VPS-IP kennt, kann Cloudflare umgehen und `CF-Connecting-IP` selbst
+  setzen. Für die Testphase in Ordnung; später die Ports 80/443 per Firewall nur für die
+  Cloudflare-Adressbereiche öffnen.
 
 ## 3. Geheimnisse
 
@@ -199,13 +218,18 @@ mehr; vorhandene Einträge in Dokploy dürfen weg.
 
 ### Wo was hingehört
 
-| Vorlage | Lokal | Dokploy |
+| Vorlage | Lokal | Dokploy (Kopie liegt lokal, gitignored) |
 | --- | --- | --- |
-| `infra/.env.example` | `infra/.env` (`POSTGRES_*`, `DB_PORT`) | – (auf dem Server nicht genutzt) |
-| `apps/api/.env.example` | `apps/api/.env` | `soulwick-api` → **Environment** |
-| `apps/relay/.env.example` | `apps/relay/.env` | `soulwick-relay` → **Environment** |
-| `apps/web/.env.example` | `apps/web/.env.local` | `soulwick-web` → **Environment** |
-| `apps/admin/.env.example` | `apps/admin/.env.local` | `soulwick-admin` → **Environment** |
+| `.env.example` (Wurzel) | `.env.local` (gemeinsame Werte) | Variablen der Umgebung: `.env.dev` → `development`, `.env.prod` → `production` |
+| `apps/api/.env.example` | `apps/api/.env.local` | `soulwick-api` → **Environment**: `apps/api/.env.dev` bzw. `.env.prod` |
+| `apps/relay/.env.example` | `apps/relay/.env.local` | `soulwick-relay` → **Environment**: `apps/relay/.env.dev` bzw. `.env.prod` |
+| `apps/web/.env.example` | `apps/web/.env.local` | `soulwick-web` → **Environment**: `apps/web/.env.dev` bzw. `.env.prod` |
+| `apps/admin/.env.example` | `apps/admin/.env.local` | `soulwick-admin` → **Environment**: `apps/admin/.env.dev` bzw. `.env.prod` |
+| `infra/.env.example` | `infra/.env.local` (`POSTGRES_*`, `DB_PORT`) | – (auf den Servern nicht genutzt; Produktion: Datenbankserver) |
+
+Die Dateien `.env.dev` und `.env.prod` sind deine lokale Kopie dessen, was in Dokploy steht: Wurzel =
+Variablen der Umgebung, `apps/<app>/` = Environment des Services mit `${{environment.NAME}}`. Ändert
+sich etwas in Dokploy, die Kopie mitziehen (und umgekehrt).
 
 - Alle Variablen sind **Laufzeit-Variablen**, keine Build-Args: Web und Admin lesen `API_URL` nur
   serverseitig, nichts davon landet im Browser-Bundle. Geänderte Variablen wirken erst nach einem neuen
@@ -239,9 +263,9 @@ je Umgebung ein eigener.
 
 ```dotenv
 WEB_URL=https://dev.playsoulwick.com
-ADMIN_URL=https://admin.dev.playsoulwick.com
-API_PUBLIC_URL=https://api.dev.playsoulwick.com
-RELAY_PUBLIC_URL=wss://play.dev.playsoulwick.com
+ADMIN_URL=https://admin-dev.playsoulwick.com
+API_PUBLIC_URL=https://api-dev.playsoulwick.com
+RELAY_PUBLIC_URL=wss://play-dev.playsoulwick.com
 API_INTERNAL_URL=http://soulwick-api-dev:8787
 RELAY_INTERNAL_URL=http://soulwick-relay-dev:8790
 DATABASE_URL=<Internal Connection URL von soulwick-postgres-dev>
@@ -271,7 +295,7 @@ MIN_GAME_VERSION=
 SUPPORT_EMAIL=<Support-Adresse, PFLICHT in production (Google Play verlangt einen Löschweg ohne App)>
 ```
 
-- `RELAY_PUBLIC_URL` ohne Pfad: Die API hängt `/v1` an und meldet `wss://play.dev.playsoulwick.com/v1`
+- `RELAY_PUBLIC_URL` ohne Pfad: Die API hängt `/v1` an und meldet `wss://play-dev.playsoulwick.com/v1`
   in `GET /public/config`.
 - `PROTOCOL_VERSION` muss der Konstante im Spiel-Build entsprechen (`OnlineConfig.PROTOCOL_VERSION`,
   derzeit 1); sie steht nur einmal hier, damit API und Relay nie auseinanderlaufen.
@@ -385,7 +409,25 @@ Gildenräume antworten mit `api_unavailable`.
 ```dotenv
 API_URL=${{environment.API_INTERNAL_URL}}
 SITE_URL=${{environment.WEB_URL}}
+# Online-Teile (Ranglisten, Gildenseiten, Ranglisten-Teaser), je Umgebung verschieden:
+#   development: LIVE_FEATURES=true
+#   production:  LIVE_FEATURES=false   (Teaser, solange der Online-Teil nicht live ist)
+LIVE_FEATURES=<true|false>
 ```
+
+- **`LIVE_FEATURES`** (Stand 15.10.2026): in `development` `true` (oder weglassen, Standard ist `true`),
+  in `production` **`false`**, solange der Online-Teil nicht live ist. Mit `false` ist die Website ein
+  reiner Teaser: `/leaderboards` und `/guilds/<TAG>` antworten mit 404, Ranglisten-Teaser, Header-Knopf
+  und Navigationslinks dazu verschwinden, die Sitemap listet die Ranglisten nicht, und die Website ruft
+  keine Ranglisten-API auf. Konto-Löschung (`/delete-account`), Impressum und Datenschutz bleiben. Die
+  Variable wird zur Laufzeit gelesen (kein `NEXT_PUBLIC_`): Umschalten = Wert ändern und den Service neu
+  starten, kein Neubau. Jeder andere Wert als leer, `true`, `1`, `on`, `yes` gilt als aus.
+- **Produktion vorerst:** Für den Teaser braucht `production` nur `soulwick-web`, `soulwick-api` und
+  `soulwick-postgres` (die API liefert Rechtstexte und `SUPPORT_EMAIL` für `/delete-account`).
+  `soulwick-relay` und `soulwick-admin` werden in `production` erst mit dem Online-Teil angelegt.
+- Liefert die API keinen Rechtstext (eRecht24-Schlüssel fehlen, API nicht erreichbar), zeigt die Website
+  `apps/web/content/legal/<imprint|privacy>.<de|en>.html`, falls vorhanden, sonst einen Platzhalter mit
+  Kurzüberblick und der Support-Adresse ([apps/web/content/legal/README.md](../apps/web/content/legal/README.md)).
 
 ### `soulwick-admin` → Environment
 
@@ -434,7 +476,7 @@ unterscheiden sich.
 | Build Type | Dockerfile |
 | Dockerfile Path | `apps/api/Dockerfile`, `apps/relay/Dockerfile`, `apps/web/Dockerfile`, `apps/admin/Dockerfile` |
 | Docker Context Path | **`.`** (Repo-Wurzel). Ohne Angabe nimmt Dokploy den Ordner des Dockerfiles, dann fehlen `bun.lock`, die Workspace-Dateien und `packages/*`. Jede App hat eine eigene `apps/<app>/Dockerfile.dockerignore`. |
-| Container Port (Domain) | API `8787`, Relay `8790`, Web `3000`, Admin `3001`; HTTPS mit Let's Encrypt |
+| Container Port (Domain) | API `8787`, Relay `8790`, Web `3000`, Admin `3001`; HTTPS an, Certificate Provider None (Cloudflare-Ursprungszertifikat, §2) |
 | Replicas | **genau 1** (API und Relay zwingend, Gründe unten) |
 | Auto Deploy | an, mit Watch Paths (unten) |
 
@@ -487,23 +529,23 @@ Admin ca. 412 MB, Relay ca. 326 MB.
 Aus Git Bash oder Linux (`<…>` ersetzen):
 
 ```bash
-curl https://play.dev.playsoulwick.com/health
-curl -H "x-relay-key: <RELAY_INTERNAL_KEY>" https://play.dev.playsoulwick.com/metrics
-bunx wscat -c wss://play.dev.playsoulwick.com/v1
+curl https://play-dev.playsoulwick.com/health
+curl -H "x-relay-key: <RELAY_INTERNAL_KEY>" https://play-dev.playsoulwick.com/metrics
+bunx wscat -c wss://play-dev.playsoulwick.com/v1
 ```
 
 Ohne `hello` schließt der Relay die Verbindung nach 5 s; das zeigt schon, dass Upgrade und Weiterleitung
 klappen. Vollständiger Test mit einem Gastkonto (legt in `development` ein Testkonto an):
 
 ```bash
-API=https://api.dev.playsoulwick.com
+API=https://api-dev.playsoulwick.com
 DEVICE=$(bun -e "console.log(crypto.randomUUID())")
 curl -s -X POST $API/auth/device -H "content-type: application/json" \
   -d "{\"deviceId\":\"$DEVICE\",\"name\":\"Relaytest\"}"
 # → {"token":"<SESSION>",…}
 curl -s -H "Authorization: Bearer <SESSION>" $API/auth/token
 # → {"token":"<JWT>","expiresAt":…}   (15 min gültig)
-bunx wscat -c wss://play.dev.playsoulwick.com/v1
+bunx wscat -c wss://play-dev.playsoulwick.com/v1
 # innerhalb von 5 s einfügen:
 {"type":"hello","token":"<JWT>","protocolVersion":1,"gameVersion":"0.9.0","platform":"windows"}
 # → {"type":"welcome",…}
@@ -512,7 +554,7 @@ bunx wscat -c wss://play.dev.playsoulwick.com/v1
 ```
 
 Format der Nachrichten: `packages/contracts/src/lobby.ts`. Für den Langzeittest mindestens 5 Minuten
-verbunden bleiben. Abnahme P17: zwei Spiel-Instanzen teilen über `wss://play.dev.playsoulwick.com` einen
+verbunden bleiben. Abnahme P17: zwei Spiel-Instanzen teilen über `wss://play-dev.playsoulwick.com` einen
 Raum.
 
 ### `soulwick-web` und `soulwick-admin`
@@ -562,10 +604,10 @@ Möglichkeiten zusätzlich nutzen:
 - **Basic Auth** in Dokploy (Application → **Security**): Benutzer/Passwort vor der Login-Seite.
   Einfachste Lösung für die Testphase.
 - **IP-Freigabe** über eine Traefik-Middleware (`ipAllowList`) für `admin.playsoulwick.com` und
-  `admin.dev.playsoulwick.com`.
+  `admin-dev.playsoulwick.com`.
 - **VPN** (z. B. Tailscale/WireGuard) und den Admin-Container gar nicht öffentlich veröffentlichen.
-- **Cloudflare Access** (Zero Trust) vor dem Admin-Host, falls die Domain bei Cloudflare liegt (dann nur
-  für den Admin-Host den Proxy einschalten, nie für API und Relay).
+- **Cloudflare Access** (Zero Trust) vor den Admin-Hosts (`admin`, `admin-dev`); der Proxy ist ohnehin
+  an (§2).
 
 Admin-Passwörter: mindestens 12 Zeichen, pro Person ein eigener Zugang (das Protokoll zeigt, wer was
 geändert hat), Zugänge ausgeschiedener Personen deaktivieren.
@@ -596,7 +638,7 @@ geändert hat), Zugänge ausgeschiedener Personen deaktivieren.
    bei Schemaänderungen zusätzlich `bun run db:verify`; bei Dockerfile-Änderungen das Image einzeln
    bauen (`docker build -f apps/<app>/Dockerfile .`).
 2. **development:** Jeder Push auf den Dev-Branch deployt automatisch die betroffenen Apps (Watch Paths).
-   Danach `https://api.dev.playsoulwick.com/health`, Relay-`/health`, Admin-Login und Ranglisten prüfen;
+   Danach `https://api-dev.playsoulwick.com/health`, Relay-`/health`, Admin-Login und Ranglisten prüfen;
    bei Vertragsänderungen den Test-Build des Spiels dagegen laufen lassen.
 3. **production:** den Branch `production` nur vorspulen, nie direkt darauf committen:
 
@@ -659,7 +701,7 @@ Gebaut wird im **Spiel-Repo** (derzeit im Worktree `soulwick-mp`, Branch `featur
    Er meldet sich automatisch als **Gast** an (`POST /auth/device`, kein Dev-Schlüssel nötig, solange
    `GUEST_AUTH_ENABLED=true`).
 5. Hauptmenü unten rechts: „v0.9.0 dev“ und „Online bereit“. Steht dort der Offline-Hinweis, zuerst
-   `https://api.dev.playsoulwick.com/health` prüfen.
+   `https://api-dev.playsoulwick.com/health` prüfen.
 6. Im Dorf ins **Gildengebäude**: Der Host wählt **Raum erstellen** und schickt den 6-stelligen
    **Raumcode**, der Freund gibt ihn ein und wählt **Raum beitreten**; der Host drückt **Starten**.
    Keine Portfreigabe, kein VPN.

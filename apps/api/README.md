@@ -18,7 +18,8 @@ Handler ist nicht gemountet: Jeder Auth-Pfad ist eine Hono-Route, die `auth.api`
 ```bash
 bun install                                          # im Repo-Wurzelordner
 bun run services:up                                  # lokale Dienste (infra/docker-compose.yml: Postgres soulwick-postgres)
-cp apps/api/.env.example apps/api/.env               # BETTER_AUTH_SECRET, DEV_AUTH_KEY eintragen
+cp .env.example .env.local                           # gemeinsame Werte (Wurzel): BETTER_AUTH_SECRET, DEV_AUTH_KEY …
+cp apps/api/.env.example apps/api/.env.local         # Werte nur der API
 bun run db:deploy                                    # Migrationen anwenden (neue Migration: bun run db:migrate --name <name>)
 bun run db:seed:dev                                  # Testdaten (siehe unten) – oder ein echter Admin:
 bun run --cwd apps/api admin:create admin@example.com "ein-langes-passwort" admin
@@ -26,9 +27,9 @@ bun run dev:api                                      # http://localhost:8787/hea
 bun run services:down                                # Dienste stoppen (Daten bleiben im Volume)
 ```
 
-Ist Port 5432 belegt, in `infra/.env` `DB_PORT=<freier Port>` setzen und den Port in `DATABASE_URL`
-(`apps/api/.env`) anpassen. Benutzer, Passwort und Datenbankname kommen aus `POSTGRES_*` in
-`infra/.env` (Standard `soulwick` / `soulwick-local-only` / `soulwick`).
+Ist Port 5432 belegt, in `infra/.env.local` `DB_PORT=<freier Port>` setzen und den Port in
+`DATABASE_URL` (Wurzel-`.env.local`) anpassen. Benutzer, Passwort und Datenbankname kommen aus
+`POSTGRES_*` in `infra/.env.local` (Standard `soulwick` / `soulwick-local-only` / `soulwick`).
 
 ## Entwicklungsdaten (Dev-Seed)
 
@@ -60,7 +61,7 @@ Der Seed **verweigert `NODE_ENV=production`**. Im Docker-Image ist er nur für d
 
 | Variable | Pflicht | Standard | Bedeutung |
 | --- | --- | --- | --- |
-| `DATABASE_URL` | ja | – | PostgreSQL-Verbindung (lokal `postgres://soulwick:soulwick-local-only@localhost:5432/soulwick`); auch Prisma CLI und Tests lesen sie aus `apps/api/.env` |
+| `DATABASE_URL` | ja | – | PostgreSQL-Verbindung (lokal `postgres://soulwick:soulwick-local-only@localhost:5432/soulwick`); Wurzel-`.env.local`; auch Prisma CLI und Tests lesen sie dort |
 | `TEST_DATABASE_URL` | nein | `DATABASE_URL` | Nur Tests: Postgres-Server für die Wegwerf-Datenbanken `soulwick_test_<zufall>` |
 | `BETTER_AUTH_SECRET` | ja | – | Better Auth (P-027): signiert Session-Tokens, verschlüsselt die JWT-Signierschlüssel; daraus abgeleitet der HMAC-Schlüssel für Verknüpfungs- und Löschcodes (≥ 32 Zeichen, je Umgebung, nur API) |
 | `BETTER_AUTH_URL` | nein | `http://localhost:8787` | Öffentliche Basis-URL der API (Aussteller `iss` der Relay-JWTs); in production `https://…` Pflicht |
@@ -85,7 +86,7 @@ Der Seed **verweigert `NODE_ENV=production`**. Im Docker-Image ist er nur für d
 | `KNOWN_GAME_VERSIONS` | nein | leer | Bekannte Spielversionen, kommagetrennt; leer = keine Prüfung |
 | `MIN_GAME_VERSION` | nein | leer | Älteste Spielversion mit Online-Funktionen (z. B. `1.0.0`), in `/health` und `/public/config`; leer = keine Grenze (P16) |
 | `PROTOCOL_VERSION` | nein | `1` | Netzwerk-Protokollversion der Umgebung; gleicher Wert wie beim Relay derselben Umgebung (P16) |
-| `RELAY_PUBLIC_URL` | nein | leer | Öffentliche WebSocket-URL des Relays (z. B. `wss://play.dev.playsoulwick.com`, ohne Pfad wird `/v1` ergänzt) für `/public/config`; leer = kein Relay gemeldet |
+| `RELAY_PUBLIC_URL` | nein | leer | Öffentliche WebSocket-URL des Relays (z. B. `wss://play-dev.playsoulwick.com`, ohne Pfad wird `/v1` ergänzt) für `/public/config`; leer = kein Relay gemeldet |
 | `SUPPORT_EMAIL` | nein | leer | Support-Adresse für Kontolöschung ohne Spielzugang; über `GET /public/config` als `supportEmail` (leer = `null`, Website zeigt nichts; P-026) |
 | `LOG_LEVEL` | nein | `info` | `info`, `error` oder `silent` |
 | `RELAY_INTERNAL_KEY` | nein | leer | Gemeinsamer Schlüssel mit dem Relay (≥ 32 Zeichen) für `GET /internal/relay/players/:playerId/status` (Header `x-relay-key`, liefert Name, Sperre, Gilde) und für die Gegenrichtung (Live-Räume, P-024); leer = Endpunkt aus (404) |

@@ -2,8 +2,8 @@ import { loadConfig } from "./config.ts";
 import { createLogger } from "./logger.ts";
 import { startRelayServer } from "./server.ts";
 
-// Local development: Bun loads apps/relay/.env when started from that directory
-// (`bun run dev:relay`). In Docker/Dokploy the variables are set directly.
+// Local development: `bun run dev:relay` loads the root .env.local (shared values) and
+// apps/relay/.env.local on top. In Docker/Dokploy the variables are set directly.
 const config = loadConfig(process.env, process.argv.slice(2));
 const logger = createLogger(config.LOG_LEVEL);
 const relay = startRelayServer(config, { logger });

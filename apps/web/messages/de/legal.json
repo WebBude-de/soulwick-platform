@@ -23,7 +23,8 @@
   },
   "placeholder": {
     "text": "Der Text kommt aus einem Rechtstexte-Dienst und wird geprüft, bevor er hier erscheint. Bis dahin findest du unten das Wichtigste in Kürze.",
-    "unreachable": "Der Server mit den Rechtstexten ist gerade nicht erreichbar. Bitte versuche es später noch einmal."
+    "unreachable": "Der Server mit den Rechtstexten ist gerade nicht erreichbar. Bitte versuche es später noch einmal.",
+    "contact": "Fragen bis dahin? Schreib uns an <mail></mail>."
   },
   "quickFacts": {
     "title": "Vorab in Kürze"

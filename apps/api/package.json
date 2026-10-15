@@ -5,12 +5,12 @@
   "type": "module",
   "description": "Soulwick game API: accounts, guilds, guild progress, run reports, leaderboards, admin.",
   "scripts": {
-    "dev": "bun --watch src/index.ts",
+    "dev": "bun --env-file=../../.env.local --env-file=.env.local --watch src/index.ts",
     "start": "bun src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
-    "admin:create": "bun src/scripts/create-admin.ts",
-    "seed:dev": "bun src/scripts/seed-dev.ts"
+    "admin:create": "bun --env-file=../../.env.local --env-file=.env.local src/scripts/create-admin.ts",
+    "seed:dev": "bun --env-file=../../.env.local --env-file=.env.local src/scripts/seed-dev.ts"
   },
   "dependencies": {
     "@hono/bun": "^1.0.1",

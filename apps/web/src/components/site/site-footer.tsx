@@ -3,6 +3,8 @@ import { useTranslations } from "next-intl";
 import { Chicken } from "@/components/fun/chicken";
 import { LanguageSwitch } from "@/components/ui/language-switch";
 import { Sprite } from "@/components/ui/sprite";
+import { liveFeaturesEnabled } from "@/lib/features";
+import { type NavLink, visibleNavLinks } from "./nav-links";
 
 const linkClass =
   "inline-flex min-h-9 items-center text-[15px] text-text transition-colors hover:text-gold";
@@ -11,7 +13,10 @@ const linkClass =
 export function SiteFooter() {
   const t = useTranslations("landing");
   const tc = useTranslations("common");
-  const links = t.raw("navLinks") as [string, string][];
+  const links = visibleNavLinks(
+    t.raw("navLinks") as NavLink[],
+    liveFeaturesEnabled()
+  );
   const year = new Date().getFullYear();
 
   return (
@@ -65,9 +70,6 @@ export function SiteFooter() {
               </Link>
             </li>
           </ul>
-          <p className="mt-3 max-w-xs text-[13px] text-disabled leading-relaxed">
-            {t("legalNote")}
-          </p>
         </nav>
       </div>
 

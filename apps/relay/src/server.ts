@@ -51,6 +51,11 @@ function clientIp(
   trustProxy: boolean
 ): string {
   if (trustProxy) {
+    // Behind the Cloudflare proxy (orange cloud) the visitor's address is CF-Connecting-IP.
+    const cloudflare = req.headers.get("cf-connecting-ip")?.trim();
+    if (cloudflare) {
+      return cloudflare;
+    }
     const forwarded = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
     if (forwarded) {
       return forwarded;

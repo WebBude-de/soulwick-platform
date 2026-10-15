@@ -14,7 +14,7 @@ Gegenstück im Spiel: `online/relay_peer.gd` (`MultiplayerPeerExtension` auf `We
 
 ```bash
 bun install                                   # im Repo-Wurzelordner
-cp apps/relay/.env.example apps/relay/.env    # API_INTERNAL_URL der lokalen API, RELAY_INTERNAL_KEY wie in der API
+cp apps/relay/.env.example apps/relay/.env.local   # API_INTERNAL_URL und RELAY_INTERNAL_KEY kommen aus der Wurzel-.env.local
 bun run dev:relay                             # ws://localhost:8790/v1, http://localhost:8790/health
 bun run --cwd apps/relay dev --sim-latency=120 --sim-loss=5   # schlechtes Netz simulieren (nur lokal)
 ```
@@ -28,7 +28,7 @@ weiter, Gildenräume antworten `api_unavailable`; ohne je geladene Schlüssel wi
 ## Protokoll (Kurzfassung für den GDScript-Client)
 
 **Verbindung:** `ws://localhost:8790/v1` (lokal), `wss://play.playsoulwick.com/v1` bzw.
-`wss://play.dev.playsoulwick.com/v1` (Vorschlag P-018). Das Token steht nicht in der URL.
+`wss://play-dev.playsoulwick.com/v1` (Vorschlag P-018). Das Token steht nicht in der URL.
 
 **Token (P-027):** `hello.token` ist das kurzlebige JWT aus `GET /auth/token` der API (mit dem
 Session-Token der Anmeldung als Bearer geholt, 15 min gültig), **nicht** das Session-Token selbst. Vor jeder

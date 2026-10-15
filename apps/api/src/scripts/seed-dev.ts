@@ -11,7 +11,7 @@
  * re-running only adds what is missing and never overwrites changes made through the admin panel.
  * Refuses to run with NODE_ENV=production.
  *
- *   bun run db:seed:dev                   (repo root; Bun loads apps/api/.env for DATABASE_URL)
+ *   bun run db:seed:dev                   (repo root; DATABASE_URL from the root .env.local)
  *   DEFAULT_ADMIN_PASSWORD=<min. 12 chars> bun run db:seed:dev   (default: soulwick-admin-local)
  *   In the Docker image (development environment only):
  *   NODE_ENV=development bun apps/api/src/scripts/seed-dev.ts

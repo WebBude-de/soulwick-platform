@@ -2,8 +2,8 @@ import { createPrisma } from "@soulwick/db";
 import { createApp } from "./app.ts";
 import { loadConfig } from "./config.ts";
 
-// Local development: Bun loads apps/api/.env itself when started from that directory
-// (`bun run dev:api`). In Docker/Dokploy the variables are set directly, and the image applies
+// Local development: `bun run dev:api` loads the root .env.local (shared values) and
+// apps/api/.env.local on top. In Docker/Dokploy the variables are set directly, and the image applies
 // pending migrations (`prisma migrate deploy`) before this file starts, see the Dockerfile.
 const config = loadConfig();
 const db = createPrisma(config.DATABASE_URL);

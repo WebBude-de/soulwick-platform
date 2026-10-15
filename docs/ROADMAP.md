@@ -263,13 +263,13 @@ Die offenen Punkte sind in **P9** (Seiten, zwei Sprachen), **P10** (Rechtstexte)
 
 Doku für alle Punkte fertig (14.10.2026) in [infra/DOKPLOY.md](../infra/DOKPLOY.md) (§0 Checkliste, §2 DNS, §4 Variablen, §6 Relay, §11 Monitoring; Checkliste für die Dev-Instanz und Test-Build für Freunde ergänzt 15.10.2026); abgehakt wird erst nach der Einrichtung auf dem Server.
 
-- [ ] *(Doku fertig 14.10.2026)* DNS: `play.playsoulwick.com` und `play.dev.playsoulwick.com` (Vorschlag P-018) auf den VPS, ohne Cloudflare-Proxy.
+- [ ] *(Doku fertig 14.10.2026)* DNS: `play.playsoulwick.com` und `play-dev.playsoulwick.com` (Vorschlag P-018) auf den VPS, mit Cloudflare-Proxy und flachen Dev-Namen (P-029).
 - [ ] *(Doku fertig 14.10.2026)* Dokploy: Application `soulwick-relay` je Umgebung aus `apps/relay/Dockerfile`, Build-Kontext `.`, Port 8790, **genau eine Replica**, Healthcheck `/health`, Watch Paths `apps/relay/**`, `packages/contracts/**`.
-- [ ] *(Doku fertig 14.10.2026, Prüfanleitung mit `wscat` und Traefik-Zeitlimits)* WebSocket über Traefik prüfen (Upgrade, lange Verbindungen, Zeitlimits), z. B. mit einem WebSocket-Kommandozeilen-Client gegen `wss://play.dev.playsoulwick.com/v1`.
+- [ ] *(Doku fertig 14.10.2026, Prüfanleitung mit `wscat` und Traefik-Zeitlimits)* WebSocket über Traefik prüfen (Upgrade, lange Verbindungen, Zeitlimits), z. B. mit einem WebSocket-Kommandozeilen-Client gegen `wss://play-dev.playsoulwick.com/v1`.
 - [ ] *(Doku fertig 14.10.2026, auf P-027 umgestellt 15.10.2026)* Variablen aus P16 setzen; `API_INTERNAL_URL` (interne Adresse der API, Pflicht: JWKS) und `RELAY_INTERNAL_KEY` gleich wie die API derselben Umgebung (`TOKEN_SECRET` entfällt).
 - [ ] *(Doku fertig 14.10.2026)* Monitoring: Logs in Dokploy, `/health` überwachen, Metriken (Räume, Spieler, Bytes/s) und den Inklusivtraffic des VPS beobachten; Vorgehen bei Ausfall dokumentieren (das Spiel zeigt einen Status, Einzelspieler bleibt spielbar).
 
-**Fertig, wenn:** zwei Spiel-Instanzen (oder zwei Testclients) über `wss://play.dev.playsoulwick.com` einen Raum teilen, der Healthcheck in Dokploy grün ist und die Doku die Einrichtung beschreibt.
+**Fertig, wenn:** zwei Spiel-Instanzen (oder zwei Testclients) über `wss://play-dev.playsoulwick.com` einen Raum teilen, der Healthcheck in Dokploy grün ist und die Doku die Einrichtung beschreibt.
 
 ## P18 – Admin-API v2: Statistik, Live-Räume, Moderation
 

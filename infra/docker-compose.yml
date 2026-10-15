@@ -1,7 +1,7 @@
 # Local development services only (Postgres): `bun run services:up` starts it, `services:down` stops it.
 # The apps (api, web, admin) are not part of this file; they are deployed from their Dockerfiles
-# on Dokploy (see DOKPLOY.md). Compose takes this file's directory as project directory, so
-# infra/.env is read for ${...} substitution (copy infra/.env.example).
+# on Dokploy (see DOKPLOY.md). `bun run services:up` passes infra/.env.local for ${...}
+# substitution (copy infra/.env.example).
 # The defaults below are for LOCAL USE ONLY.
 name: soulwick
 

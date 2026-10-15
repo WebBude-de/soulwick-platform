@@ -114,7 +114,7 @@ Das Spiel läuft komplett ohne Server. Die Plattform ergänzt nur, was einen Ser
   Spiel- und Protokollversion; mehrere Runs je Raum mit Rückkehr ins Dorf.
 - Der Relay prüft das Spieler-JWT und bei Gildenräumen die Mitgliedschaft über die API, leitet Pakete
   weiter, ohne sie zu lesen, und protokolliert keine Inhalte.
-- Je Umgebung ein eigener Relay (`play.dev.playsoulwick.com`, `play.playsoulwick.com`).
+- Je Umgebung ein eigener Relay (`play-dev.playsoulwick.com`, `play.playsoulwick.com`).
 
 Zielbild Crossplay über Steam, Google Play und App Store (D-108), Architektur entschieden (D-119):
 Host-Modell plus eigener Relay, Reihenfolge Steam → Android → iOS, Publisher WebBude. Konzept für

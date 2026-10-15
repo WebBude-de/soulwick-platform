@@ -1,5 +1,6 @@
 import type { LeaderboardResponse } from "@soulwick/contracts";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { LeaderboardsView } from "@/components/leaderboards/leaderboards-view";
 import {
@@ -9,8 +10,12 @@ import {
 } from "@/components/leaderboards/params";
 import type { Locale } from "@/i18n/locale";
 import { apiGet } from "@/lib/api";
+import { liveFeaturesEnabled } from "@/lib/features";
 
-/** Rendered per request: the selection comes from the query string, the data from the API. */
+/**
+ * Rendered per request: the selection comes from the query string, the data from the API, and
+ * `LIVE_FEATURES` is checked on every request (404 in teaser mode).
+ */
 export const dynamic = "force-dynamic";
 
 interface Props {
@@ -18,6 +23,9 @@ interface Props {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
+  if (!liveFeaturesEnabled()) {
+    notFound();
+  }
   const t = await getTranslations("leaderboards");
   return {
     title: t("meta.title"),
@@ -27,6 +35,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function LeaderboardsRoute({ searchParams }: Props) {
+  if (!liveFeaturesEnabled()) {
+    notFound();
+  }
   const locale = (await getLocale()) as Locale;
   const selection = selectBoard(await searchParams, locale);
   const result = await apiGet<LeaderboardResponse>(

@@ -142,7 +142,7 @@ async function main() {
   const url = process.env.DATABASE_URL;
   if (!url) {
     console.error(
-      "DATABASE_URL is not set (apps/api/.env or packages/db/.env)."
+      "DATABASE_URL is not set (root .env.local or packages/db/.env.local)."
     );
     process.exit(1);
   }

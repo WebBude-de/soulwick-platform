@@ -1,15 +1,14 @@
-import type { LegalDocumentResponse } from "@soulwick/contracts";
 import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { PixelPanel } from "@/components/ui/pixel-panel";
 import { Sprite } from "@/components/ui/sprite";
-import type { Locale } from "@/i18n/locale";
-import type { ApiResult } from "@/lib/api";
-import { resolveLegalView } from "@/lib/legal";
+import type { LegalView } from "@/lib/legal";
+import type { LegalFileKind } from "@/lib/legal-files";
+import { mailtoHref } from "@/lib/support";
 import { LegalHtml } from "./legal-html";
 
-type LegalKind = "imprint" | "privacy";
+type LegalKind = LegalFileKind;
 
 const FACT_KEYS = {
   imprint: ["project", "contact", "noShop"],
@@ -17,21 +16,22 @@ const FACT_KEYS = {
 } as const;
 
 /**
- * Imprint or privacy policy: the HTML from the API when it is ready, otherwise an honest
- * placeholder with the facts that are already certain. Never invents names or addresses.
+ * Imprint or privacy policy: the HTML from the API (or the local fallback file) when it is ready,
+ * otherwise an honest placeholder with the facts that are already certain and, if configured, the
+ * support address. Never invents names or addresses.
  */
 export function LegalPage({
   kind,
-  locale,
-  result,
+  view,
+  supportEmail,
 }: {
   kind: LegalKind;
-  locale: Locale;
-  result: ApiResult<LegalDocumentResponse>;
+  view: LegalView;
+  /** `SUPPORT_EMAIL` via `GET /public/config`; null when not configured or unreachable. */
+  supportEmail: string | null;
 }) {
   const t = useTranslations("legal");
   const format = useFormatter();
-  const view = resolveLegalView(result, locale);
 
   return (
     <article className="flex flex-col gap-8">
@@ -64,7 +64,11 @@ export function LegalPage({
           />
         </>
       ) : (
-        <Placeholder kind={kind} reason={view.reason} />
+        <Placeholder
+          kind={kind}
+          reason={view.reason}
+          supportEmail={supportEmail}
+        />
       )}
     </article>
   );
@@ -73,9 +77,11 @@ export function LegalPage({
 function Placeholder({
   kind,
   reason,
+  supportEmail,
 }: {
   kind: LegalKind;
   reason: "missing" | "unreachable";
+  supportEmail: string | null;
 }) {
   const t = useTranslations("legal");
   return (
@@ -92,6 +98,20 @@ function Placeholder({
                 ? t("placeholder.unreachable")
                 : t("placeholder.text")}
             </p>
+            {supportEmail ? (
+              <p className="text-soft">
+                {t.rich("placeholder.contact", {
+                  mail: () => (
+                    <a
+                      className="break-all text-violet-link underline hover:text-gold"
+                      href={mailtoHref(supportEmail)}
+                    >
+                      {supportEmail}
+                    </a>
+                  ),
+                })}
+              </p>
+            ) : null}
           </div>
         </div>
       </PixelPanel>

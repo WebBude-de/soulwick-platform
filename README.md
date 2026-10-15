@@ -33,11 +33,12 @@ Voraussetzungen: [Bun](https://bun.sh) 1.3, Node 24 (Next.js läuft darauf), Doc
 
 ```bash
 bun install                                    # Abhängigkeiten, richtet auch die Husky-Hooks ein
-cp apps/api/.env.example apps/api/.env         # BETTER_AUTH_SECRET (≥ 32 Zeichen) und DEV_AUTH_KEY eintragen
-cp apps/relay/.env.example apps/relay/.env     # RELAY_INTERNAL_KEY wie in apps/api/.env (≥ 32 Zeichen)
+cp .env.example .env.local                     # gemeinsame Werte: BETTER_AUTH_SECRET, RELAY_INTERNAL_KEY, DEV_AUTH_KEY eintragen
+cp apps/api/.env.example apps/api/.env.local
+cp apps/relay/.env.example apps/relay/.env.local
 cp apps/web/.env.example apps/web/.env.local
 cp apps/admin/.env.example apps/admin/.env.local
-cp infra/.env.example infra/.env               # optional: Port und Passwort des lokalen Postgres
+cp infra/.env.example infra/.env.local         # Port und Passwort des lokalen Postgres
 bun run services:up                            # nur Postgres (Container soulwick-postgres, Port 5432)
 bun run db:deploy                              # Migrationen einspielen
 bun run db:seed:dev                            # Testdaten: Admins, Spieler, Gilde, Runs, Sperre, Löschprotokoll
@@ -45,8 +46,18 @@ bun dev                                        # Web 3000, Admin 3001, API 8787,
 ```
 
 Stoppen: `bun run services:down` (die Daten bleiben im Docker-Volume). Einzeln starten:
-`bun run dev:api`, `dev:web`, `dev:admin`, `dev:relay`. Ist Port 5432 belegt, in `infra/.env`
-`DB_PORT` ändern und `DATABASE_URL` in `apps/api/.env` anpassen. Geheimnisse erzeugen z. B. mit
+`bun run dev:api`, `dev:web`, `dev:admin`, `dev:relay`. Ist Port 5432 belegt, in `infra/.env.local`
+`DB_PORT` ändern und `DATABASE_URL` in der Root-`.env.local` anpassen.
+
+**Aufbau der `.env`-Dateien** (alle außer `.env.example` sind gitignored):
+
+| Ort | `.env.example` | `.env.local` | `.env.dev` / `.env.prod` |
+| --- | --- | --- | --- |
+| Wurzel | Vorlage | gemeinsame Werte lokal (URLs, Datenbank, Geheimnisse, Versionen) | Dokploy: Variablen der Umgebung `development` / `production` |
+| `apps/<app>/` | Vorlage | Werte der App lokal, gewinnt über die Wurzel | Dokploy: **Environment** des Services (mit `${{environment.NAME}}`) |
+| `infra/` | Vorlage | lokaler Postgres-Container | – (auf den Servern nicht genutzt) |
+
+API, Relay und Prisma laden erst die Wurzel-`.env.local`, dann die eigene darüber. Geheimnisse erzeugen z. B. mit
 `openssl rand -base64 48`.
 
 **Zugänge nach dem Seed:** Admin `admin@soulwick.local`, Moderator `moderator@soulwick.local`, Passwort

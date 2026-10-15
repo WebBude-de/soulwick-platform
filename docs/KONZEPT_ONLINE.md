@@ -207,10 +207,10 @@ Niemand prüft oder entscheidet Löschungen von Hand. Alle Wege nutzen dieselbe 
 | Dienst | Wo | `production` | `development` |
 | --- | --- | --- | --- |
 | Website `soulwick-web` | Dokploy (VPS) | `playsoulwick.com` | `dev.playsoulwick.com` |
-| API `soulwick-api` | Dokploy | `api.playsoulwick.com` | `api.dev.playsoulwick.com` |
-| Admin-Panel `soulwick-admin` | Dokploy, zusätzlich geschützt | `admin.playsoulwick.com` | `admin.dev.playsoulwick.com` |
+| API `soulwick-api` | Dokploy | `api.playsoulwick.com` | `api-dev.playsoulwick.com` |
+| Admin-Panel `soulwick-admin` | Dokploy, zusätzlich geschützt | `admin.playsoulwick.com` | `admin-dev.playsoulwick.com` |
 | Datenbank `soulwick-postgres` | Dokploy, nur intern | – | – |
-| **Relay `soulwick-relay`** (neu) | Dokploy, eigene Application aus `apps/relay/Dockerfile`, Traefik leitet WebSockets durch | `play.playsoulwick.com` | `play.dev.playsoulwick.com` |
+| **Relay `soulwick-relay`** (neu) | Dokploy, eigene Application aus `apps/relay/Dockerfile`, Traefik leitet WebSockets durch | `play.playsoulwick.com` | `play-dev.playsoulwick.com` |
 | Dedizierter Godot-Server (später) | erst Dokploy-Container-Pool, bei Bedarf Anbieter mit Regionen | – | – |
 | Spiel-Builds | Steam (SteamPipe), Google Play Console, später App Store Connect | Standard-Branch / Produktion | Steam-Beta-Branch / Play „Interner Test“ |
 

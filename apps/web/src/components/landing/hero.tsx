@@ -10,6 +10,8 @@ import type { SpriteId } from "@/lib/sprite-manifest";
 interface HeroProps {
   /** `/brand/keyart.webp` when present. */
   keyartSrc: string | null;
+  /** False in teaser mode (`LIVE_FEATURES=false`): the second CTA jumps to the biomes instead. */
+  live: boolean;
 }
 
 const PLATFORM_ICONS: SpriteId[] = ["chip_pc", "chip_mobile", "chip_crossplay"];
@@ -23,7 +25,7 @@ const WALKERS: { id: SpriteId; delay: string; konami?: boolean }[] = [
   { id: "shadow_walk_6f", delay: "-9s", konami: true },
 ];
 
-export function Hero({ keyartSrc }: HeroProps) {
+export function Hero({ keyartSrc, live }: HeroProps) {
   const t = useTranslations("landing");
   const platforms = t.raw("platforms") as string[];
 
@@ -46,7 +48,13 @@ export function Hero({ keyartSrc }: HeroProps) {
               <Sprite id="icon_sword" scale={1} />
               {t("heroCta1")}
             </a>
-            <PixelButton href="/leaderboards">{t("heroCta2")}</PixelButton>
+            {live ? (
+              <PixelButton href="/leaderboards">{t("heroCta2")}</PixelButton>
+            ) : (
+              <a className="btn" href="#biome">
+                {t("heroCta2Teaser")}
+              </a>
+            )}
           </div>
           <ul className="flex flex-wrap gap-3 pt-2">
             {platforms.map((label, i) => (

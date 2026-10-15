@@ -23,7 +23,8 @@
   },
   "placeholder": {
     "text": "The text comes from a legal-text service and is reviewed before it appears here. Until then, the essentials are summarised below.",
-    "unreachable": "The server holding the legal texts is not reachable right now. Please try again later."
+    "unreachable": "The server holding the legal texts is not reachable right now. Please try again later.",
+    "contact": "Questions in the meantime? Write to us at <mail></mail>."
   },
   "quickFacts": {
     "title": "The short version"

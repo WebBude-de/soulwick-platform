@@ -3,13 +3,19 @@ import { LanguageSwitch } from "@/components/ui/language-switch";
 import { MusicToggle } from "@/components/ui/music-toggle";
 import { PixelButton } from "@/components/ui/pixel-button";
 import { Sprite } from "@/components/ui/sprite";
+import { liveFeaturesEnabled } from "@/lib/features";
 import { HomeLink } from "./home-link";
+import { type NavLink, visibleNavLinks } from "./nav-links";
 
-/** Sticky navbar (handoff §3, row 0): logo, anchor links, language segment, CTA. */
+/**
+ * Sticky navbar (handoff §3, row 0): logo, anchor links, language segment, CTA. In teaser mode
+ * (`LIVE_FEATURES=false`) the leaderboards link is dropped and the CTA leads into the game section.
+ */
 export function SiteHeader() {
   const t = useTranslations("landing");
   const tc = useTranslations("common");
-  const links = t.raw("navLinks") as [string, string][];
+  const live = liveFeaturesEnabled();
+  const links = visibleNavLinks(t.raw("navLinks") as NavLink[], live);
 
   return (
     <header className="sticky top-0 z-40 border-line border-b-2 bg-[rgb(21_19_31/0.94)] backdrop-blur-sm">
@@ -63,10 +69,17 @@ export function SiteHeader() {
             <MusicToggle className="px-1" />
           </span>
           <LanguageSwitch />
-          <PixelButton href="/leaderboards" size="sm" variant="primary">
-            <Sprite id="trophy_icon" scale={1} />
-            {t("navCta")}
-          </PixelButton>
+          {live ? (
+            <PixelButton href="/leaderboards" size="sm" variant="primary">
+              <Sprite id="trophy_icon" scale={1} />
+              {t("navCta")}
+            </PixelButton>
+          ) : (
+            <a className="btn btn-primary btn-sm" href="/#spiel">
+              <Sprite id="icon_sword" scale={1} />
+              {t("navCtaTeaser")}
+            </a>
+          )}
         </div>
       </div>
     </header>

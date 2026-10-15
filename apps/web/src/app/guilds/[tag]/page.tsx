@@ -4,8 +4,12 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { GuildView } from "@/components/leaderboards/guild-view";
 import { apiGet } from "@/lib/api";
+import { liveFeaturesEnabled } from "@/lib/features";
 
-/** Rendered per request from the API (`GET /public/guilds/:tag`, cached 60 s). */
+/**
+ * Rendered per request from the API (`GET /public/guilds/:tag`, cached 60 s); 404 without an API
+ * call in teaser mode (`LIVE_FEATURES=false`).
+ */
 export const dynamic = "force-dynamic";
 
 interface Props {
@@ -21,6 +25,9 @@ function cleanTag(raw: string): string | null {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  if (!liveFeaturesEnabled()) {
+    notFound();
+  }
   const { tag: rawTag } = await params;
   const tag = cleanTag(rawTag);
   if (!tag) {
@@ -35,6 +42,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function GuildRoute({ params }: Props) {
+  if (!liveFeaturesEnabled()) {
+    notFound();
+  }
   const { tag: rawTag } = await params;
   const tag = cleanTag(rawTag);
   if (!tag) {

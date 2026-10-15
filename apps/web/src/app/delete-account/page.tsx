@@ -1,7 +1,6 @@
 import {
   DELETION_CODE_TTL_SECONDS,
   DELETION_TOKEN_TTL_SECONDS,
-  type PublicConfig,
 } from "@soulwick/contracts";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -9,7 +8,7 @@ import { getTranslations } from "next-intl/server";
 import { DeletionFlow } from "@/components/deletion/deletion-form";
 import { PixelPanel } from "@/components/ui/pixel-panel";
 import { Sprite } from "@/components/ui/sprite";
-import { apiGet } from "@/lib/api";
+import { loadSupportEmail, mailtoHref } from "@/lib/support";
 
 /** Public URL for account deletion (Google Play requirement, KONZEPT_ONLINE.md §3.7, P-026). */
 export async function generateMetadata(): Promise<Metadata> {
@@ -24,8 +23,6 @@ export async function generateMetadata(): Promise<Metadata> {
 
 const GONE = ["account", "logins", "guild"] as const;
 const WEB_STEPS = ["code", "enter", "confirm"] as const;
-/** Same shape check as the API (`SUPPORT_EMAIL` is validated there); guards the mailto link. */
-const EMAIL_SHAPE = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/;
 
 const linkClass = "text-violet-link underline hover:text-gold";
 
@@ -186,19 +183,4 @@ export default async function DeleteAccountRoute() {
       </div>
     </div>
   );
-}
-
-/** Support address for players without the game (P-026); null when not configured or unreachable. */
-async function loadSupportEmail(): Promise<string | null> {
-  const config = await apiGet<PublicConfig>("/public/config", 60);
-  const email = config.ok ? config.data.supportEmail?.trim() : undefined;
-  return email && EMAIL_SHAPE.test(email) ? email : null;
-}
-
-function mailtoHref(
-  email: string,
-  { subject, body }: { subject: string; body: string }
-): string {
-  const query = `subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  return `mailto:${email}?${query}`;
 }

@@ -15,7 +15,11 @@ const LINE_BREAK = /\r?\n/;
 const MIGRATIONS_DIR = fileURLToPath(
   new URL("../../../packages/db/prisma/migrations", import.meta.url)
 );
-const API_ENV_FILE = fileURLToPath(new URL("../.env", import.meta.url));
+/** Local env files, later ones win (same order as `bun run dev:api`). */
+const ENV_FILES = [
+  fileURLToPath(new URL("../../../.env.local", import.meta.url)),
+  fileURLToPath(new URL("../.env.local", import.meta.url)),
+];
 
 /** Minimal KEY=VALUE reader: `bun test` runs from the repo root, where Bun loads no .env file. */
 function readEnvFile(path: string): Record<string, string> {
@@ -47,11 +51,14 @@ function readEnvFile(path: string): Record<string, string> {
 
 /**
  * Postgres server for the throwaway test databases (P-011): TEST_DATABASE_URL, else DATABASE_URL,
- * each from the environment first and then from apps/api/.env. The database named in the URL is
+ * each from the environment first and then from the root .env.local and apps/api/.env.local. The database named in the URL is
  * only used for the admin connection that creates and drops `soulwick_test_<random>`.
  */
 function baseDatabaseUrl(): string {
-  const fileVars = readEnvFile(API_ENV_FILE);
+  const fileVars = Object.assign({}, ...ENV_FILES.map(readEnvFile)) as Record<
+    string,
+    string
+  >;
   const url =
     process.env.TEST_DATABASE_URL ??
     fileVars.TEST_DATABASE_URL ??
@@ -59,7 +66,7 @@ function baseDatabaseUrl(): string {
     fileVars.DATABASE_URL;
   if (!url) {
     throw new Error(
-      "Tests need the local Postgres: run `bun run services:up` and set DATABASE_URL in apps/api/.env (or TEST_DATABASE_URL)."
+      "Tests need the local Postgres: run `bun run services:up` and set DATABASE_URL in the root .env.local (or TEST_DATABASE_URL)."
     );
   }
   return url;

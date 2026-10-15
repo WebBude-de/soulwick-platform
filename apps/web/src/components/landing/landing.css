@@ -517,26 +517,6 @@
 }
 
 /* ---------- Leaderboard board ---------- */
-.lb-seg {
-  display: inline-flex;
-  overflow: hidden;
-  background: var(--color-bg-deep);
-  border: 2px solid var(--color-line);
-  border-radius: 3px;
-}
-.lb-seg button {
-  padding: 8px 14px;
-  font-family: var(--font-pixel);
-  font-size: 14px;
-  line-height: 1;
-  color: var(--color-soft);
-  text-shadow: 1px 1px 0 var(--color-ink);
-}
-.lb-seg button[aria-pressed="true"] {
-  color: var(--color-ink);
-  text-shadow: none;
-  background: var(--color-gold);
-}
 .lb-tabs {
   display: flex;
   overflow-x: auto;

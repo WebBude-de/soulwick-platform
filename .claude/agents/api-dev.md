@@ -63,7 +63,7 @@ bans), `docs/KONZEPT_ONLINE.md` the relay protocol, store logins and versions.
   yet, ask before running `bun run db:deploy`; then `bun run db:seed:dev` and `bun run dev:api`
   (port 8787; if it is taken by the user's dev server, start your own with `PORT=8797`). Relay:
   `bun run dev:relay` (port 8790, `RELAY_PORT` to change). Player login: `POST /auth/dev` with header
-  `x-dev-auth-key: <DEV_AUTH_KEY from apps/api/.env>` and body
+  `x-dev-auth-key: <DEV_AUTH_KEY from the root .env.local>` and body
   `{ "name": "Lumen", "deviceId": "dev-device-00000001" }`. Admin login: `admin@soulwick.local` /
   `DEFAULT_ADMIN_PASSWORD` (default `soulwick-admin-local`); moderator `moderator@soulwick.local`.
 - **Never reset the developer's database** (`bun run db:reset`, `prisma migrate reset`, dropping the

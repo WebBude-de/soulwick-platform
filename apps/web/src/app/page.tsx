@@ -10,6 +10,7 @@ import { Weapons } from "@/components/landing/weapons";
 import { Divider } from "@/components/ui/divider";
 import type { Locale } from "@/i18n/locale";
 import { brand, brandAsset } from "@/lib/brand";
+import { liveFeaturesEnabled } from "@/lib/features";
 import "@/components/landing/landing.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -21,12 +22,16 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+/** Per request: `LIVE_FEATURES` is read at runtime, not baked into the build. */
+export const dynamic = "force-dynamic";
+
 export default async function LandingPage() {
   const locale = (await getLocale()) as Locale;
+  const live = liveFeaturesEnabled();
 
   return (
     <>
-      <Hero keyartSrc={brand.keyart()} />
+      <Hero keyartSrc={brand.keyart()} live={live} />
       <Descent />
       <Divider />
       <Weapons />
@@ -41,7 +46,8 @@ export default async function LandingPage() {
       <Divider />
       <Village sceneSrc={brandAsset("scenes/village.webp")} />
       <Coop />
-      <LeaderboardTeaser locale={locale} />
+      {/* Teaser mode: no board and no API call. */}
+      {live ? <LeaderboardTeaser locale={locale} /> : null}
     </>
   );
 }

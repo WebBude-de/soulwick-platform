@@ -8,6 +8,7 @@
     ["Ranglisten", "#ranglisten"]
   ],
   "navCta": "Ranglisten",
+  "navCtaTeaser": "Spiel entdecken",
   "planned": "geplant",
   "hoverHint": "Hover: Angriff",
   "heroEyebrow": "2D-Top-down-Dungeon-Roguelite · Pixel-Art",
@@ -15,6 +16,7 @@
   "heroText": "Vom Dorf aus steigst du in einen endlosen Dungeon hinab. Mit Schwert, Bogen, Magierstab, Dolchen oder Kriegshammer kämpfst du dich durch vier Biome und ihre Bosse, sammelst Gold und Upgrades und entscheidest selbst, wann du mit der Beute zurückkehrst.",
   "heroCta1": "So funktioniert das Spiel",
   "heroCta2": "Ranglisten ansehen",
+  "heroCta2Teaser": "Biome entdecken",
   "heroHud": "Raum 12 · Zyklus 3",
   "platformNote": "Steam, Google Play und App Store sind geplant; Crossplay über alle drei ist das Ziel. Store-Links folgen, sobald es sie gibt.",
   "platforms": ["PC", "Mobil", "Crossplay"],
@@ -156,7 +158,6 @@
   "imprint": "Impressum",
   "privacy": "Datenschutz",
   "deleteAccount": "Konto löschen",
-  "legalNote": "Rechtstexte kommen aus eRecht24. Solange keiner vorliegt, zeigt die Seite einen Platzhalter.",
   "footerMade": "Deutsch · English",
   "meta": {
     "title": "Soulwick – Das letzte Licht im endlosen Dunkel",
