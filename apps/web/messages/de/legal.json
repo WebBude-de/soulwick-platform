@@ -1,0 +1,35 @@
+{
+  "imprint": {
+    "title": "Impressum",
+    "description": "Impressum der Soulwick-Website.",
+    "placeholderTitle": "Das Impressum wird gerade eingerichtet.",
+    "facts": {
+      "project": "Soulwick ist ein Indie-Spiel, das gerade entsteht.",
+      "contact": "Verantwortliche Person und Kontaktweg stehen hier, sobald das Impressum freigegeben ist.",
+      "noShop": "Auf dieser Website wird nichts verkauft, es gibt keine Konten und keine Anmeldung."
+    }
+  },
+  "privacy": {
+    "title": "Datenschutzerklärung",
+    "description": "Datenschutzerklärung der Soulwick-Website und des Spiels.",
+    "placeholderTitle": "Die Datenschutzerklärung wird gerade eingerichtet.",
+    "facts": {
+      "offline": "Der Einzelspieler läuft komplett ohne Server. Ohne Anmeldung im Spiel verlässt kein Spieldatum deinen Rechner.",
+      "stored": "Meldest du dich später im Spiel an (für Gilden und Ranglisten, beides geplant), speichert der Server nur: eine Plattform- oder Geräte-ID, deinen Spielernamen, deine Gilde und Run-Berichte (Modus, Teilnehmer, erreichter Raum, Dauer, Seed, Spielversion).",
+      "notStored": "Keine Klarnamen und keine Zahlungsdaten. E-Mail-Adressen nur, wenn du uns selbst schreibst, etwa weil du ohne Zugang zum Spiel dein Konto löschen lassen willst.",
+      "website": "Diese Website setzt keine Tracking- und keine Werbe-Cookies. Beim Aufruf verarbeitet der Server kurzzeitig technisch notwendige Daten wie die IP-Adresse, um die Seite auszuliefern und vor Missbrauch zu schützen.",
+      "deletion": "Dein Konto löschst du selbst und sofort: im Spiel unter Konto oder <link>hier auf der Website</link> mit einem Löschcode aus dem Spiel. Dabei werden Spielerprofil, Gildenmitgliedschaft und deine Zuordnung zu Run-Berichten entfernt."
+    }
+  },
+  "placeholder": {
+    "text": "Der Text kommt aus einem Rechtstexte-Dienst und wird geprüft, bevor er hier erscheint. Bis dahin findest du unten das Wichtigste in Kürze.",
+    "unreachable": "Der Server mit den Rechtstexten ist gerade nicht erreichbar. Bitte versuche es später noch einmal."
+  },
+  "quickFacts": {
+    "title": "Vorab in Kürze"
+  },
+  "otherLocale": {
+    "note": "Dieser Text liegt derzeit nur auf Englisch vor."
+  },
+  "modified": "Stand: {date}"
+}

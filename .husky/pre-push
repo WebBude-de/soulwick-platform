@@ -1,0 +1,33 @@
+#!/bin/sh
+# Verifies the migrations before anything leaves the machine (bun run db:verify).
+#
+# Only runs when the Prisma schema or the migrations changed, so a push with pure
+# frontend changes does not wait for the database. Needs the local Postgres
+# (bun run services:up).
+#
+# Escape hatch: git push --no-verify
+
+set -e
+
+SCHEMA_PATHS="packages/db/prisma/schema.prisma packages/db/prisma/migrations"
+REMOTE_REF=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || echo "")
+
+if [ -n "$REMOTE_REF" ]; then
+  # shellcheck disable=SC2086
+  CHANGED=$(git diff --name-only "$REMOTE_REF..HEAD" -- $SCHEMA_PATHS 2>/dev/null || echo "")
+  if [ -z "$CHANGED" ]; then
+    exit 0
+  fi
+else
+  # Without an upstream we cannot tell what the remote is missing, so check to be safe.
+  echo "No upstream set, checking to be safe."
+fi
+
+echo "Schema or migrations changed. Checking that a fresh deploy works."
+
+if ! bun run db:verify; then
+  echo ""
+  echo "Push stopped: the migrations do not build a database from scratch."
+  echo "Push anyway with 'git push --no-verify'."
+  exit 1
+fi

@@ -1,0 +1,150 @@
+/* Dark-theme typography for legal texts delivered as HTML (imprint, privacy policy). */
+.prose {
+  max-width: 72ch;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: var(--color-soft);
+  overflow-wrap: anywhere;
+}
+
+.prose > :first-child {
+  margin-top: 0;
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  font-family: var(--font-pixel);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--color-gold);
+  text-wrap: balance;
+  text-shadow: 0.08em 0.08em 0 var(--color-outline);
+}
+
+.prose h1 {
+  margin: 2.5rem 0 0.75rem;
+  font-size: 1.75rem;
+}
+
+.prose h2 {
+  margin: 2.5rem 0 0.75rem;
+  font-size: 1.5rem;
+}
+
+.prose h3 {
+  margin: 2rem 0 0.5rem;
+  font-size: 1.25rem;
+}
+
+.prose h4 {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 1.125rem;
+}
+
+.prose p,
+.prose ul,
+.prose ol,
+.prose dl,
+.prose blockquote,
+.prose pre,
+.prose table {
+  margin: 0 0 1rem;
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.5rem;
+}
+
+.prose ul {
+  list-style: square;
+}
+
+.prose ol {
+  list-style: decimal;
+}
+
+.prose li {
+  margin: 0.25rem 0;
+}
+
+.prose li::marker {
+  color: var(--color-gold);
+}
+
+.prose strong,
+.prose b {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.prose a {
+  color: var(--color-magic-link);
+  text-decoration: underline;
+  text-decoration-color: color-mix(
+    in srgb,
+    var(--color-magic-link) 50%,
+    transparent
+  );
+  text-underline-offset: 0.2em;
+}
+
+.prose a:hover {
+  color: var(--color-text);
+  text-decoration-color: currentColor;
+}
+
+.prose hr {
+  margin: 2rem 0;
+  border: 0;
+  border-top: 2px solid var(--color-panel-edge);
+}
+
+.prose blockquote {
+  padding-left: 1rem;
+  color: var(--color-muted);
+  border-left: 3px solid var(--color-panel-edge);
+}
+
+.prose code,
+.prose pre {
+  font-family: var(--font-pixel);
+  font-size: 0.9375em;
+  color: var(--color-text);
+}
+
+.prose pre {
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  background: var(--color-void);
+  border: 2px solid var(--color-panel-edge);
+}
+
+.prose table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  font-size: 0.9375rem;
+  border-collapse: collapse;
+}
+
+.prose th,
+.prose td {
+  padding: 0.5rem 0.75rem;
+  vertical-align: top;
+  text-align: left;
+  border-bottom: 1px solid var(--color-panel-edge);
+}
+
+.prose th {
+  font-family: var(--font-pixel);
+  font-weight: 500;
+  color: var(--color-text);
+  background: var(--color-panel);
+}
+
+.prose address {
+  font-style: normal;
+}

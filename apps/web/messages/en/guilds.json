@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "title": "Guild [{tag}]",
+    "description": "Public guild page of {name} [{tag}] in Soulwick: members and best guild run."
+  },
+  "founded": "Founded on {date}",
+  "stats": {
+    "members": "Members",
+    "bestRoom": "Best room",
+    "time": "Time"
+  },
+  "bestRun": "Best guild run from {date}.",
+  "noRun": "This guild has no ranked guild run yet.",
+  "toBoard": "To the guild leaderboard",
+  "unreachable": {
+    "title": "The guild hall is locked right now.",
+    "text": "The server is not reachable right now. Please try again later."
+  }
+}

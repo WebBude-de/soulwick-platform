@@ -1,0 +1,10 @@
+[install]
+# Classic hoisted node_modules layout: one copy of hono, zod, react types etc. for the whole
+# workspace (same as DapItUp). The default isolated linker creates duplicate package instances
+# with incompatible types, e.g. two zod copies behind @soulwick/contracts and the apps.
+linker = "hoisted"
+
+[test]
+# Tests create a throwaway Postgres database per context; Bun's default of 5 s is too short.
+# The root script also passes --timeout because bunfig is not applied to every workspace run.
+timeout = 30000

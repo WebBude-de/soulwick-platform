@@ -1,0 +1,19 @@
+# Context is the repository root: only send what the relay image needs.
+# Every workspace package.json is required for `bun install --frozen-lockfile`.
+*
+!package.json
+!bun.lock
+!bunfig.toml
+!apps/admin/package.json
+!apps/api/package.json
+!apps/web/package.json
+!packages/config/package.json
+!packages/db/package.json
+!packages/contracts/**
+!apps/relay/package.json
+!apps/relay/src/**
+**/node_modules
+**/.turbo
+**/*.tsbuildinfo
+**/.env
+**/.env.*

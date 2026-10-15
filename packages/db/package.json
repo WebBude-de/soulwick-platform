@@ -1,0 +1,33 @@
+{
+  "name": "@soulwick/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Prisma schema, migrations and client factory for the Soulwick API (only apps/api imports this).",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "generate": "prisma generate",
+    "migrate": "prisma migrate dev",
+    "deploy": "prisma migrate deploy",
+    "reset": "prisma migrate reset",
+    "studio": "prisma studio",
+    "status": "bun scripts/db-status.ts",
+    "verify": "bun scripts/verify-migrations.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@soulwick/config": "workspace:*",
+    "@types/bun": "^1.4.2",
+    "@types/pg": "^8.23.1",
+    "dotenv": "^17.0.0",
+    "prisma": "7.10.0",
+    "typescript": "~6.0.3"
+  }
+}

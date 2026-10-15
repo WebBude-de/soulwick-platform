@@ -1,0 +1,15 @@
+# Fallback for builds without a Dockerfile-specific ignore file (apps/*/Dockerfile.dockerignore
+# takes precedence when present). Context is the repository root.
+**/node_modules
+**/.next
+**/.turbo
+**/coverage
+**/*.tsbuildinfo
+packages/db/generated
+.git
+.claude
+**/.env
+**/.env.*
+!**/.env.example
+docs
+infra

@@ -1,0 +1,28 @@
+# Local development services only (Postgres): `bun run services:up` starts it, `services:down` stops it.
+# The apps (api, web, admin) are not part of this file; they are deployed from their Dockerfiles
+# on Dokploy (see DOKPLOY.md). Compose takes this file's directory as project directory, so
+# infra/.env is read for ${...} substitution (copy infra/.env.example).
+# The defaults below are for LOCAL USE ONLY.
+name: soulwick
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: soulwick-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-soulwick}
+      POSTGRES_USER: ${POSTGRES_USER:-soulwick}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-soulwick-local-only}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - soulwick-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  soulwick-pgdata:

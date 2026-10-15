@@ -1,0 +1,167 @@
+{
+  "navLinks": [
+    ["Game", "#spiel"],
+    ["Weapons", "#waffen"],
+    ["Biomes", "#biome"],
+    ["Village", "#dorf"],
+    ["Co-op & Guilds", "#koop"],
+    ["Leaderboards", "#ranglisten"]
+  ],
+  "navCta": "Leaderboards",
+  "planned": "planned",
+  "hoverHint": "Hover: attack",
+  "heroEyebrow": "2D top-down dungeon roguelite · pixel art",
+  "heroTitle": "The last light in the endless dark",
+  "heroText": "From the village you descend into an endless dungeon. With sword, bow or mage staff you fight through four biomes and their bosses, collect gold and upgrades, and decide for yourself when to return with the loot.",
+  "heroCta1": "How the game works",
+  "heroCta2": "View leaderboards",
+  "heroHud": "Room 12 · Cycle 3",
+  "platformNote": "Steam, Google Play and App Store are planned; crossplay across all three is the goal. Store links follow once they exist.",
+  "platforms": ["PC", "Mobile", "Crossplay"],
+  "catTitle": "Kitty",
+  "catSays": "Meow.",
+  "loopEyebrow": "The core loop",
+  "loopTitle": "Village → Dungeon → Cycle of five → Boss → Campfire",
+  "loopText": "A run is a sequence of rooms. Every fifth room is a special room with a shop, fountain, weapon choice, upgrade altar or exit portal. After the third cycle the biome boss awaits, followed by a quiet campfire room where the next biome begins.",
+  "loopSteps": [
+    [
+      "01",
+      "Start",
+      "Village",
+      "Every run starts here. Forge, trading post and chronicle improve you permanently."
+    ],
+    [
+      "02",
+      "Descent",
+      "Dungeon",
+      "You only see your circle of light. Torches and crystals cut islands of light into the dark."
+    ],
+    [
+      "03",
+      "4 + 1",
+      "Cycle of five",
+      "Four combat rooms, then a special room. After each fight you pick one of three upgrades."
+    ],
+    [
+      "04",
+      "Room 15",
+      "Boss",
+      "Each biome has a boss with its own special attack. Soul crystals drop afterwards."
+    ],
+    [
+      "05",
+      "Rest",
+      "Campfire",
+      "A quiet room without combat. The old biome fades into the new one, the counter keeps going."
+    ]
+  ],
+  "goldTitle": "Gold is a decision.",
+  "goldText": "Leave through the exit portal and 100 % of the run gold goes to the village. Die and you keep half. Continue past room 45 and everything stays in the run.",
+  "weaponsEyebrow": "Weapons & upgrades",
+  "weaponsTitle": "Three weapons, two slots, fifteen upgrades",
+  "weaponsText": "The weapon follows the mouse. Two slots, swap with Q. Upgrades last for the whole run and stack; the Tab overview always shows effective values.",
+  "weapons": [
+    [
+      "Sword",
+      "Melee",
+      "Fast swing in an arc in front of you. Hits everything in the arc, including several enemies.",
+      "12 damage",
+      "1.5 / s",
+      "100° arc"
+    ],
+    [
+      "Bow",
+      "Ranged",
+      "Arrows with long reach. Pierce and double shot turn it into a volley.",
+      "9 damage",
+      "1.2 / s",
+      "600 px"
+    ],
+    [
+      "Mage staff",
+      "Area",
+      "Slow magic orb that explodes on impact and hits everything around it.",
+      "8 damage",
+      "0.8 / s",
+      "AOE 45 px"
+    ]
+  ],
+  "upgradeCats": [
+    ["Attribute", "Damage, attack rate, shield. Stacks without limit."],
+    ["Mechanic", "Pierce, wall bounce, double shot, wider swing. Limited."],
+    ["Effect", "Explosive hit, heal or shield on kill."]
+  ],
+  "upgradesNote": "Three offers after every won fight, never duplicates. Limited upgrades show “2 / 3”, unlimited ones the next level.",
+  "biomesEyebrow": "Four biomes",
+  "biomesTitle": "Each biome changes light, enemies and boss",
+  "biomesText": "After every boss the next biome begins. From cycle five it starts over, only harder: elite enemies carry badges for swift, armored or volatile.",
+  "bossLabel": "Boss",
+  "biomes": [
+    [
+      "Crypt",
+      "Rooms 1–15",
+      "Bone King",
+      "Stone slabs, torches, skeletons and archers. The entry, ending with a shield charge."
+    ],
+    [
+      "Slime Grotto",
+      "Rooms 16–30",
+      "Slime Queen",
+      "Damp rock, green crystal torches, toxic puddles. Slimes split when they die."
+    ],
+    [
+      "Shadow Realm",
+      "Rooms 31–45",
+      "Shadow Lord",
+      "Violet glowing cracks, fog, shadows that blind. The lord teleports."
+    ],
+    [
+      "Ember Forge",
+      "Rooms 46+",
+      "Ember Golem",
+      "Basalt, ember veins, lava cracks and braziers. The golem stomps and the floor breaks."
+    ]
+  ],
+  "villageEyebrow": "The village",
+  "villageTitle": "The warm counterpart to the dungeon",
+  "villageText": "Between runs you improve permanently. Village gold from the dungeon and soul crystals from bosses flow into forge, trade and chronicle.",
+  "villageCaption": "Village with forge, trading post, chronicle, guild hall and dungeon entrance",
+  "villageList": [
+    [
+      "Forge",
+      "",
+      "Permanent upgrades: more hearts, starting shield, sharpness, dash, second starting weapon."
+    ],
+    ["Trading post", "", "Consumables and offers for the next run."],
+    ["Chronicle", "", "Records, kills, playtime and your best runs."],
+    ["Guild hall", "planned", "Lobby for co-op runs and guilds."],
+    ["Home", "", "Starting point and storage chest."]
+  ],
+  "coopEyebrow": "Co-op & guilds",
+  "coopTitle": "Deeper together",
+  "coopText": "Co-op runs through a host player, guilds live on the server. Both are in progress; the leaderboards already count solo, group and guild runs separately.",
+  "coopHost": "Host",
+  "coopCardTitle": "Co-op up to four",
+  "coopCardText": "One player hosts, the others join. Each player has their own colour; teammates can be revived. Local and online first, Steam later.",
+  "guildCardTitle": "Guilds with treasury and forge",
+  "guildCardText": "Up to 30 members, join by invite code. The guild treasury funds guild forge levels that benefit everyone. Guild runs are members only.",
+  "guildChips": ["Guild treasury", "Guild forge", "Guild leaderboard"],
+  "lbEyebrow": "Leaderboards",
+  "lbTitle": "Who gets deepest?",
+  "lbText": "Three boards, each all-time and season (calendar month). Ranked by highest room, ties broken by shorter time. Flagged runs and banned players do not count.",
+  "lbPeriods": ["Season October", "All-time"],
+  "lbTabs": ["Players solo", "Players group", "Guilds"],
+  "lbHeads": ["Player", "Group", "Guild"],
+  "lbRank": "Rank",
+  "lbRoom": "Room",
+  "lbTime": "Time",
+  "lbNote": "Sample data. The website loads the boards live from the platform API.",
+  "lbAll": "All leaderboards",
+  "footerText": "Soulwick is a pixel-art dungeon roguelite built with Godot. The game runs without a server; guilds and leaderboards come from the platform.",
+  "footerGame": "Game",
+  "footerLegal": "Legal",
+  "imprint": "Imprint",
+  "privacy": "Privacy",
+  "legalNote": "Legal texts come from eRecht24. Until one is available the page shows a placeholder.",
+  "footerMade": "Deutsch · English"
+}

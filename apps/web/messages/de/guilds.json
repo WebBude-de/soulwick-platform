@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "title": "Gilde [{tag}]",
+    "description": "Öffentliche Gildenseite von {name} [{tag}] in Soulwick: Mitglieder und bester Gilden-Run."
+  },
+  "founded": "Gegründet am {date}",
+  "stats": {
+    "members": "Mitglieder",
+    "bestRoom": "Bester Raum",
+    "time": "Zeit"
+  },
+  "bestRun": "Bester Gilden-Run vom {date}.",
+  "noRun": "Diese Gilde hat noch keinen gewerteten Gilden-Run.",
+  "toBoard": "Zur Gilden-Rangliste",
+  "unreachable": {
+    "title": "Die Gildenhalle ist gerade verschlossen.",
+    "text": "Der Server ist im Moment nicht erreichbar. Bitte versuche es später noch einmal."
+  }
+}

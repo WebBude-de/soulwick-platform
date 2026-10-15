@@ -1,0 +1,215 @@
+# Soulwick API (`@soulwick/api`)
+
+## Zweck
+
+HTTP-API für alles, was **nicht** Echtzeit ist: Konten, Gilden, Gildenfortschritt (Kasse + Schmiede),
+Run-Berichte, Ranglisten, Rechtstexte, Kontolöschung (Website und Spiel) und der Admin-Bereich. Echtzeit-Spiel läuft im
+Host-Modell über den Relay (`apps/relay`); die API beantwortet ihm nur intern Sperr- und Gildenstatus.
+Das Spiel muss ohne Server funktionieren (Einzelspieler, Schnelles Spiel).
+
+Technik: Hono auf Bun (`Bun.serve`), Prisma + PostgreSQL über `@soulwick/db` (`packages/db`),
+zod-Schemas aus `@soulwick/contracts`, **Better Auth** (P-027) für Spieler- und Admin-Sitzungen
+(Session-Token als `Authorization: Bearer`, Plugins `admin`, `bearer`, `jwt`, eigenes Plugin
+`soulwickPlayerAuth` in `src/auth/`), Admin-Passwörter mit argon2id (`Bun.password`). Der Better-Auth-
+Handler ist nicht gemountet: Jeder Auth-Pfad ist eine Hono-Route, die `auth.api` aufruft.
+
+## Start (lokal)
+
+```bash
+bun install                                          # im Repo-Wurzelordner
+bun run services:up                                  # lokale Dienste (infra/docker-compose.yml: Postgres soulwick-postgres)
+cp apps/api/.env.example apps/api/.env               # BETTER_AUTH_SECRET, DEV_AUTH_KEY eintragen
+bun run db:deploy                                    # Migrationen anwenden (neue Migration: bun run db:migrate --name <name>)
+bun run db:seed:dev                                  # Testdaten (siehe unten) – oder ein echter Admin:
+bun run --cwd apps/api admin:create admin@example.com "ein-langes-passwort" admin
+bun run dev:api                                      # http://localhost:8787/health
+bun run services:down                                # Dienste stoppen (Daten bleiben im Volume)
+```
+
+Ist Port 5432 belegt, in `infra/.env` `DB_PORT=<freier Port>` setzen und den Port in `DATABASE_URL`
+(`apps/api/.env`) anpassen. Benutzer, Passwort und Datenbankname kommen aus `POSTGRES_*` in
+`infra/.env` (Standard `soulwick` / `soulwick-local-only` / `soulwick`).
+
+## Entwicklungsdaten (Dev-Seed)
+
+`bun run db:seed:dev` (Root) bzw. `bun run --cwd apps/api seed:dev` legt an, was Website und
+Admin-Bereich lokal zum Anzeigen brauchen:
+
+| Was | Inhalt |
+| --- | --- |
+| Admin-Zugänge | `admin@soulwick.local` (Rolle `admin`), `moderator@soulwick.local` (`moderator`); Passwort aus `DEFAULT_ADMIN_PASSWORD` (mind. 12 Zeichen), Standard `soulwick-admin-local` |
+| Spieler | 10 Testspieler mit Geräte-IDs `dev-device-00000001` … `dev-device-00000010` (9 und 10 erst vor wenigen Tagen angelegt, für „neue Spieler“) (je eine Identität `device`; „Lumen“ zusätzlich eine erfundene Steam-ID `76561190000000001`); damit funktioniert `POST /auth/dev` (z. B. `{ "name": "Lumen", "deviceId": "dev-device-00000001" }`) als dieser Spieler |
+| Gilde | „Dochtwächter“ `[DOCHT]`, Einladungscode `DOCHT2345`, 4 Mitglieder (Gründer, Offizier, 2 Mitglieder), Gildenkasse und Schmiede-Stufen |
+| Runs | 20 Runs (`solo`, `quick`, `guild`) über die aktuelle und die vorige Saison, Seeds `dev-seed-01` … `dev-seed-20`; einer ist markiert (`too_fast`), zwei Spieler teilen sich einen Rang; dazu 14 Runs über die letzten zwei Wochen (`dev-seed-21` … `dev-seed-34`) für die Admin-Statistik |
+| Notiz | eine Moderations-Notiz des Moderators zu „Sternasche“ (P-023) |
+| Löschprotokoll | 4 Einträge (Website, im Spiel, Admin; zwei davon „war gesperrt“) über die letzten zwei Wochen, ohne Namen (P-026) |
+| Sperre | Spieler „Sternasche“ für 7 Tage gesperrt (durch den Moderator); seine Runs fehlen in den Ranglisten, seine Anmeldung liefert `403 banned` |
+| Protokoll | Einträge `admin.create`, `player.ban` und `player.note_add`, damit die Protokoll-Seite gefüllt ist |
+
+Der Seed ist **idempotent**: Jeder Datensatz hat einen festen Schlüssel (E-Mail, Geräte-ID,
+Gilden-Kürzel, Run-Seed, Sperrgrund, Notiztext, ID der Löschprotokoll-Zeile). Ein zweiter Lauf ergänzt nur Fehlendes und überschreibt keine
+Änderungen aus dem Admin-Bereich (Ausnahme: die Passwörter der beiden Zugänge werden neu gesetzt).
+Komplett neu aufsetzen: `bun run db:reset` (löscht die lokale Datenbank, spielt alle Migrationen und den
+Seed neu ein). Nur auf ausdrücklichen Wunsch – Agenten setzen die Datenbank des Projektmitglieds nie zurück.
+
+Der Seed **verweigert `NODE_ENV=production`**. Im Docker-Image ist er nur für die Dokploy-Umgebung
+`development` gedacht: `NODE_ENV=development DEFAULT_ADMIN_PASSWORD=<eigenes> bun apps/api/src/scripts/seed-dev.ts`
+(siehe [infra/DOKPLOY.md](../../infra/DOKPLOY.md)).
+
+## Umgebungsvariablen
+
+| Variable | Pflicht | Standard | Bedeutung |
+| --- | --- | --- | --- |
+| `DATABASE_URL` | ja | – | PostgreSQL-Verbindung (lokal `postgres://soulwick:soulwick-local-only@localhost:5432/soulwick`); auch Prisma CLI und Tests lesen sie aus `apps/api/.env` |
+| `TEST_DATABASE_URL` | nein | `DATABASE_URL` | Nur Tests: Postgres-Server für die Wegwerf-Datenbanken `soulwick_test_<zufall>` |
+| `BETTER_AUTH_SECRET` | ja | – | Better Auth (P-027): signiert Session-Tokens, verschlüsselt die JWT-Signierschlüssel; daraus abgeleitet der HMAC-Schlüssel für Verknüpfungs- und Löschcodes (≥ 32 Zeichen, je Umgebung, nur API) |
+| `BETTER_AUTH_URL` | nein | `http://localhost:8787` | Öffentliche Basis-URL der API (Aussteller `iss` der Relay-JWTs); in production `https://…` Pflicht |
+| `PORT` | nein | `8787` | HTTP-Port |
+| `PLAYER_TOKEN_TTL_DAYS` | nein | `30` | Gültigkeit einer Spieler-Session ab Anmeldung (ohne Verlängern) |
+| `ADMIN_TOKEN_TTL_HOURS` | nein | `8` | Gültigkeit einer Admin-Session ab Anmeldung (ohne Verlängern) |
+| `DEV_AUTH_ENABLED` | nein | `false` | Testphasen-Login `POST /auth/dev` erlauben |
+| `DEV_AUTH_KEY` | wenn Dev-Login an | – | Muss im Header `x-dev-auth-key` mitgeschickt werden (≥ 16 Zeichen) |
+| `GUEST_AUTH_ENABLED` | nein | `true` | Gast-Anmeldung je Gerät `POST /auth/device` ohne Schlüssel (P-028); `false` = `403 guest_auth_disabled` |
+| `GUEST_LOGINS_PER_MINUTE` | nein | `10` | TESTWERT: `POST /auth/device` je IP und Minute |
+| `GUEST_ACCOUNTS_PER_HOUR` | nein | `20` | TESTWERT: neue Gastkonten je IP und Stunde (Anmeldungen bekannter Geräte zählen nicht) |
+| `STEAM_WEB_API_KEY`, `STEAM_APP_ID` | nein | – | Steam-Login (Publisher-Schlüssel); ohne beide antwortet `/auth/steam` mit `501 provider_not_configured` |
+| `STEAM_TICKET_IDENTITY` | nein | `soulwick` | Identity-String, den das Spiel an `GetAuthTicketForWebApi` übergibt |
+| `GOOGLE_PLAY_CLIENT_ID`, `GOOGLE_PLAY_CLIENT_SECRET` | nein | – | Web-OAuth-Client für Play Games Services (Server-Auth-Code); ohne beide antwortet `/auth/google-play` mit 501 |
+| `EXTERNAL_AUTH_TIMEOUT_MS` | nein | `8000` | TESTWERT: Zeitlimit je Aufruf bei Steam/Google |
+| `CORS_ORIGINS` | nein | leer | Erlaubte Browser-Origins, kommagetrennt |
+| `RATE_LIMIT_PER_MINUTE` | nein | `120` | TESTWERT: Anfragen je IP und Minute (Admin-Login: 10) |
+| `LINK_ATTEMPTS_PER_MINUTE` | nein | `10` | TESTWERT: `POST /me/link` je IP und Minute (Verknüpfungscodes nicht erratbar) |
+| `DELETION_REQUESTS_PER_HOUR` | nein | `5` | TESTWERT: `POST /account-deletion/verify` je IP und Stunde (P-026; zusätzlich höchstens 5 falsche Codes je Spielername) |
+| `TRUST_PROXY` | nein | `true` | Client-IP aus `X-Forwarded-For` (hinter Dokploy/Traefik); lokal `false` (`.env.example`) |
+| `MIN_SECONDS_PER_ROOM` | nein | `8` | TESTWERT: schnellere Runs werden markiert |
+| `KNOWN_GAME_VERSIONS` | nein | leer | Bekannte Spielversionen, kommagetrennt; leer = keine Prüfung |
+| `MIN_GAME_VERSION` | nein | leer | Älteste Spielversion mit Online-Funktionen (z. B. `1.0.0`), in `/health` und `/public/config`; leer = keine Grenze (P16) |
+| `PROTOCOL_VERSION` | nein | `1` | Netzwerk-Protokollversion der Umgebung; gleicher Wert wie beim Relay derselben Umgebung (P16) |
+| `RELAY_PUBLIC_URL` | nein | leer | Öffentliche WebSocket-URL des Relays (z. B. `wss://play.dev.playsoulwick.com`, ohne Pfad wird `/v1` ergänzt) für `/public/config`; leer = kein Relay gemeldet |
+| `SUPPORT_EMAIL` | nein | leer | Support-Adresse für Kontolöschung ohne Spielzugang; über `GET /public/config` als `supportEmail` (leer = `null`, Website zeigt nichts; P-026) |
+| `LOG_LEVEL` | nein | `info` | `info`, `error` oder `silent` |
+| `RELAY_INTERNAL_KEY` | nein | leer | Gemeinsamer Schlüssel mit dem Relay (≥ 32 Zeichen) für `GET /internal/relay/players/:playerId/status` (Header `x-relay-key`, liefert Name, Sperre, Gilde) und für die Gegenrichtung (Live-Räume, P-024); leer = Endpunkt aus (404) |
+| `RELAY_INTERNAL_URL` | nein | leer | Interne Adresse des Relays derselben Umgebung (z. B. `http://soulwick-relay:8790`, lokal `http://localhost:8790`) für `/admin/relay/*` und den Kick nach einer Sperre (P-024); braucht `RELAY_INTERNAL_KEY`; leer = `501 relay_not_configured`, Sperren ohne Relay-Kick |
+| `RELAY_INTERNAL_TIMEOUT_MS` | nein | `3000` | TESTWERT: Zeitlimit je Aufruf an den Relay |
+| `ERECHT24_API_KEY` | nein | leer | Projekt-Schlüssel der eRecht24 Rechtstexte-API v2 (P-025); ohne ihn oder ohne `ERECHT24_PLUGIN_KEY` meldet `GET /legal/:type` `missing`, die Website zeigt den Platzhalter |
+| `ERECHT24_PLUGIN_KEY` | nein | leer | Plugin-/Entwickler-Schlüssel von eRecht24 (Header `eRecht24-plugin-key`); wie bei DapItUp Pflicht für den Abruf |
+| `ERECHT24_API_URL` | nein | `https://api.e-recht24.de/v2` | Basis-URL der Rechtstexte-API |
+| `DEFAULT_ADMIN_PASSWORD` | nein | `soulwick-admin-local` | Nur Dev-Seed: Passwort der Zugänge `admin@soulwick.local` und `moderator@soulwick.local` (≥ 12 Zeichen) |
+
+## Befehle
+
+| Befehl | Was passiert |
+| --- | --- |
+| `bun run dev:api` (oder `bun run --cwd apps/api dev`) | Entwicklungsserver mit Neustart bei Änderungen (`bun --watch`) |
+| `bun test apps/api` | Tests gegen den Docker-Postgres (je Lauf eine Wegwerf-Datenbank mit allen Migrationen, `test/helpers.ts`); braucht `bun run services:up`. Ganzes Repo: `bun test` |
+| `bun run --cwd apps/api typecheck` | TypeScript prüfen (Root: `bun run typecheck`, erzeugt vorher den Prisma-Client) |
+| `bun run db:migrate --name <name>` | Neue Migration aus `packages/db/prisma/schema.prisma` erzeugen und lokal anwenden (Ordner `packages/db/prisma/migrations/`, mit committen) |
+| `bun run db:deploy` | Vorhandene Migrationen auf `DATABASE_URL` anwenden (wie beim Start des Images) |
+| `bun run db:status` / `bun run db:verify` | Zustand der Datenbank ansehen / alle Migrationen in einer Wegwerf-Datenbank prüfen |
+| `bun run db:generate` | Prisma-Client erzeugen (läuft vor `typecheck` und `build` automatisch) |
+| `bun run --cwd apps/api admin:create <email> <passwort> [admin\|moderator]` | Admin anlegen bzw. Passwort zurücksetzen |
+| `bun run db:seed:dev` (oder `bun run --cwd apps/api seed:dev`) | Entwicklungsdaten einspielen (idempotent, nicht in Produktion) |
+
+Lint und Formatierung laufen für das ganze Repo aus dem Root: `bun run fix`, `bun run check`. Einen
+Build-Schritt gibt es nicht: Die API startet direkt aus der Quelle (`bun src/index.ts`).
+
+Docker: `docker build -f apps/api/Dockerfile -t soulwick-api .` (aus dem Repo-Wurzelordner). Das Image
+führt **beim Start** `prisma migrate deploy` aus und startet dann die API; deshalb genau eine Replica.
+Im Container (Arbeitsordner `/app`): `bun apps/api/src/scripts/create-admin.ts <email> <passwort> [rolle]`
+und (nur Entwicklungsumgebung) `NODE_ENV=development bun apps/api/src/scripts/seed-dev.ts`.
+Betrieb auf dem Server: [infra/DOKPLOY.md](../../infra/DOKPLOY.md).
+
+## Endpunkte (Kurzüberblick)
+
+Spieler (Header `Authorization: Bearer <token>`):
+
+- `GET /health` (mit `minGameVersion`, `protocolVersion`), `GET /public/config` (`apiVersion`, `minGameVersion`, `protocolVersion`, `relayUrl`, `supportEmail`, `guestAuth`)
+- `POST /auth/dev`, `POST /auth/device` (Gast, P-028), `POST /auth/steam`, `POST /auth/google-play`, `POST /auth/game-center` (noch 501):
+  Antwort `{token, expiresAt, player}`, `token` = Better-Auth-Session-Token (30 Tage) für `Authorization: Bearer`
+- `GET /auth/token` (Bearer, nur Spieler): `{token, expiresAt}`, JWT für `hello.token` am Relay (EdDSA,
+  15 min, Claims `sub` = Spieler-ID, `name`, `iat`, `exp`, `iss`, `aud` = `soulwick-relay`);
+  `GET /auth/jwks` (öffentlich): Schlüssel dazu
+- `GET /me`, `DELETE /me`, `GET /me/identities`, `DELETE /me/identities/:provider`, `POST /me/link-code`,
+  `POST /me/link` (Konten verknüpfen nach D-121/D-122), `POST /me/deletion-code` (Einmal-Löschcode)
+- `POST /account-deletion/verify`, `POST /account-deletion/confirm` (öffentlich, Lösch-Seite der Website, P-026)
+- `POST /guilds`, `POST /guilds/join`, `POST /guilds/leave`, `GET /guilds/me`,
+  `DELETE /guilds/me/members/:playerId`, `POST /guilds/me/invite-code`,
+  `GET /guilds/me/progress`, `PATCH /guilds/me/progress` (Versionsprüfung, 409 bei Konflikt)
+- `POST /runs`
+- `GET /leaderboards/:kind?period=all|season&season=YYYY-MM&limit=50` (`solo`, `group`, `guild`; öffentlich, mit Token zusätzlich `own`)
+- `GET /public/guilds/:tag` (öffentlich, für die Webseite)
+
+Gesperrte Spieler erhalten auf jeder angemeldeten Route `403 {"error":"banned","reason","expiresAt"}`.
+
+Admin (Präfix `/admin`, Session-Token eines Admins oder Moderators als Bearer; Spieler-Sessions → 401):
+`POST /admin/auth/login` (`{token, expiresAt, admin}`, 8 h), `POST /admin/auth/logout` (204), `me`, `stats`, Spieler, Gilden, Runs,
+Löschprotokoll (`account-deletions`, nur lesen), Protokoll (`audit`), Admin-Zugänge, Live-Räume (`relay`). Moderatoren dürfen sperren/entsperren, umbenennen und Runs
+markieren; nur Admins dürfen Gilden auflösen, Runs und Spielerkonten löschen und Admins verwalten. Jede Änderung
+landet im Protokoll. Die genauen Schemas stehen in `packages/contracts`.
+
+Admin-API v2 (P18, P-023/P-024; Schemas in `packages/contracts/src/admin.ts`):
+
+| Route | Rolle | Antwort / Fehler |
+| --- | --- | --- |
+| `GET /admin/stats` | Moderator | `AdminStats`, zusätzlich `newPlayers7d`, `activePlayers7d`, `runs24h`, `runs7d`, `runsTotal`, `runsByMode {solo, quick, guild}`, `activeGuilds7d` |
+| `GET /admin/stats/daily?days=30` | Moderator | `AdminDailyStats`: `series[] {date, newPlayers, runs, activePlayers}`, `totals`, `roomReached[] {min, max, runs}`, `averageRoomReached`, `averageDurationSeconds`, `medianDurationSeconds`; `days` 1–90 |
+| `GET /admin/relay/rooms` | Moderator | `AdminRelayRoomList` (`rooms[]` mit `code`, `mode`, `guildId`, `started`, `playerCount`, `maxPlayers`, `players[] {peerId, playerId, name, platform, host, inRoomSeconds}`, `ageSeconds`, `expiresAt`, `runsStarted`, `bytesInPerSecond`, `bytesOutPerSecond`); `501 relay_not_configured`, `502 relay_unavailable` |
+| `POST /admin/relay/rooms/:code/close` `{ reason }` | Moderator | `{ code, playerIds, started }`; die Spieler bekommen `room_closed` (`closed_by_admin`); Protokoll `relay.room_close`; `404 room_not_found` |
+| `POST /admin/relay/rooms/:code/kick` `{ playerId, reason }` | Moderator | `{ code, playerId, peerId, roomClosed }`; Protokoll `relay.kick` (Ziel Spieler); `404 player_not_in_room` |
+| `POST /admin/players/:id/bans` | Moderator | wie bisher plus `relay`: `disconnected` \| `not_connected` \| `unavailable` \| `not_configured` |
+| `GET /admin/players/:id` | Moderator | wie bisher (Sperr-Historie, letzte 20 Runs) plus `runsTotal`, `noteCount` |
+| `GET` / `POST /admin/players/:id/notes` `{ text }` | Moderator | `{ items: AdminPlayerNote[] }` bzw. 201 `AdminPlayerNote`; Protokoll `player.note_add` |
+| `DELETE /admin/players/:id/notes/:noteId` | Admin oder Verfasser | 204; `403 forbidden`, `404 note_not_found`; Protokoll `player.note_delete` |
+| `POST /admin/guilds/:id/transfer` `{ playerId, reason }` | Moderator | `{ id, founderId, previousFounderId }`; `404 not_a_member`, `409 already_founder`, `409 guild_disbanded`; Protokoll `guild.transfer` |
+| `GET /admin/guilds?status=active\|disbanded\|all` | Moderator | `status` gewinnt über `includeDisbanded` |
+| `GET /admin/audit?from=&to=&actionPrefix=&targetType=` | Moderator | `from`/`to` als Tag (`2026-10-15`, UTC, inklusive) oder Zeitpunkt; `actionPrefix` z. B. `relay.` |
+
+## Anmeldung, Konten, Versionen (P14–P16)
+
+- **Gast je Gerät** (`POST /auth/device`, `{ deviceId, name }`, P-028): ohne Schlüssel; `deviceId` ist eine
+  zufällige UUID v4, die das Spiel einmal pro Installation erzeugt (32–128 Zeichen, nur `A-Z a-z 0-9 -`).
+  Dieselbe `device`-Identität wie `/auth/dev`, Antwort wie dort. Später per Verknüpfungscode mit
+  Steam/Google Play verbinden. Fehler: `400 validation_error`, `403 guest_auth_disabled`
+  (`GUEST_AUTH_ENABLED=false`), `403 banned`, `429 rate_limited` (`GUEST_LOGINS_PER_MINUTE` je IP,
+  `GUEST_ACCOUNTS_PER_HOUR` neue Konten je IP). `GET /public/config` meldet `guestAuth`.
+- **Steam** (`POST /auth/steam`, `{ ticket, name? }`): Das Spiel schickt das Hex-Ticket von
+  `GetAuthTicketForWebApi(STEAM_TICKET_IDENTITY)`, die API prüft es mit dem Publisher-Schlüssel bei
+  `ISteamUserAuth/AuthenticateUserTicket`. Fehler: `401 invalid_steam_ticket`, `403 steam_banned`
+  (`publisherbanned`/`vacbanned`), `502 steam_unavailable`, `403 banned` (Soulwick-Sperre).
+- **Google Play** (`POST /auth/google-play`, `{ serverAuthCode, name? }`): Code bei
+  `oauth2.googleapis.com/token` eintauschen, Spieler-ID von `games/v1/players/me`; nie eine ID vom
+  Gerät. Fehler: `401 invalid_google_play_code`, `502 google_play_unavailable`.
+- **Game Center** (`POST /auth/game-center`): Vertrag steht (`GameCenterAuthRequest`), Route antwortet
+  bis iOS `501 not_implemented`. Ohne Konfiguration antworten Steam und Google `501 provider_not_configured`.
+- **Verknüpfen** (D-121/D-122): Gerät A `POST /me/link-code` → 6 Zeichen, 10 min (TESTWERT, nur als
+  HMAC gespeichert, ein Code je Konto). Gerät B (mit eigenem Konto angemeldet) `POST /me/link { code }`.
+  Leeres Konto (keine Gilde, keine Runs) geht still im anderen auf; haben beide Fortschritt, kommt
+  `409 account_has_progress` mit `remaining`/`removed`, bis das Spiel mit `confirmMerge: true`
+  wiederholt. Dann bleibt das ältere Konto (Name, Gilde; gildenlos übernimmt es die Mitgliedschaft
+  samt Rolle des anderen, sonst verlässt das andere seine Gilde mit Gründer-Übergabe nach P-102),
+  Identitäten, Runs, Sperr-Historie wandern mit, das andere Konto wird gelöscht. Gesperrt →
+  `409 merge_blocked_banned`. Antwort: neuer Token für das bleibende Konto; Tokens des gelöschten
+  Kontos sind ungültig, dessen Geräte landen bei der nächsten Anmeldung beim bleibenden Konto.
+- **Entkoppeln**: `DELETE /me/identities/:provider` entfernt alle Identitäten dieses Providers, nie
+  die letzte (`409 last_identity`).
+- **Kontolöschung** (P-026, vollautomatisch, KONZEPT_ONLINE.md §3.7):
+  - Spiel: `POST /me/deletion-code` → `201 {code, expiresAt}`; 8 Zeichen (ohne 0/O, 1/I/L), 15 min,
+    einmal verwendbar (TESTWERT), nur als HMAC in `deletion_codes`; ein neuer Code ersetzt den alten.
+    Gesperrte Spieler bekommen `403 banned` (P-108).
+  - Website: `POST /account-deletion/verify {playerName, code}` → `200 {token, expiresAt, account:
+    {playerName, guild: {name, tag} | null, runCount}}`. Jeder Fehler `400 invalid_deletion_code`
+    (kein Hinweis, ob der Name existiert); `429 rate_limited` nach `DELETION_REQUESTS_PER_HOUR`
+    je IP; 5 falsche Codes je Spielername verbrennen dessen Code.
+  - Website: `POST /account-deletion/confirm {token}` → `200 {deleted: true, deletedAt}`; löscht wie
+    `DELETE /me` (auch gesperrte Konten, im Protokoll markiert). `400 deletion_token_invalid` bei
+    abgelaufenem (10 min), benutztem oder durch einen neuen Code ersetztem Token.
+  - Jede Löschung (Website `web_code`, `DELETE /me` `in_game`, `DELETE /admin/players/:id` `admin`)
+    schreibt `account_deletions` (Zeit, Kanal, `was_banned`, HMAC der Spieler-ID; kein Name) und
+    die Logzeile `account_deleted` (nur Kanal, `wasBanned`). Admins lesen sie mit
+    `GET /admin/account-deletions?from&to&channel&playerId&limit&offset` →
+    `{items: [{id, deletedAt, channel, wasBanned}], total, counts: {web_code, in_game, admin}}`
+    (Moderator und Admin). `DELETE /admin/players/:id { note? }` (nur Admin, Protokoll
+    `player.delete` mit Name und Notiz, Antwort mit `wasBanned`). `GET /admin/stats` hat
+    `deletions7d`; `openDeletionRequests` ist veraltet und immer 0.
+- **Versionen**: `GET /health` und `GET /public/config` melden `minGameVersion` und
+  `protocolVersion`, `/public/config` zusätzlich `relayUrl` (je Umgebung).

@@ -1,0 +1,21 @@
+# Context is the repository root: only send what the API image needs.
+# Every workspace package.json is required for `bun install --frozen-lockfile`.
+*
+!package.json
+!bun.lock
+!bunfig.toml
+!apps/admin/package.json
+!apps/relay/package.json
+!apps/web/package.json
+!packages/config/**
+!packages/contracts/**
+!packages/db/**
+!apps/api/**
+**/node_modules
+**/.turbo
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+!**/.env.example
+# generated locally by `bun run db:generate`; the image generates its own copy
+packages/db/generated

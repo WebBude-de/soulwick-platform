@@ -1,0 +1,20 @@
+# Context is the repository root: only send what the admin image needs.
+# Every workspace package.json is required for `bun install --frozen-lockfile`.
+*
+!package.json
+!bun.lock
+!bunfig.toml
+!apps/api/package.json
+!apps/relay/package.json
+!packages/db/package.json
+!apps/web/package.json
+!packages/config/**
+!packages/contracts/**
+!apps/admin/**
+**/node_modules
+**/.next
+**/.turbo
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+!**/.env.example

@@ -1,0 +1,24 @@
+{
+  "name": "@soulwick/relay",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Soulwick relay: WebSocket lobby with room codes; forwards game packets between host and clients without reading them.",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@soulwick/contracts": "workspace:*",
+    "hono": "^4.13.13",
+    "jose": "^6.2.3",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@soulwick/config": "workspace:*",
+    "@types/bun": "^1.4.2",
+    "typescript": "~6.0.3"
+  }
+}

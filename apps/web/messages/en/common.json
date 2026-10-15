@@ -1,0 +1,53 @@
+{
+  "siteName": "Soulwick",
+  "tagline": "The last light in the endless dark",
+  "description": "Soulwick is a dark 2D dungeon roguelite: an endless dungeon, four biomes with their own bosses, and a village that grows with every run. Co-op, guilds and leaderboards are planned.",
+  "skipToContent": "Skip to content",
+  "nav": {
+    "label": "Main navigation",
+    "home": "Home",
+    "game": "Game",
+    "leaderboards": "Leaderboards",
+    "privacy": "Privacy",
+    "imprint": "Imprint"
+  },
+  "language": {
+    "label": "Language",
+    "de": "Deutsch",
+    "en": "English",
+    "short": {
+      "de": "DE",
+      "en": "EN"
+    }
+  },
+  "music": {
+    "label": "Music on/off",
+    "on": "Music on",
+    "off": "Music off",
+    "track": "Village theme",
+    "unsupported": "Your browser can't play the music."
+  },
+  "status": {
+    "planned": "planned",
+    "inDevelopment": "in development",
+    "soon": "coming"
+  },
+  "footer": {
+    "copyright": "© {year} Soulwick",
+    "credit": "Made with ♥ by WebBude",
+    "legal": "Legal",
+    "project": "Soulwick is a team project. Everything shown is work in progress and may change before release."
+  },
+  "notFound": {
+    "title": "The dungeon ends here",
+    "text": "This page doesn't exist or fell into the abyss. Hover over the character and they'll get back up.",
+    "back": "Back to the village",
+    "spriteAlt": "Player character lying on the ground"
+  },
+  "fun": {
+    "chickenLabel": "Chicken – click it",
+    "chickenSays": ["Bawk!", "Cluck!", "Bok bok!"],
+    "chickenPanic": "BAWWWK!!",
+    "slimeHit": "Hit the Slime Queen"
+  }
+}

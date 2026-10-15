@@ -1,0 +1,469 @@
+@import "tailwindcss";
+
+/*
+ * Soulwick design tokens (docs/design/TOKENS.md §1–§6), same values as apps/web.
+ * The admin panel uses them calmly: no sprite animation, no hover lift, no glow;
+ * gold only for focus, the page title and the primary action.
+ */
+@theme {
+  /* Surfaces */
+  --color-bg: #1e1b2c;
+  --color-bg-deep: #15131f;
+  --color-bg-footer: #0f0d18;
+  --color-panel: #2a2638;
+  --color-line: #3b3650;
+  --color-line-light: #5d577a;
+  --color-line-lighter: #8f88ad;
+  --color-ink: #1c1a2b;
+
+  /* Text */
+  --color-text: #e9e4d2;
+  --color-soft: #d9d2e8;
+  --color-muted: #b9b3c9;
+  --color-disabled: #7a7396;
+
+  /* Accents */
+  --color-gold: #f2cf4a;
+  --color-gold-dark: #c99a2e;
+  --color-gold-light: #fff0a8;
+  --color-violet: #a66ef0;
+  --color-violet-link: #a98cf5;
+  --color-attr: #6cb2ec;
+  --color-mech: #5fcd62;
+  --color-effect: #ff8a3c;
+  --color-danger: #e0463a;
+  --color-crystal: #2fb391;
+
+  --font-pixel: var(--font-pixelify), "Courier New", ui-monospace, monospace;
+  --font-body:
+    var(--font-dm-sans), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+
+  --shadow-card: 0 4px 0 #0f0d18;
+}
+
+/*
+ * Numbers and identifiers (ids, tags, times) in Pixelify 400 (TOKENS §6). Pixelify's glyphs are
+ * small for their em size and 2/5/8 blur below ~16 px, so it runs 1.15× the surrounding text.
+ */
+@utility font-data {
+  font-family: var(--font-pixel);
+  font-size: 1.15em;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-shadow: none;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    background: var(--color-bg);
+  }
+  body {
+    min-height: 100vh;
+    font-family: var(--font-body);
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.55;
+    color: var(--color-text);
+    background: var(--color-bg);
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-pixel);
+    font-weight: 700;
+    -webkit-font-smoothing: auto;
+    line-height: 1.15;
+    text-shadow: 2px 2px 0 var(--color-ink);
+  }
+  h1 {
+    text-shadow: 3px 3px 0 var(--color-ink);
+  }
+  a {
+    text-underline-offset: 3px;
+  }
+  code {
+    font-family: var(--font-pixel);
+    font-weight: 400;
+  }
+  /* Visible gold focus on every interactive element (TOKENS §5). */
+  :focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+  }
+  ::selection {
+    color: var(--color-ink);
+    background: var(--color-gold);
+  }
+  img,
+  [data-pixel] {
+    image-rendering: pixelated;
+  }
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--color-gold);
+  }
+  summary {
+    cursor: pointer;
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+}
+
+@layer components {
+  /* Eyebrow: Pixelify caps, violet (also the table header style). */
+  .eyebrow {
+    font-family: var(--font-pixel);
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--color-violet-link);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-shadow: 1px 1px 0 var(--color-ink);
+  }
+
+  /* Card: panel surface, 2 px line, hard 4 px shadow. Linked cards only change the border. */
+  .card {
+    background: var(--color-panel);
+    border: 2px solid var(--color-line);
+    border-radius: 4px;
+    box-shadow: var(--shadow-card);
+  }
+  .card-deep {
+    background: var(--color-bg-deep);
+  }
+  .card-danger {
+    border-color: var(--color-danger);
+  }
+  .card-warn {
+    border-color: var(--color-effect);
+  }
+  a.card {
+    color: inherit;
+    text-decoration: none;
+  }
+  a.card:hover {
+    border-color: var(--color-line-lighter);
+  }
+  a.card-warn:hover {
+    border-color: var(--color-gold-light);
+  }
+
+  /* Links inside content: violet, underline on hover. */
+  .link {
+    color: var(--color-violet-link);
+    text-decoration: none;
+  }
+  .link:hover {
+    text-decoration: underline;
+  }
+
+  /*
+   * Buttons: body font, bold, ink rings and a 4 px ink drop (TOKENS §3). Calm in the panel:
+   * hover only changes the fill, the button presses down only while active.
+   */
+  .btn {
+    display: inline-flex;
+    gap: 0.5em;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 16px;
+    margin-bottom: 4px;
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--color-text);
+    white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
+    background: var(--color-panel);
+    border: 0;
+    border-radius: 3px;
+    box-shadow:
+      0 0 0 2px var(--color-ink),
+      0 4px 0 2px var(--color-ink),
+      inset 0 0 0 2px var(--color-line-light);
+    transition:
+      background-color 90ms ease-out,
+      box-shadow 90ms ease-out,
+      transform 90ms ease-out;
+  }
+  .btn:hover {
+    background: var(--color-line);
+  }
+  .btn:active {
+    box-shadow:
+      0 0 0 2px var(--color-ink),
+      0 2px 0 2px var(--color-ink),
+      inset 0 0 0 2px var(--color-line-light);
+    transform: translateY(2px);
+  }
+  .btn-primary {
+    color: var(--color-ink);
+    background: var(--color-gold);
+    box-shadow:
+      0 0 0 2px var(--color-ink),
+      0 4px 0 2px var(--color-ink),
+      inset 0 -4px 0 var(--color-gold-dark);
+  }
+  .btn-primary:hover {
+    background: var(--color-gold-light);
+  }
+  .btn-primary:active {
+    box-shadow:
+      0 0 0 2px var(--color-ink),
+      0 2px 0 2px var(--color-ink),
+      inset 0 -4px 0 var(--color-gold-dark);
+  }
+  /* Destructive: secondary button with a danger ring (TOKENS §6). */
+  .btn-danger {
+    box-shadow:
+      0 0 0 2px var(--color-ink),
+      0 4px 0 2px var(--color-ink),
+      inset 0 0 0 2px var(--color-danger);
+  }
+  .btn-danger:active {
+    box-shadow:
+      0 0 0 2px var(--color-ink),
+      0 2px 0 2px var(--color-ink),
+      inset 0 0 0 2px var(--color-danger);
+  }
+  .btn-sm {
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: 14px;
+  }
+  /* Selected segment in a filter row (links styled as buttons). */
+  .btn[aria-current="page"] {
+    color: var(--color-ink);
+    background: var(--color-gold);
+    box-shadow:
+      0 0 0 2px var(--color-ink),
+      0 4px 0 2px var(--color-ink),
+      inset 0 -4px 0 var(--color-gold-dark);
+  }
+  .btn:disabled,
+  .btn[aria-disabled="true"] {
+    color: var(--color-disabled);
+    cursor: not-allowed;
+    background: var(--color-panel);
+    box-shadow:
+      0 0 0 2px var(--color-ink),
+      0 4px 0 2px var(--color-ink),
+      inset 0 0 0 2px var(--color-line);
+    transform: none;
+  }
+
+  /* Form fields on the deep surface; focus turns the border gold. */
+  .input {
+    min-height: 40px;
+    padding: 0 10px;
+    font: inherit;
+    color: var(--color-text);
+    background: var(--color-bg-deep);
+    border: 2px solid var(--color-line-light);
+    border-radius: 3px;
+  }
+  textarea.input {
+    padding: 8px 10px;
+  }
+  .input::placeholder {
+    color: var(--color-disabled);
+  }
+  .input:focus {
+    border-color: var(--color-gold);
+  }
+  .field-label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 14px;
+    color: var(--color-muted);
+  }
+
+  /* Status chip: Pixelify 14 px on the deep surface, tone as border and marker. */
+  .chip {
+    --chip-tone: var(--color-line-light);
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    min-height: 24px;
+    padding: 0 8px;
+    font-family: var(--font-pixel);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1;
+    color: var(--color-text);
+    white-space: nowrap;
+    background: var(--color-bg-deep);
+    border: 2px solid var(--chip-tone);
+    border-radius: 3px;
+  }
+  .chip::before {
+    flex: none;
+    width: 6px;
+    height: 6px;
+    content: "";
+    background: var(--chip-tone);
+  }
+  .chip-active {
+    --chip-tone: var(--color-mech);
+  }
+  .chip-danger {
+    --chip-tone: var(--color-danger);
+  }
+  .chip-flagged {
+    --chip-tone: var(--color-effect);
+  }
+  .chip-muted {
+    --chip-tone: var(--color-muted);
+    color: var(--color-muted);
+  }
+  /* Chip as a filter link with a count (deletion log): taller hit area, gold when selected. */
+  .chip-link {
+    gap: 8px;
+    min-height: 32px;
+    padding: 0 10px;
+    text-decoration: none;
+  }
+  .chip-link:hover {
+    --chip-tone: var(--color-line-lighter);
+  }
+  .chip-link[aria-current="page"] {
+    --chip-tone: var(--color-gold);
+  }
+  .chip-off {
+    color: var(--color-disabled);
+    text-decoration: line-through;
+    border-style: dashed;
+  }
+  .chip-off::before {
+    display: none;
+  }
+
+  /* Tables: 14 px DM Sans, eyebrow headers, zebra rows on the deep surface (TOKENS §6). */
+  .table {
+    width: 100%;
+    font-size: 14px;
+    line-height: 1.55;
+    text-align: left;
+    border-collapse: collapse;
+  }
+  .table th {
+    padding: 10px 12px 8px;
+    font-family: var(--font-pixel);
+    font-size: 14px;
+    font-weight: 400;
+    vertical-align: bottom;
+    color: var(--color-violet-link);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-shadow: 1px 1px 0 var(--color-ink);
+    border-bottom: 2px solid var(--color-line);
+  }
+  .table td {
+    padding: 8px 12px;
+    vertical-align: top;
+    border-bottom: 1px solid var(--color-line);
+  }
+  .table tbody tr:nth-child(even) td {
+    background: var(--color-bg-deep);
+  }
+  .table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  /* Sidebar navigation; the current page gets a gold bar and text. */
+  .nav-link {
+    display: flex;
+    flex: none;
+    gap: 10px;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 12px;
+    font-family: var(--font-pixel);
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--color-muted);
+    white-space: nowrap;
+    text-decoration: none;
+    border-radius: 3px;
+  }
+  .nav-link:hover {
+    color: var(--color-text);
+    background: var(--color-panel);
+  }
+  .nav-link[aria-current="page"] {
+    color: var(--color-gold);
+    background: var(--color-panel);
+    box-shadow:
+      inset 4px 0 0 var(--color-gold),
+      inset 0 0 0 2px var(--color-line);
+  }
+
+  /* Flash and notice boxes (success, note, error). */
+  .flash {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    color: var(--color-text);
+    background: var(--color-bg-deep);
+    border: 2px solid var(--color-line);
+    border-left-width: 6px;
+    border-radius: 4px;
+  }
+  .flash-ok {
+    border-color: var(--color-mech);
+  }
+  .flash-note {
+    border-color: var(--color-attr);
+  }
+  .flash-error {
+    border-color: var(--color-danger);
+  }
+
+  /* Small pixel icon from public/brand/sprites (size and sheet set inline). */
+  .pixel-icon {
+    display: inline-block;
+    flex: none;
+    image-rendering: pixelated;
+    background-repeat: no-repeat;
+  }
+
+  /* Section separator: divider.webp 32×8 at 2× (TOKENS §3). */
+  .divider {
+    height: 16px;
+    image-rendering: pixelated;
+    background: url("/brand/sprites/divider.webp") center / 64px 16px repeat-x;
+  }
+
+  /* Disclosure for a destructive step: summary is the trigger, the form opens below. */
+  .confirm-box {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+    margin-top: 6px;
+    font-size: 14px;
+    background: var(--color-bg-deep);
+    border: 2px solid var(--color-danger);
+    border-radius: 4px;
+  }
+  .confirm-box-neutral {
+    border-color: var(--color-line-light);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .btn {
+      transition: none;
+    }
+    .btn:active {
+      transform: none;
+    }
+  }
+}

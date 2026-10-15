@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "title": "Leaderboards",
+    "description": "The deepest runs in Soulwick: solo, group and guilds, all-time and per season."
+  },
+  "title": "Leaderboards",
+  "intro": "Runs are ranked by the highest room reached; ties go to the shorter time. Suspicious runs are reviewed and only appear once cleared.",
+  "filters": {
+    "kind": "Board",
+    "period": "Period",
+    "season": "Season"
+  },
+  "kinds": {
+    "solo": "Solo",
+    "group": "Group",
+    "guild": "Guilds"
+  },
+  "periods": {
+    "all": "All-time",
+    "season": "Season"
+  },
+  "table": {
+    "caption": "{kind}, {period}",
+    "rank": "Rank",
+    "player": "Player",
+    "guild": "Guild",
+    "room": "Room",
+    "time": "Time",
+    "rankLabel": "Rank {rank}",
+    "guildLink": "View guild {tag}",
+    "membersCount": "{count, plural, one {# member} other {# members}}"
+  },
+  "empty": {
+    "title": "No entries yet.",
+    "text": "Be the first flame in the dark."
+  },
+  "unreachable": {
+    "title": "The leaderboards are asleep.",
+    "text": "The server is not reachable right now. Please try again later."
+  },
+  "planned": "Leaderboards fill up once the game can report runs. That is planned, but not live yet.",
+  "plannedLabel": "planned"
+}

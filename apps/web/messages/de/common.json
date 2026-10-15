@@ -1,0 +1,53 @@
+{
+  "siteName": "Soulwick",
+  "tagline": "Das letzte Licht im endlosen Dunkel",
+  "description": "Soulwick ist ein dunkles 2D-Dungeon-Roguelite: ein endloser Dungeon, vier Biome mit eigenen Bossen, ein Dorf, das mit jedem Run wächst. Koop, Gilden und Ranglisten sind in Planung.",
+  "skipToContent": "Zum Inhalt springen",
+  "nav": {
+    "label": "Hauptnavigation",
+    "home": "Start",
+    "game": "Spiel",
+    "leaderboards": "Ranglisten",
+    "privacy": "Datenschutz",
+    "imprint": "Impressum"
+  },
+  "language": {
+    "label": "Sprache",
+    "de": "Deutsch",
+    "en": "English",
+    "short": {
+      "de": "DE",
+      "en": "EN"
+    }
+  },
+  "music": {
+    "label": "Musik an/aus",
+    "on": "Musik an",
+    "off": "Musik aus",
+    "track": "Dorfthema",
+    "unsupported": "Dein Browser spielt die Musik nicht ab."
+  },
+  "status": {
+    "planned": "in Planung",
+    "inDevelopment": "in Entwicklung",
+    "soon": "folgt"
+  },
+  "footer": {
+    "copyright": "© {year} Soulwick",
+    "credit": "Mit ♥ gemacht von WebBude",
+    "legal": "Rechtliches",
+    "project": "Soulwick ist ein Teamprojekt. Alle Angaben ohne Gewähr, Inhalte können sich bis zur Veröffentlichung ändern."
+  },
+  "notFound": {
+    "title": "Hier endet der Dungeon",
+    "text": "Diese Seite gibt es nicht oder sie ist in den Abgrund gefallen. Fahr mit der Maus über die Figur, dann steht sie wieder auf.",
+    "back": "Zurück zum Dorf",
+    "spriteAlt": "Spielfigur liegt am Boden"
+  },
+  "fun": {
+    "chickenLabel": "Huhn – anklicken",
+    "chickenSays": ["Gak!", "Gaaak!", "Bok bok!"],
+    "chickenPanic": "GAAAK!!",
+    "slimeHit": "Schleimkönigin treffen"
+  }
+}

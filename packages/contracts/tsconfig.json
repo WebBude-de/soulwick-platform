@@ -1,0 +1,4 @@
+{
+  "extends": "@soulwick/config/tsconfig/bun.json",
+  "include": ["src"]
+}

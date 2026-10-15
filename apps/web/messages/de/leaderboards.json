@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "title": "Ranglisten",
+    "description": "Die tiefsten Runs in Soulwick: Solo, Gruppe und Gilden, allzeit und je Saison."
+  },
+  "title": "Ranglisten",
+  "intro": "Gewertet wird der höchste erreichte Raum eines Runs, bei Gleichstand die kürzere Zeit. Verdächtige Runs werden geprüft und erscheinen erst nach Freigabe.",
+  "filters": {
+    "kind": "Art",
+    "period": "Zeitraum",
+    "season": "Saison"
+  },
+  "kinds": {
+    "solo": "Solo",
+    "group": "Gruppe",
+    "guild": "Gilden"
+  },
+  "periods": {
+    "all": "Allzeit",
+    "season": "Saison"
+  },
+  "table": {
+    "caption": "{kind}, {period}",
+    "rank": "Platz",
+    "player": "Spieler",
+    "guild": "Gilde",
+    "room": "Raum",
+    "time": "Zeit",
+    "rankLabel": "Platz {rank}",
+    "guildLink": "Gilde {tag} ansehen",
+    "membersCount": "{count, plural, one {# Mitglied} other {# Mitglieder}}"
+  },
+  "empty": {
+    "title": "Noch keine Einträge.",
+    "text": "Sei die erste Flamme im Dunkel."
+  },
+  "unreachable": {
+    "title": "Die Ranglisten schlafen gerade.",
+    "text": "Der Server ist im Moment nicht erreichbar. Bitte versuche es später noch einmal."
+  },
+  "planned": "Ranglisten füllen sich, sobald das Spiel Runs melden kann. Das ist geplant, aber noch nicht live.",
+  "plannedLabel": "geplant"
+}

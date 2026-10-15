@@ -1,0 +1,35 @@
+{
+  "imprint": {
+    "title": "Imprint",
+    "description": "Legal notice (imprint) of the Soulwick website.",
+    "placeholderTitle": "The imprint is being set up.",
+    "facts": {
+      "project": "Soulwick is an indie game in development.",
+      "contact": "The responsible person and a way to contact them will appear here once the imprint has been approved.",
+      "noShop": "Nothing is sold on this website; there are no accounts and no sign-in."
+    }
+  },
+  "privacy": {
+    "title": "Privacy policy",
+    "description": "Privacy policy of the Soulwick website and game.",
+    "placeholderTitle": "The privacy policy is being set up.",
+    "facts": {
+      "offline": "Single player runs entirely without a server. Unless you sign in inside the game, no game data leaves your machine.",
+      "stored": "If you later sign in inside the game (for guilds and leaderboards, both planned), the server stores only: a platform or device ID, your player name, your guild and run reports (mode, participants, room reached, duration, seed, game version).",
+      "notStored": "No real names and no payment data. E-mail addresses only if you write to us yourself, for example to have your account deleted without access to the game.",
+      "website": "This website sets no tracking and no advertising cookies. When you open it, the server briefly processes technically necessary data such as your IP address to deliver the page and protect it from abuse.",
+      "deletion": "You delete your account yourself, right away: in the game under Account, or <link>here on the website</link> with a deletion code from the game. This removes your player profile, your guild membership and your link to run reports."
+    }
+  },
+  "placeholder": {
+    "text": "The text comes from a legal-text service and is reviewed before it appears here. Until then, the essentials are summarised below.",
+    "unreachable": "The server holding the legal texts is not reachable right now. Please try again later."
+  },
+  "quickFacts": {
+    "title": "The short version"
+  },
+  "otherLocale": {
+    "note": "This text is currently only available in German."
+  },
+  "modified": "Last updated: {date}"
+}

@@ -1,0 +1,459 @@
+/*
+ * Easter eggs and hover micro-animations. Everything here is decorative: fixed overlays or
+ * transforms only (no layout shifts), and all of it stops under prefers-reduced-motion.
+ */
+
+/* ---------- Slime Queen ---------- */
+.fun-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  overflow: hidden;
+  pointer-events: none;
+}
+.sq-body {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate(-400px, -400px);
+  will-change: transform;
+}
+.sq-squash {
+  transform-origin: 50% 100%;
+}
+.sq-hit {
+  display: block;
+  padding: 0;
+  line-height: 0;
+  pointer-events: auto;
+  cursor: pointer;
+  background: none;
+  border: 0;
+}
+.sq-shadow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 80px;
+  height: 18px;
+  background: rgb(15 13 24 / 0.7);
+  border-radius: 50%;
+  opacity: 0;
+}
+.sq-splat {
+  position: absolute;
+  line-height: 0;
+  transform: translate(-50%, -60%);
+  animation: sq-fade 1.8s ease-in forwards;
+}
+.sq-spark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -60%);
+}
+@keyframes sq-fade {
+  0%,
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.sq-mini {
+  position: absolute;
+  line-height: 0;
+  animation: sq-flee 1.6s ease-out forwards;
+}
+.sq-mini-hop {
+  display: block;
+  animation: sq-hop 0.32s ease-in-out infinite alternate;
+}
+@keyframes sq-flee {
+  from {
+    transform: translate(-50%, -100%);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  to {
+    transform: translate(calc(-50% + var(--dx)), calc(-100% + var(--dy)));
+    opacity: 0;
+  }
+}
+@keyframes sq-hop {
+  from {
+    transform: translateY(0) scaleY(0.85);
+  }
+  to {
+    transform: translateY(-14px) scaleY(1.05);
+  }
+}
+
+/* ---------- Cat on the scrollbar thumb ---------- */
+/* Fixed boxes end at the scrollbar edge, so right: 0 puts the cat flush against the thumb. */
+.scroll-cat {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 60;
+  display: none;
+  pointer-events: none;
+  transform: translateY(calc(var(--thumb-top, 0px) + 6px));
+}
+.scroll-cat[data-show] {
+  display: block;
+}
+.scroll-cat-swing {
+  position: relative;
+  padding: 14px 6px 0 0;
+  line-height: 0;
+  transform: rotate(var(--swing, 0deg));
+  /* Pivot where the paws hold the thumb; the overshooting curve makes it settle with a wobble. */
+  transform-origin: 100% 0;
+  transition: transform 0.8s cubic-bezier(0.3, 1.9, 0.5, 1);
+}
+.scroll-cat-body {
+  transform: rotate(-8deg);
+  transform-origin: 80% 0;
+}
+/* Two arms in the cat's fur colour reaching up and over to the edge of the thumb. */
+.scroll-cat-paw {
+  position: absolute;
+  width: 6px;
+  height: 18px;
+  background: #c9843a;
+  box-shadow: 0 0 0 3px #1c1a2b;
+  transform-origin: 50% 100%;
+}
+.scroll-cat-paw-a {
+  top: 2px;
+  right: 7px;
+  transform: rotate(28deg);
+}
+.scroll-cat-paw-b {
+  top: 4px;
+  right: 19px;
+  transform: rotate(40deg);
+}
+.scroll-cat-paw::after {
+  position: absolute;
+  top: -3px;
+  left: -1px;
+  width: 9px;
+  height: 6px;
+  content: "";
+  background: #e0a35a;
+  box-shadow: 0 0 0 3px #1c1a2b;
+}
+
+/* ---------- Peekers ---------- */
+.peeker {
+  position: fixed;
+  z-index: 65;
+  line-height: 0;
+  pointer-events: none;
+  animation: peek-left 2.8s ease-in-out forwards;
+}
+/* Pivot on the screen edge: the sprite leans in at an angle, sways, and ducks away. */
+.peeker-left {
+  left: 0;
+  transform-origin: 0% 100%;
+}
+.peeker-right {
+  right: 0;
+  transform-origin: 100% 100%;
+  animation-name: peek-right;
+}
+@keyframes peek-left {
+  0%,
+  100% {
+    transform: translateX(-100%) rotate(0deg);
+  }
+  20% {
+    transform: translateX(-40%) rotate(24deg);
+  }
+  40% {
+    transform: translateX(-36%) rotate(18deg);
+  }
+  60% {
+    transform: translateX(-40%) rotate(26deg);
+  }
+  80% {
+    transform: translateX(-42%) rotate(20deg);
+  }
+}
+@keyframes peek-right {
+  0%,
+  100% {
+    transform: translateX(100%) rotate(0deg);
+  }
+  20% {
+    transform: translateX(40%) rotate(-24deg);
+  }
+  40% {
+    transform: translateX(36%) rotate(-18deg);
+  }
+  60% {
+    transform: translateX(40%) rotate(-26deg);
+  }
+  80% {
+    transform: translateX(42%) rotate(-20deg);
+  }
+}
+
+/* ---------- Chicken ---------- */
+.chicken {
+  position: relative;
+  display: inline-block;
+  padding: 0;
+  line-height: 0;
+  pointer-events: auto;
+  cursor: pointer;
+  background: none;
+  border: 0;
+}
+.chicken-body {
+  display: inline-block;
+}
+.chicken[data-talk] .chicken-body {
+  animation: chicken-flap 0.24s steps(2) 4;
+}
+@keyframes chicken-flap {
+  50% {
+    transform: translateY(-6px);
+  }
+}
+.chicken[data-panic] .chicken-body {
+  animation: chicken-run 1.2s ease-in forwards;
+}
+.chicken[data-panic] .sprite {
+  animation-duration: 0.2s;
+}
+@keyframes chicken-run {
+  0% {
+    transform: translate(0, 0);
+  }
+  10% {
+    transform: translate(0, -10px);
+  }
+  100% {
+    transform: translate(110vw, 0);
+  }
+}
+.chicken-bubble {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  padding: 4px 7px;
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  line-height: 1;
+  color: var(--color-ink);
+  white-space: nowrap;
+  pointer-events: none;
+  background: var(--color-text);
+  border: 2px solid var(--color-ink);
+  border-radius: 3px;
+  box-shadow: 2px 2px 0 var(--color-ink);
+  transform: translateX(-50%);
+}
+/* The panicking chicken runs off sideways: clip it without clipping the chicken on the top edge. */
+footer:has(.footer-chicken) {
+  overflow-x: clip;
+  overflow-y: visible;
+}
+/* The moving containers stop while the chicken talks. */
+.footer-chicken:has(.chicken[data-talk]),
+.village-peck:has(.chicken[data-talk]) {
+  animation-play-state: paused;
+}
+.footer-chicken:has(.chicken[data-panic]),
+.village-peck:has(.chicken[data-panic]) {
+  animation-play-state: paused;
+}
+
+/* ---------- Konami: Schattenreich ---------- */
+.walker-shadow {
+  display: none;
+}
+html[data-shadow-realm] .walker-shadow {
+  display: block;
+}
+html[data-shadow-realm] body::after {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+  content: "";
+  background: radial-gradient(
+    ellipse at 50% 40%,
+    rgb(140 90 230 / 0.45),
+    rgb(40 16 80 / 0.75)
+  );
+  mix-blend-mode: multiply;
+  animation: realm-in 0.8s ease-out;
+}
+@keyframes realm-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---------- Hover micro-animations ---------- */
+
+/* Nav links: the game menu's gold cursor. */
+.nav-link {
+  position: relative;
+}
+.nav-link::before {
+  position: absolute;
+  left: -1px;
+  font-family: var(--font-pixel);
+  color: var(--color-gold);
+  content: ">";
+  opacity: 0;
+  transform: translateX(-4px);
+  transition:
+    opacity 120ms,
+    transform 120ms;
+}
+.nav-link:hover::before,
+.nav-link:focus-visible::before {
+  opacity: 1;
+  transform: none;
+}
+
+/* Primary buttons: three gold pixel sparks on hover. */
+.btn-primary,
+.pixel-button-primary {
+  position: relative;
+}
+.btn-primary::after,
+.pixel-button-primary::after {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  pointer-events: none;
+  content: "";
+  box-shadow:
+    -34px 2px 0 var(--color-gold-light),
+    -2px -4px 0 var(--color-gold),
+    30px 0 0 var(--color-gold-light);
+  opacity: 0;
+}
+.btn-primary:hover::after,
+.pixel-button-primary:hover::after {
+  animation: btn-sparks 0.7s steps(5);
+}
+@keyframes btn-sparks {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
+}
+
+@keyframes fun-bob {
+  to {
+    transform: translateY(-4px);
+  }
+}
+
+/* Biome cards: the boss portrait shakes, the torch flares. */
+.biome-card:hover .biome-plaque .sprite {
+  animation: fun-shake 0.4s steps(4) 1;
+}
+@keyframes fun-shake {
+  25% {
+    transform: translateX(-2px) rotate(-3deg);
+  }
+  50% {
+    transform: translateX(2px) rotate(3deg);
+  }
+  75% {
+    transform: translateX(-1px);
+  }
+}
+.biome-card:hover .biome-torch .sprite {
+  animation-duration: calc(var(--dur) / 2);
+}
+.biome-card:hover .biome-torch::before {
+  width: 220px;
+  height: 220px;
+  animation-duration: 0.5s;
+}
+
+/* Leaderboard rows: coins spin, the trophy turns. */
+.lb-spin,
+.lb-trophy {
+  display: inline-block;
+  line-height: 0;
+}
+.lb-table tr:hover .lb-spin .sprite {
+  animation: sprite-run var(--dur) steps(var(--frames)) infinite;
+}
+.lb-table tr:hover .lb-trophy {
+  animation: fun-turn 0.6s steps(6) 1;
+}
+@keyframes fun-turn {
+  to {
+    transform: rotateY(360deg);
+  }
+}
+
+/* Co-op: the hovered player jumps, the ones to the right turn to look. */
+.coop-player:hover > span {
+  animation: fun-jump 0.45s ease-out;
+}
+.coop-player:hover ~ .coop-player > span {
+  transform: scaleX(-1);
+}
+@keyframes fun-jump {
+  40% {
+    transform: translateY(-14px);
+  }
+  70% {
+    transform: translateY(0) scaleY(0.9);
+  }
+}
+
+/* Hero: the soul flame grows while the headline is hovered. */
+.hero-flame {
+  transform-origin: 50% 100%;
+  transition: transform 200ms steps(3);
+}
+.hero:has(#hero-title:hover) .hero-flame {
+  transform: scale(1.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fun-layer,
+  .peeker {
+    display: none;
+  }
+  .scroll-cat-swing {
+    transition: none;
+  }
+  .chicken[data-talk] .chicken-body,
+  .chicken[data-panic] .chicken-body,
+  .btn-primary:hover::after,
+  .pixel-button-primary:hover::after,
+  .biome-card:hover .biome-plaque .sprite,
+  .lb-table tr:hover .lb-trophy,
+  .coop-player:hover > span,
+  html[data-shadow-realm] body::after {
+    animation: none;
+  }
+  .nav-link::before,
+  .hero-flame {
+    transition: none;
+  }
+}

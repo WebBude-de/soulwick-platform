@@ -1,0 +1,651 @@
+/*
+ * Landing page scenes (docs/design/web/HANDOFF_WEB.md §3–§5). All animations pause under
+ * prefers-reduced-motion (end of file); walkers live in pointer-events: none containers.
+ */
+
+/* ---------- Hero ---------- */
+.hero {
+  /* The panicking chicken runs off sideways. */
+  overflow-x: clip;
+  background:
+    radial-gradient(
+      55% 60% at 72% 40%,
+      rgb(106 60 180 / 0.16) 0%,
+      transparent 70%
+    ),
+    linear-gradient(180deg, #15131f 0%, #1e1b2c 100%);
+}
+.hero-flame {
+  display: inline-block;
+  width: 24px;
+  height: 36px;
+  overflow: hidden;
+  line-height: 0;
+}
+.hero-flame .sprite {
+  margin: -6px 0 0 -4px;
+}
+.hero-keyart {
+  transform: rotate(-1.2deg);
+}
+.hero-keyart img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 2px;
+}
+.hero-hud {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  padding: 4px 10px;
+  background: rgb(21 19 31 / 0.78);
+  border: 2px solid var(--color-line);
+  border-radius: 3px;
+}
+.hero-chicken {
+  position: absolute;
+  top: -31px;
+  right: 18px;
+  z-index: 2;
+  line-height: 0;
+}
+
+/* Ground strip under the hero: floor tiles at 2× with a light top edge, walkers crossing. */
+.walkers {
+  position: relative;
+  z-index: 1;
+  height: 64px;
+  /* Clip only sideways: the golem (48 px frame at 2x) stands taller than the strip. */
+  overflow-x: clip;
+  overflow-y: visible;
+  pointer-events: none;
+  image-rendering: pixelated;
+  background: url("/brand/sprites/tile_floor.webp") 0 0 / 64px 64px repeat-x;
+  border-top: 2px solid var(--color-line-lighter);
+  border-bottom: 2px solid var(--color-ink);
+}
+.walker {
+  position: absolute;
+  bottom: 0;
+  left: -12%;
+  animation: cross 26s linear infinite;
+  animation-delay: var(--d, 0s);
+}
+@keyframes cross {
+  from {
+    left: -12%;
+  }
+  to {
+    left: 104%;
+  }
+}
+
+/* ---------- Descent ---------- */
+.descent {
+  /* The page gets a little darker the deeper the path goes. */
+  background: linear-gradient(
+    180deg,
+    var(--color-bg) 0%,
+    var(--color-bg-deep) 70%,
+    #120f1b 100%
+  );
+}
+.descent-path {
+  position: relative;
+  display: grid;
+  gap: 28px;
+  padding-left: 40px;
+}
+/* The path: a dotted rope of light down the left (phones) or the middle (desktop). */
+.descent-path::before {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 14px;
+  width: 4px;
+  content: "";
+  background: repeating-linear-gradient(
+    180deg,
+    var(--color-gold-dark) 0 8px,
+    transparent 8px 16px
+  );
+  opacity: 0.7;
+}
+.descent-stop {
+  position: relative;
+}
+.descent-marker {
+  position: absolute;
+  top: 44px;
+  left: -40px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  line-height: 0;
+  filter: drop-shadow(0 0 6px rgb(255 138 60 / 0.6));
+}
+.descent-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  overflow: hidden;
+}
+.descent-scene {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+  justify-content: center;
+  height: 140px;
+  padding-bottom: 8px;
+  border-width: 0 0 2px;
+  border-radius: 0;
+}
+.descent-hook {
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--color-text);
+  text-shadow: 2px 2px 0 var(--color-ink);
+}
+.descent-door {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+  line-height: 0;
+}
+.descent-door-symbol {
+  filter: drop-shadow(0 0 6px rgb(242 207 74 / 0.5));
+}
+.descent-ladder {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: -8px;
+  line-height: 0;
+}
+.descent-jumper {
+  animation: descent-jump 1.4s ease-in-out infinite;
+}
+@keyframes descent-jump {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  40% {
+    transform: translate(14px, -38px);
+  }
+  70% {
+    transform: translate(26px, 0);
+  }
+}
+.descent-stop:hover .descent-door-symbol {
+  animation: fun-bob 0.4s ease-in-out infinite alternate;
+}
+@media (min-width: 48rem) {
+  .descent-path {
+    gap: 8px;
+    padding-left: 0;
+  }
+  .descent-path::before {
+    left: calc(50% - 2px);
+  }
+  .descent-stop {
+    width: calc(50% - 40px);
+  }
+  .descent-stop[data-side="right"] {
+    margin-left: calc(50% + 40px);
+  }
+  .descent-stop[data-side="left"] .descent-marker {
+    right: -56px;
+    left: auto;
+  }
+  .descent-stop[data-side="right"] .descent-marker {
+    left: -56px;
+  }
+  .descent-card {
+    grid-template-columns: 200px minmax(0, 1fr);
+    align-items: center;
+  }
+  .descent-scene {
+    height: 132px;
+    border-width: 0 2px 0 0;
+  }
+  /* Each stop slides in from its side as it scrolls into view (browsers that support it). */
+  @supports (animation-timeline: view()) {
+    .descent-stop {
+      animation: descent-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 30%;
+    }
+    .descent-stop[data-side="right"] {
+      --from: 48px;
+    }
+  }
+}
+@keyframes descent-in {
+  from {
+    opacity: 0;
+    transform: translateX(var(--from, -48px));
+  }
+}
+
+/* Mini-game teasers */
+.minigame-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+@media (min-width: 64rem) {
+  .minigame-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+  }
+}
+.minigame {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.minigame-scene {
+  position: relative;
+  display: flex;
+  gap: 4px;
+  align-items: flex-end;
+  justify-content: center;
+  height: 116px;
+  padding-bottom: 8px;
+  border-width: 0 0 2px;
+  border-radius: 0;
+}
+.minigame-symbol {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  filter: drop-shadow(0 0 5px rgb(242 207 74 / 0.45));
+}
+.minigame-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 0;
+}
+.minigame-stack > :first-child {
+  margin-bottom: -18px;
+  animation: fun-bob 0.9s ease-in-out infinite alternate;
+}
+.minigame-wisp {
+  align-self: center;
+  animation: fun-bob 1.1s ease-in-out infinite alternate;
+}
+.minigame:hover .sprite:not([data-frames="1"]) {
+  animation-duration: calc(var(--dur) / 2);
+}
+.minigame:hover .minigame-symbol {
+  animation: fun-bob 0.35s ease-in-out infinite alternate;
+}
+
+/* ---------- Weapons ---------- */
+.weapon-vitrine {
+  height: 124px;
+}
+.weapon-stage {
+  position: absolute;
+  bottom: 14px;
+  left: 40px;
+  width: 64px;
+  height: 64px;
+}
+.weapon-stage .weapon {
+  position: absolute;
+  top: 2px;
+  left: 30px;
+  transform: rotate(var(--rot, 0deg));
+  transform-origin: 12px 52px;
+}
+.weapon-fx {
+  position: absolute;
+  opacity: 0;
+  transition: opacity 120ms;
+}
+.card:hover .weapon-fx,
+.card:focus-within .weapon-fx {
+  opacity: 1;
+}
+.weapon-fx-arrow {
+  animation: arrow-fly 0.7s linear infinite;
+  animation-play-state: paused;
+}
+.card:hover .weapon-fx-arrow,
+.card:focus-within .weapon-fx-arrow {
+  animation-play-state: running;
+}
+@keyframes arrow-fly {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(200px);
+    opacity: 0;
+  }
+}
+.upgrade-card {
+  border-left-width: 6px;
+}
+
+/* ---------- Biomes ---------- */
+.biome-scene {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--color-bg-deep);
+  border-bottom: 2px solid var(--color-line);
+}
+.biome-scene img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.biome-torch {
+  position: absolute;
+  top: 6%;
+  left: 8%;
+}
+.biome-torch::before {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  width: 150px;
+  height: 150px;
+  pointer-events: none;
+  content: "";
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--glow) 55%, transparent) 0%,
+    color-mix(in srgb, var(--glow) 18%, transparent) 40%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  mix-blend-mode: screen;
+  transform: translate(-50%, -50%);
+  animation: flicker 1.2s steps(4) infinite;
+}
+@keyframes flicker {
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+  35% {
+    opacity: 1;
+  }
+  65% {
+    opacity: 0.7;
+  }
+}
+.biome-plaque {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  padding: 4px 12px 4px 4px;
+  background: rgb(21 19 31 / 0.92);
+  border: 2px solid var(--color-line);
+  border-radius: 3px;
+}
+
+/* ---------- Village scene ---------- */
+.village-scene {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 2px;
+}
+.village-scene > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.village-npc {
+  position: absolute;
+  top: calc(var(--y) * 1%);
+  left: calc(var(--x) * 1%);
+  line-height: 0;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+}
+.village-walker {
+  animation: village-walk 22s linear infinite alternate;
+}
+.village-walker .sprite {
+  animation-name: sprite-run, face;
+  animation-duration: var(--dur), 44s;
+  animation-timing-function: steps(var(--frames)), steps(1);
+  animation-iteration-count: infinite, infinite;
+}
+@keyframes village-walk {
+  from {
+    left: calc(var(--x) * 1%);
+  }
+  to {
+    left: calc(var(--x2) * 1%);
+  }
+}
+@keyframes face {
+  0%,
+  49.9% {
+    transform: scaleX(1);
+  }
+  50%,
+  100% {
+    transform: scaleX(-1);
+  }
+}
+.village-peck {
+  animation: village-peck 12s ease-in-out infinite alternate;
+}
+@keyframes village-peck {
+  from {
+    left: calc(var(--x) * 1%);
+  }
+  to {
+    left: calc(var(--x) * 1% + 60px);
+  }
+}
+.village-caption {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 24px 12px 8px;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: var(--color-soft);
+  text-shadow: 1px 1px 0 var(--color-ink);
+  background: linear-gradient(180deg, transparent, rgb(21 19 31 / 0.85));
+}
+.village-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 12px 16px;
+}
+
+/* ---------- Co-op ---------- */
+.coop-vitrine {
+  height: 108px;
+}
+.coop-player {
+  position: absolute;
+  bottom: 10px;
+  left: calc(16px + var(--i) * 72px);
+  line-height: 0;
+}
+.coop-tint {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-color: var(--tint);
+  mix-blend-mode: color;
+  -webkit-mask:
+    var(--mask) 0 0 / calc(var(--fw) * var(--frames) * 2px)
+    calc(var(--fh) * 2px) no-repeat;
+  mask:
+    var(--mask) 0 0 / calc(var(--fw) * var(--frames) * 2px)
+    calc(var(--fh) * 2px) no-repeat;
+  animation: mask-run var(--dur) steps(var(--frames)) infinite;
+}
+@keyframes mask-run {
+  from {
+    mask-position: 0 0;
+    -webkit-mask-position: 0 0;
+  }
+  to {
+    mask-position: calc(var(--fw) * var(--frames) * -2px) 0;
+    -webkit-mask-position: calc(var(--fw) * var(--frames) * -2px) 0;
+  }
+}
+.coop-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+/* ---------- Leaderboard board ---------- */
+.lb-seg {
+  display: inline-flex;
+  overflow: hidden;
+  background: var(--color-bg-deep);
+  border: 2px solid var(--color-line);
+  border-radius: 3px;
+}
+.lb-seg button {
+  padding: 8px 14px;
+  font-family: var(--font-pixel);
+  font-size: 14px;
+  line-height: 1;
+  color: var(--color-soft);
+  text-shadow: 1px 1px 0 var(--color-ink);
+}
+.lb-seg button[aria-pressed="true"] {
+  color: var(--color-ink);
+  text-shadow: none;
+  background: var(--color-gold);
+}
+.lb-tabs {
+  display: flex;
+  overflow-x: auto;
+  /* The active tab's underline sits 2 px below the strip: no vertical scrollbar for it. */
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  border-bottom: 2px solid var(--color-line);
+}
+.lb-tab {
+  display: inline-flex;
+  flex: none;
+  gap: 8px;
+  align-items: center;
+  padding: 14px 18px 12px;
+  margin-bottom: -2px;
+  font-family: var(--font-pixel);
+  font-size: 15px;
+  line-height: 1;
+  color: var(--color-soft);
+  white-space: nowrap;
+  text-shadow: 1px 1px 0 var(--color-ink);
+  border-bottom: 3px solid transparent;
+}
+.lb-tab[aria-selected="true"] {
+  color: var(--color-gold);
+  border-bottom-color: var(--color-gold);
+}
+.lb-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.lb-table th {
+  padding: 10px 16px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-disabled);
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 2px solid var(--color-line);
+}
+.lb-table td {
+  padding: 10px 16px;
+  vertical-align: middle;
+  border-bottom: 2px solid var(--color-line);
+}
+.lb-table tr:last-child td {
+  border-bottom: 0;
+}
+.lb-table tr[data-top] td {
+  background: rgb(42 38 56 / 0.9);
+}
+.lb-num {
+  font-family: var(--font-pixel);
+  font-size: 15px;
+  text-shadow: 1px 1px 0 var(--color-ink);
+}
+
+/* ---------- Footer chicken ---------- */
+.footer-chicken {
+  position: absolute;
+  top: -34px;
+  left: -5%;
+  line-height: 0;
+  pointer-events: none;
+  animation: cross 40s linear infinite;
+}
+
+/* Weapon effects run only while the card is hovered (after all other .sprite rules). */
+.weapon-fx .sprite {
+  animation-play-state: paused;
+}
+/* Weapon hover effects are one-shot sheets in the manifest; on the card they loop while hovered
+   (handoff §5.3). Without this they ran once while invisible and stuck on their small last frame. */
+.card .weapon-fx .sprite[data-loop="false"] {
+  animation-iteration-count: infinite;
+  animation-fill-mode: none;
+}
+.card:hover .weapon-fx .sprite,
+.card:focus-within .weapon-fx .sprite {
+  animation-play-state: running;
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .walker,
+  .descent-jumper,
+  .minigame-stack > :first-child,
+  .minigame-wisp,
+  .biome-torch::before,
+  .village-walker,
+  .village-peck,
+  .footer-chicken,
+  .weapon-fx-arrow {
+    animation-play-state: paused;
+  }
+  .coop-tint,
+  .village-walker .sprite {
+    animation-play-state: paused;
+  }
+  .descent-stop {
+    animation: none;
+  }
+  .weapon-fx {
+    transition: none;
+  }
+  .card:hover .weapon-fx .sprite,
+  .card:focus-within .weapon-fx .sprite {
+    animation-play-state: paused;
+  }
+}

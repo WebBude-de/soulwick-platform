@@ -1,0 +1,170 @@
+{
+  "navLinks": [
+    ["Spiel", "#spiel"],
+    ["Waffen", "#waffen"],
+    ["Biome", "#biome"],
+    ["Dorf", "#dorf"],
+    ["Koop & Gilden", "#koop"],
+    ["Ranglisten", "#ranglisten"]
+  ],
+  "navCta": "Ranglisten",
+  "planned": "geplant",
+  "hoverHint": "Hover: Angriff",
+  "heroEyebrow": "2D-Top-down-Dungeon-Roguelite · Pixel-Art",
+  "heroTitle": "Das letzte Licht im endlosen Dunkel",
+  "heroText": "Vom Dorf aus steigst du in einen endlosen Dungeon hinab. Mit Schwert, Bogen oder Magierstab kämpfst du dich durch vier Biome und ihre Bosse, sammelst Gold und Upgrades und entscheidest selbst, wann du mit der Beute zurückkehrst.",
+  "heroCta1": "So funktioniert das Spiel",
+  "heroCta2": "Ranglisten ansehen",
+  "heroHud": "Raum 12 · Zyklus 3",
+  "platformNote": "Steam, Google Play und App Store sind geplant; Crossplay über alle drei ist das Ziel. Store-Links folgen, sobald es sie gibt.",
+  "platforms": ["PC", "Mobil", "Crossplay"],
+  "catTitle": "Miez",
+  "catSays": "Miau.",
+  "loopEyebrow": "Der Kern-Loop",
+  "loopTitle": "Dorf → Dungeon → Fünferzyklus → Boss → Lagerfeuer",
+  "loopText": "Ein Run ist eine Folge von Räumen. Jeder fünfte Raum ist ein Spezialraum mit Shop, Brunnen, Waffenwahl, Upgrade-Altar oder Ausgangsportal. Nach dem dritten Zyklus wartet der Boss des Bioms, danach ein ruhiger Lagerfeuer-Raum, in dem das nächste Biom beginnt.",
+  "loopSteps": [
+    [
+      "01",
+      "Start",
+      "Dorf",
+      "Hier beginnt jeder Run. Schmiede, Handel und Chronik verbessern dich dauerhaft."
+    ],
+    [
+      "02",
+      "Abstieg",
+      "Dungeon",
+      "Du siehst nur deinen Lichtkreis. Fackeln und Kristalle schneiden Lichtinseln ins Dunkel."
+    ],
+    [
+      "03",
+      "4 + 1",
+      "Fünferzyklus",
+      "Vier Kampfräume, dann ein Spezialraum. Nach jedem Kampf wählst du eines von drei Upgrades."
+    ],
+    [
+      "04",
+      "Raum 15",
+      "Boss",
+      "Jedes Biom hat einen Boss mit eigenem Spezialangriff. Danach fallen Seelenkristalle."
+    ],
+    [
+      "05",
+      "Pause",
+      "Lagerfeuer",
+      "Ein ruhiger Raum ohne Kampf. Das alte Biom geht ins neue über, der Zähler läuft weiter."
+    ]
+  ],
+  "goldTitle": "Gold ist eine Entscheidung.",
+  "goldText": "Wer durch das Ausgangsportal geht, nimmt 100 % des Run-Golds mit ins Dorf. Wer stirbt, behält die Hälfte. Wer nach Raum 45 weiterspielt, lässt alles im Run.",
+  "weaponsEyebrow": "Waffen & Upgrades",
+  "weaponsTitle": "Drei Waffen, zwei Slots, fünfzehn Upgrades",
+  "weaponsText": "Die Waffe dreht sich mit der Maus. Zwei Slots, Wechsel mit Q. Upgrades gelten für den ganzen Run und stapeln sich; die Übersicht per Tab zeigt jederzeit die effektiven Werte.",
+  "weapons": [
+    [
+      "Schwert",
+      "Nahkampf",
+      "Schneller Schwung in einer Sichel vor dir. Trifft alles im Bogen, auch mehrere Gegner.",
+      "12 Schaden",
+      "1,5 / s",
+      "100° Winkel"
+    ],
+    [
+      "Bogen",
+      "Fernkampf",
+      "Pfeile mit großer Reichweite. Mit Durchschlag und Doppelschuss wird daraus eine Salve.",
+      "9 Schaden",
+      "1,2 / s",
+      "600 px"
+    ],
+    [
+      "Magierstab",
+      "Fläche",
+      "Langsame Magiekugel, die beim Einschlag explodiert und alles im Umkreis trifft.",
+      "8 Schaden",
+      "0,8 / s",
+      "AOE 45 px"
+    ]
+  ],
+  "upgradeCats": [
+    ["Attribut", "Schaden, Angriffsrate, Schild. Unbegrenzt stapelbar."],
+    [
+      "Mechanik",
+      "Durchschlag, Wandabprall, Doppelschuss, größerer Schwung. Mit Limit."
+    ],
+    ["Effekt", "Explosiver Treffer, Heilung oder Schild bei Tötung."]
+  ],
+  "upgradesNote": "Drei Angebote nach jedem gewonnenen Kampf, nie doppelt. Limitierte Upgrades zeigen „2 / 3“, unbegrenzte die nächste Stufe.",
+  "biomesEyebrow": "Vier Biome",
+  "biomesTitle": "Jedes Biom wechselt Licht, Gegner und Boss",
+  "biomesText": "Nach jedem Boss beginnt das nächste Biom. Ab Zyklus fünf geht es von vorn los, nur härter: Elite-Gegner tragen Kennzeichen für Flink, Gepanzert oder Explosiv.",
+  "bossLabel": "Boss",
+  "biomes": [
+    [
+      "Krypta",
+      "Raum 1–15",
+      "Knochenkönig",
+      "Steinplatten, Fackeln, Skelette und Bogenschützen. Der Einstieg mit Schildstoß am Ende."
+    ],
+    [
+      "Schleimgrotte",
+      "Raum 16–30",
+      "Schleimkönigin",
+      "Feuchter Fels, grüne Kristallfackeln, Giftpfützen. Schleime teilen sich, wenn sie sterben."
+    ],
+    [
+      "Schattenreich",
+      "Raum 31–45",
+      "Schattenlord",
+      "Violett glimmende Risse, Nebel, Schattenwesen, die blenden. Der Lord teleportiert."
+    ],
+    [
+      "Glutkammer",
+      "Raum 46+",
+      "Glutgolem",
+      "Basalt, Glutadern, Lavarisse und Feuerschalen. Der Golem stampft und der Boden bricht."
+    ]
+  ],
+  "villageEyebrow": "Das Dorf",
+  "villageTitle": "Der warme Gegenpol zum Dungeon",
+  "villageText": "Zwischen den Runs verbesserst du dich dauerhaft. Dorfgold aus dem Dungeon und Seelenkristalle von Bossen fließen in Schmiede, Handel und Chronik.",
+  "villageCaption": "Dorf mit Schmiede, Handelshaus, Chronik, Gildenhaus und Dungeon-Eingang",
+  "villageList": [
+    [
+      "Schmiede",
+      "",
+      "Permanente Verbesserungen: mehr Herzen, Startschild, Schärfe, Dash, zweite Startwaffe."
+    ],
+    ["Handelshaus", "", "Verbrauchsgüter und Angebote für den nächsten Run."],
+    ["Chronik", "", "Rekorde, Kills, Spielzeit und deine besten Runs."],
+    ["Gildenhaus", "geplant", "Lobby für Koop-Runs und Gilden."],
+    ["Zuhause", "", "Startpunkt und Lagerkiste."]
+  ],
+  "coopEyebrow": "Koop & Gilden",
+  "coopTitle": "Gemeinsam tiefer",
+  "coopText": "Koop läuft über einen Host-Spieler, Gilden leben auf dem Server. Beides ist in Arbeit; die Ranglisten zählen schon heute Solo-, Gruppen- und Gildenruns getrennt.",
+  "coopHost": "Host",
+  "coopCardTitle": "Koop bis zu vier",
+  "coopCardText": "Ein Spieler hostet, die anderen treten bei. Jeder Spieler hat eine eigene Farbe; Mitspieler lassen sich wiederbeleben. Erst lokal und über das Netz, später über Steam.",
+  "guildCardTitle": "Gilden mit Kasse und Schmiede",
+  "guildCardText": "Bis zu 30 Mitglieder, Beitritt per Einladungscode. Die Gildenkasse finanziert Gilden-Schmiede-Stufen, von denen alle profitieren. Gilden-Runs nur mit Mitgliedern.",
+  "guildChips": ["Gildenkasse", "Gilden-Schmiede", "Gilden-Rangliste"],
+  "lbEyebrow": "Ranglisten",
+  "lbTitle": "Wer kommt am tiefsten?",
+  "lbText": "Drei Tafeln, jeweils Allzeit und Saison (Kalendermonat). Gewertet wird der höchste Raum, bei Gleichstand die kürzere Zeit. Markierte Runs und gesperrte Spieler zählen nicht.",
+  "lbPeriods": ["Saison Oktober", "Allzeit"],
+  "lbTabs": ["Spieler Solo", "Spieler Gruppe", "Gilden"],
+  "lbHeads": ["Spieler", "Gruppe", "Gilde"],
+  "lbRank": "Platz",
+  "lbRoom": "Raum",
+  "lbTime": "Zeit",
+  "lbNote": "Beispieldaten. Die Website lädt die Tafeln live von der Plattform-API.",
+  "lbAll": "Alle Ranglisten",
+  "footerText": "Soulwick ist ein Dungeon-Roguelite in Pixel-Art, entwickelt mit Godot. Das Spiel läuft ohne Server; Gilden und Ranglisten liefert die Plattform.",
+  "footerGame": "Spiel",
+  "footerLegal": "Rechtliches",
+  "imprint": "Impressum",
+  "privacy": "Datenschutz",
+  "legalNote": "Rechtstexte kommen aus eRecht24. Solange keiner vorliegt, zeigt die Seite einen Platzhalter.",
+  "footerMade": "Deutsch · English"
+}

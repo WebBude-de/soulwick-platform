@@ -1,0 +1,135 @@
+{
+  "meta": {
+    "title": "Delete account",
+    "description": "How to delete your Soulwick account yourself: in the game, or here with a deletion code from the game, right away and for good."
+  },
+  "title": "Delete account",
+  "lead": "You delete your Soulwick account yourself, right away and without a request: in the game, or here with a deletion code from the game.",
+  "toForm": "Go to deletion",
+  "panelLabel": "Delete your account here",
+  "ways": {
+    "title": "How it works",
+    "inGame": {
+      "title": "Right in the game",
+      "text": "Open Account in the game and choose “Delete account”. After one more question, your account is gone."
+    },
+    "web": {
+      "title": "Here on the website",
+      "steps": {
+        "code": "In the game, under Account, get a deletion code for the website. It has 8 characters, is valid for {minutes} minutes and works only once.",
+        "enter": "Enter your player name and the code here.",
+        "confirm": "Check that the account shown is yours, then delete it for good."
+      }
+    }
+  },
+  "deleted": {
+    "title": "What gets deleted",
+    "gone": {
+      "account": "Your account and your player name",
+      "logins": "The links to Steam, Google Play or your device that you sign in with",
+      "guild": "Your guild membership"
+    },
+    "keptTitle": "What stays",
+    "kept": {
+      "runs": "Your runs stay without your name so the leaderboards of your guild and teammates remain correct. Your own leaderboard places disappear.",
+      "device": "The save on your device. Single player needs no account, so you can just keep playing."
+    }
+  },
+  "noAccess": {
+    "title": "Can't get into the game any more?",
+    "mail": "Then write to us at <mail></mail>. Tell us your player name, the platform you played on (for example Steam or Android) and roughly when you last played.",
+    "deadline": "We then delete your account within the period stated in the <link>privacy policy</link>.",
+    "subject": "Soulwick account deletion",
+    "body": "Player name:\nPlatform (e.g. Steam, Android):\nLast played (roughly):\n",
+    "fallback": "Then write to us using the contact details in the <link>imprint</link>. Tell us your player name, the platform and roughly when you last played."
+  },
+  "rights": "What other rights you have is explained in the <link>privacy policy</link>.",
+  "steps": {
+    "label": "Steps",
+    "verify": "Find account",
+    "confirm": "Delete for good"
+  },
+  "form": {
+    "title": "Find your account",
+    "intro": "Player name and deletion code from the game. Nothing is deleted yet.",
+    "playerName": {
+      "label": "Player name",
+      "hint": "Exactly as the game shows it."
+    },
+    "code": {
+      "label": "Deletion code",
+      "hint": "Shown in the game under Account, valid for {minutes} minutes. Upper or lower case, spaces and dashes don't matter.",
+      "placeholder": "K7QM 4XPA"
+    },
+    "honeypot": "Please leave this field empty",
+    "submit": "Check account",
+    "submitting": "Checking …",
+    "errors": {
+      "title": "That didn't work yet",
+      "summary": "Please check the marked fields.",
+      "nameLength": "The player name has {min} to {max} characters.",
+      "codeFormat": "The deletion code has exactly 8 letters and digits."
+    },
+    "notices": {
+      "codeMismatch": {
+        "title": "No matching account found",
+        "text": "Player name and deletion code don't match, or the code has expired or was already used. Get a new code in the game under Account and try again. If you can't get into the game any more, <help>here's what to do</help>."
+      },
+      "rateLimited": {
+        "title": "Too many attempts",
+        "text": "Too many attempts came from your connection recently. Please try again in an hour."
+      },
+      "unreachable": {
+        "title": "Server not reachable",
+        "text": "The server isn't answering right now. Your entries are still here; please try again in a moment."
+      },
+      "rejected": {
+        "title": "Entry not accepted",
+        "text": "The server didn't accept the entry. Check player name and code and try again."
+      },
+      "confirmExpired": {
+        "title": "Please start over",
+        "text": "The confirmation took too long or was already used. Your account has not been deleted. Get a new deletion code in the game and enter it here."
+      },
+      "cancelled": {
+        "title": "Cancelled",
+        "text": "Nothing was deleted; your account stays as it is."
+      }
+    }
+  },
+  "confirm": {
+    "title": "Is this your account?",
+    "intro": "You have {minutes} minutes to confirm the deletion.",
+    "nameLabel": "Player name",
+    "guildLabel": "Guild",
+    "noGuild": "none",
+    "runsLabel": "Runs",
+    "goneTitle": "What happens when you delete",
+    "gone": {
+      "account": "Your account and your player name are deleted.",
+      "logins": "The links to Steam, Google Play or your device are removed.",
+      "guild": "Your membership in {guild} ends. If you lead the guild, another member takes over; without other members the guild is disbanded.",
+      "runs": "{count, plural, =0 {You have no runs yet, so no leaderboard place disappears.} one {Your run stays without your name; your leaderboard place disappears.} other {Your # runs stay without your name; your leaderboard places disappear.}}"
+    },
+    "final": "This cannot be undone.",
+    "submit": "Delete for good",
+    "submitting": "Deleting …",
+    "cancel": "Cancel",
+    "failed": {
+      "unreachable": {
+        "title": "Server not reachable",
+        "text": "Your account has not been deleted yet. Please try again in a moment."
+      },
+      "rejected": {
+        "title": "Deletion not accepted",
+        "text": "Your account has not been deleted yet. Please try again, or start over with a new deletion code."
+      }
+    }
+  },
+  "done": {
+    "title": "Your account has been deleted.",
+    "atLabel": "Deleted on",
+    "device": "The save on your device is not affected: single player needs no account, so you can keep playing.",
+    "home": "Back to the home page"
+  }
+}

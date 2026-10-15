@@ -1,0 +1,135 @@
+{
+  "meta": {
+    "title": "Konto löschen",
+    "description": "So löschst du dein Soulwick-Konto selbst: im Spiel oder hier mit einem Löschcode aus dem Spiel, sofort und endgültig."
+  },
+  "title": "Konto löschen",
+  "lead": "Du löschst dein Soulwick-Konto selbst, sofort und ohne Antrag: direkt im Spiel oder hier mit einem Löschcode aus dem Spiel.",
+  "toForm": "Direkt zum Löschen",
+  "panelLabel": "Konto hier löschen",
+  "ways": {
+    "title": "So geht’s",
+    "inGame": {
+      "title": "Direkt im Spiel",
+      "text": "Öffne im Spiel den Bereich Konto und wähl „Konto löschen“. Nach einer Rückfrage ist dein Konto sofort weg."
+    },
+    "web": {
+      "title": "Hier auf der Website",
+      "steps": {
+        "code": "Hol dir im Spiel unter Konto einen Löschcode für die Website. Er hat 8 Zeichen, gilt {minutes} Minuten und funktioniert nur einmal.",
+        "enter": "Gib hier deinen Spielernamen und den Code ein.",
+        "confirm": "Prüf, ob das angezeigte Konto deins ist, und lösch es endgültig."
+      }
+    }
+  },
+  "deleted": {
+    "title": "Was gelöscht wird",
+    "gone": {
+      "account": "Dein Konto mit deinem Spielernamen",
+      "logins": "Die Verknüpfungen mit Steam, Google Play oder deinem Gerät, über die du dich anmeldest",
+      "guild": "Deine Mitgliedschaft in einer Gilde"
+    },
+    "keptTitle": "Was bleibt",
+    "kept": {
+      "runs": "Deine Runs bleiben ohne deinen Namen erhalten, damit die Ranglisten deiner Gilde und deiner Mitspieler stimmen. Deine eigenen Ranglistenplätze verschwinden.",
+      "device": "Dein Spielstand auf dem Gerät. Der Einzelspieler läuft ohne Konto, du kannst also einfach weiterspielen."
+    }
+  },
+  "noAccess": {
+    "title": "Kein Zugang mehr zum Spiel?",
+    "mail": "Dann schreib uns an <mail></mail>. Nenn uns deinen Spielernamen, die Plattform, auf der du gespielt hast (zum Beispiel Steam oder Android), und ungefähr, wann du zuletzt gespielt hast.",
+    "deadline": "Wir löschen dein Konto dann innerhalb der Frist, die in der <link>Datenschutzerklärung</link> steht.",
+    "subject": "Kontolöschung Soulwick",
+    "body": "Spielername:\nPlattform (z. B. Steam, Android):\nZuletzt gespielt (ungefähr):\n",
+    "fallback": "Dann schreib uns über die Kontaktdaten im <link>Impressum</link>. Nenn uns deinen Spielernamen, die Plattform und ungefähr, wann du zuletzt gespielt hast."
+  },
+  "rights": "Welche Rechte du außerdem hast, steht in der <link>Datenschutzerklärung</link>.",
+  "steps": {
+    "label": "Schritte",
+    "verify": "Konto finden",
+    "confirm": "Endgültig löschen"
+  },
+  "form": {
+    "title": "Konto finden",
+    "intro": "Spielername und Löschcode aus dem Spiel. Noch wird nichts gelöscht.",
+    "playerName": {
+      "label": "Spielername",
+      "hint": "So, wie er im Spiel angezeigt wird."
+    },
+    "code": {
+      "label": "Löschcode",
+      "hint": "Steht im Spiel unter Konto und gilt {minutes} Minuten. Groß- und Kleinschreibung, Leerzeichen und Bindestriche sind egal.",
+      "placeholder": "K7QM 4XPA"
+    },
+    "honeypot": "Dieses Feld bitte leer lassen",
+    "submit": "Konto prüfen",
+    "submitting": "Wird geprüft …",
+    "errors": {
+      "title": "Das hat noch nicht geklappt",
+      "summary": "Bitte prüf die markierten Felder.",
+      "nameLength": "Der Spielername hat {min} bis {max} Zeichen.",
+      "codeFormat": "Der Löschcode hat genau 8 Zeichen aus Buchstaben und Ziffern."
+    },
+    "notices": {
+      "codeMismatch": {
+        "title": "Kein passendes Konto gefunden",
+        "text": "Spielername und Löschcode passen nicht zusammen, oder der Code ist abgelaufen oder schon benutzt. Hol dir im Spiel unter Konto einen neuen Code und versuch es noch einmal. Kommst du nicht mehr ins Spiel, <help>hilft dir das hier</help>."
+      },
+      "rateLimited": {
+        "title": "Zu viele Versuche",
+        "text": "Von deinem Anschluss kamen in letzter Zeit zu viele Versuche. Bitte versuch es in einer Stunde noch einmal."
+      },
+      "unreachable": {
+        "title": "Server nicht erreichbar",
+        "text": "Der Server antwortet gerade nicht. Deine Eingaben sind noch da, bitte versuch es gleich noch einmal."
+      },
+      "rejected": {
+        "title": "Eingabe nicht angenommen",
+        "text": "Der Server hat die Eingabe nicht angenommen. Prüf Spielername und Code und versuch es noch einmal."
+      },
+      "confirmExpired": {
+        "title": "Bitte noch einmal von vorn",
+        "text": "Die Bestätigung hat zu lange gedauert oder wurde schon benutzt. Dein Konto ist nicht gelöscht. Hol dir im Spiel einen neuen Löschcode und gib ihn hier ein."
+      },
+      "cancelled": {
+        "title": "Abgebrochen",
+        "text": "Es wurde nichts gelöscht, dein Konto bleibt bestehen."
+      }
+    }
+  },
+  "confirm": {
+    "title": "Ist das dein Konto?",
+    "intro": "Du hast {minutes} Minuten Zeit, die Löschung zu bestätigen.",
+    "nameLabel": "Spielername",
+    "guildLabel": "Gilde",
+    "noGuild": "keine",
+    "runsLabel": "Runs",
+    "goneTitle": "Das passiert beim Löschen",
+    "gone": {
+      "account": "Dein Konto und dein Spielername werden gelöscht.",
+      "logins": "Die Verknüpfungen mit Steam, Google Play oder deinem Gerät werden entfernt.",
+      "guild": "Deine Mitgliedschaft in {guild} endet. Führst du die Gilde, übernimmt ein anderes Mitglied; ohne weitere Mitglieder wird sie aufgelöst.",
+      "runs": "{count, plural, =0 {Du hast noch keine Runs, also verschwindet auch kein Ranglistenplatz.} one {Dein Run bleibt ohne deinen Namen erhalten, dein Ranglistenplatz verschwindet.} other {Deine # Runs bleiben ohne deinen Namen erhalten, deine Ranglistenplätze verschwinden.}}"
+    },
+    "final": "Das lässt sich nicht rückgängig machen.",
+    "submit": "Endgültig löschen",
+    "submitting": "Wird gelöscht …",
+    "cancel": "Abbrechen",
+    "failed": {
+      "unreachable": {
+        "title": "Server nicht erreichbar",
+        "text": "Dein Konto ist noch nicht gelöscht. Bitte versuch es gleich noch einmal."
+      },
+      "rejected": {
+        "title": "Löschen nicht angenommen",
+        "text": "Dein Konto ist noch nicht gelöscht. Bitte versuch es noch einmal oder fang mit einem neuen Löschcode von vorn an."
+      }
+    }
+  },
+  "done": {
+    "title": "Dein Konto wurde gelöscht.",
+    "atLabel": "Gelöscht am",
+    "device": "Dein Spielstand auf dem Gerät ist davon unberührt: Der Einzelspieler läuft ohne Konto, du kannst also weiterspielen.",
+    "home": "Zur Startseite"
+  }
+}

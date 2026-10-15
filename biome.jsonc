@@ -1,0 +1,78 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  // Ultracite presets on top of Biome (same setup as DapItUp). Project-specific exceptions below.
+  "extends": [
+    "ultracite/biome/core",
+    "ultracite/biome/react",
+    "ultracite/biome/next"
+  ],
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": [
+      "!**/node_modules",
+      "!**/.next",
+      "!**/dist",
+      "!**/coverage",
+      "!**/next-env.d.ts",
+      // Generated Prisma client (bun run db:generate); never edited by hand.
+      "!packages/db/generated"
+    ]
+  },
+  "css": { "parser": { "tailwindDirectives": true } },
+  // Alphabetical key sorting scatters meaningful key order (zod schemas mirror the API docs,
+  // Drizzle columns mirror the tables). package.json scripts are grouped by workflow.
+  "assist": {
+    "actions": {
+      "source": { "useSortedKeys": "off", "useSortedPackageJson": "off" }
+    }
+  },
+  "linter": {
+    "rules": {
+      // Style/perf rules that only add noise in this codebase (see the reason per rule).
+      "performance": {
+        // `import * as schema` is how Drizzle expects the schema to be passed to `drizzle()`.
+        "noNamespaceImport": "off",
+        // `packages/contracts/src/index.ts` is an intentional barrel: the package's single entry point.
+        "noBarrelFile": "off",
+        // Server Actions receive their arguments via `action.bind(null, id)` (documented Next.js
+        // pattern); in Server Components there is no re-render cost to avoid.
+        "noJsxPropsBind": "off"
+      },
+      "style": {
+        // Short nested ternaries are used for small branch-free formatting helpers.
+        "noNestedTernary": "off",
+        // Forced destructuring of every `obj.prop` read hurts readability in handlers.
+        "useDestructuring": "off"
+      },
+      "complexity": {
+        // Route handlers and the leaderboard query builder are long by nature, not complex.
+        "noExcessiveCognitiveComplexity": "off"
+      }
+    }
+  },
+  "overrides": [
+    {
+      // The API runs on the Bun runtime (Bun.serve, Bun.password); Biome only knows browser and
+      // Node.js globals by default.
+      "includes": ["apps/api/**"],
+      "javascript": { "globals": ["Bun"] }
+    },
+    {
+      // Scripts (create-admin, seed, migration verify/status) run sequentially on purpose.
+      "includes": ["apps/api/src/scripts/**", "packages/db/scripts/**"],
+      "linter": { "rules": { "performance": { "noAwaitInLoops": "off" } } }
+    },
+    {
+      // Test helpers share the exemptions Ultracite grants *.test.ts files; tests issue requests
+      // sequentially on purpose (ordering, member cap, rate limit).
+      "includes": ["apps/api/test/**"],
+      "linter": {
+        "rules": {
+          "suspicious": { "noExplicitAny": "off" },
+          "performance": { "noAwaitInLoops": "off" }
+        }
+      }
+    }
+  ]
+}

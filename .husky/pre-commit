@@ -1,0 +1,43 @@
+#!/bin/sh
+# Formats and lint-fixes the files that go into the commit (Biome with the Ultracite presets).
+#
+# No stashing: formatting a file that also has unstaged changes and restaging it would
+# pull the unstaged parts into the commit. Partially staged files are therefore left
+# alone and listed, so you can decide yourself. (Same approach as DapItUp / WebBude.)
+#
+# Escape hatch: git commit --no-verify
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
+if [ -z "$STAGED" ]; then
+  exit 0
+fi
+
+# Files that additionally carry unstaged changes.
+PARTIAL=$(git diff --name-only)
+
+SAFE=""
+SKIPPED=""
+for file in $STAGED; do
+  if echo "$PARTIAL" | grep -qx "$file"; then
+    SKIPPED="$SKIPPED $file"
+  elif [ -f "$file" ]; then
+    SAFE="$SAFE $file"
+  fi
+done
+
+if [ -n "$SAFE" ]; then
+  # In batches: a big commit would exceed the Windows command line limit (exit 126).
+  # shellcheck disable=SC2086
+  printf '%s\n' $SAFE | xargs -n 200 bunx biome check --write --no-errors-on-unmatched --files-ignore-unknown=true >/dev/null 2>&1
+  # shellcheck disable=SC2086
+  printf '%s\n' $SAFE | xargs -n 200 git add
+fi
+
+if [ -n "$SKIPPED" ]; then
+  echo "Partially staged, therefore not formatted:"
+  for file in $SKIPPED; do
+    echo "  $file"
+  done
+fi
+
+exit 0

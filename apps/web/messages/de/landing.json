@@ -1,0 +1,182 @@
+{
+  "navLinks": [
+    ["Spiel", "#spiel"],
+    ["Waffen", "#waffen"],
+    ["Biome", "#biome"],
+    ["Dorf", "#dorf"],
+    ["Koop & Gilden", "#koop"],
+    ["Ranglisten", "#ranglisten"]
+  ],
+  "navCta": "Ranglisten",
+  "planned": "geplant",
+  "hoverHint": "Hover: Angriff",
+  "heroEyebrow": "2D-Top-down-Dungeon-Roguelite · Pixel-Art",
+  "heroTitle": "Das letzte Licht im endlosen Dunkel",
+  "heroText": "Vom Dorf aus steigst du in einen endlosen Dungeon hinab. Mit Schwert, Bogen, Magierstab, Dolchen oder Kriegshammer kämpfst du dich durch vier Biome und ihre Bosse, sammelst Gold und Upgrades und entscheidest selbst, wann du mit der Beute zurückkehrst.",
+  "heroCta1": "So funktioniert das Spiel",
+  "heroCta2": "Ranglisten ansehen",
+  "heroHud": "Raum 12 · Zyklus 3",
+  "platformNote": "Steam, Google Play und App Store sind geplant; Crossplay über alle drei ist das Ziel. Store-Links folgen, sobald es sie gibt.",
+  "platforms": ["PC", "Mobil", "Crossplay"],
+  "descentEyebrow": "Der Abstieg",
+  "descentTitle": "Kein Abstieg ist wie der andere",
+  "descentText": "Kämpfen, retten, wählen, klettern. Und ganz unten wartet etwas Großes.",
+  "descentStops": [
+    ["Kampf", "Das Tor fällt zu. Raus kommst du erst, wenn es still ist."],
+    ["Minispiel", "Mal kämpfst du, mal rettest du ein Huhn."],
+    ["Abzweigung", "Zwei Türen. Eine Wahl."],
+    ["Abstieg", "Zwischen den Räumen geht es springend in die Tiefe."],
+    ["Boss", "Alle 15 Räume wird es ernst."],
+    ["Lagerfeuer", "Durchatmen. Dann tiefer."]
+  ],
+  "minigamesTitle": "Nicht jeder Raum ist ein Kampf",
+  "minigamesText": "Acht Minispiele mischen jeden Run auf.",
+  "minigames": [
+    ["Flamme hüten", "Hüte eine Flamme gegen die Nacht."],
+    ["Geleit", "Bring einen Verirrten heim. Manchmal ist es ein Huhn."],
+    ["Reliquie holen", "Schnapp sie dir. Dann renn."],
+    ["Seelen sammeln", "Fang die Seelen, bevor sie verlöschen."],
+    ["Risse schließen", "Aus der Wand kriecht es. Mach die Risse zu."],
+    ["Jagd", "Der Gekrönte flieht mit dem Gold."],
+    ["Lichtfeuer", "Steinwächter fürchten nur das Licht."],
+    ["Einsturz", "Der Boden bricht. Halte dich, wo noch Boden ist."]
+  ],
+  "goldTitle": "Gold ist eine Entscheidung.",
+  "goldText": "Wer durch ein Ausgangsportal geht, nimmt 100 % des Run-Golds mit ins Dorf. Wer stirbt oder aufgibt, behält die Hälfte.",
+  "weaponsEyebrow": "Waffen & Upgrades",
+  "weaponsTitle": "Fünf Waffen, zwei Slots, jede Menge Upgrades",
+  "weaponsText": "Schwert, Bogen, Magierstab, Dolche und Kriegshammer: Die Waffe dreht sich mit der Maus, jede hat einen Spezialangriff. Zwei Slots, Wechsel mit Q. Upgrades gelten für den ganzen Run und stapeln sich.",
+  "weapons": [
+    [
+      "Schwert",
+      "Nahkampf",
+      "Schneller Schwung in einer Sichel vor dir. Trifft alles im Bogen, auch mehrere Gegner.",
+      "12 Schaden",
+      "1,5 / s",
+      "100° Winkel"
+    ],
+    [
+      "Bogen",
+      "Fernkampf",
+      "Pfeile mit großer Reichweite. Mit Durchschlag und Doppelschuss wird daraus eine Salve.",
+      "9 Schaden",
+      "1,2 / s",
+      "600 px"
+    ],
+    [
+      "Magierstab",
+      "Fläche",
+      "Langsame Magiekugel, die beim Einschlag explodiert und alles im Umkreis trifft.",
+      "8 Schaden",
+      "0,8 / s",
+      "Flächentreffer"
+    ]
+  ],
+  "upgradeCats": [
+    ["Attribut", "Schaden, Angriffsrate, Schild. Unbegrenzt stapelbar."],
+    [
+      "Mechanik",
+      "Durchschlag, Wandabprall, Doppelschuss, größerer Schwung. Mit Limit."
+    ],
+    ["Effekt", "Explosiver Treffer, Heilung oder Schild bei Tötung."]
+  ],
+  "upgradesNote": "Nach dem dritten Kampfraum jedes Zyklus wählst du eines von drei Upgrades, nie doppelt. Limitierte Upgrades zeigen „2 / 3“, unbegrenzte die nächste Stufe.",
+  "biomesEyebrow": "Vier Biome",
+  "biomesTitle": "Jedes Biom wechselt Licht, Gegner und Boss",
+  "biomesText": "Alle 15 Räume beginnt ein neues Biom mit eigenem Boss. Nach der Glutkammer geht es zurück in die Krypta, nur härter: Elite-Gegner tragen Kennzeichen für Flink, Gepanzert oder Explosiv.",
+  "bossLabel": "Boss",
+  "biomes": [
+    [
+      "Krypta",
+      "Raum 1–15",
+      "Knochenkönig",
+      "Steinplatten, Fackeln, Skelette und Bogenschützen. Der Einstieg mit Schildstoß am Ende."
+    ],
+    [
+      "Schleimgrotte",
+      "Raum 16–30",
+      "Schleimkönigin",
+      "Feuchter Fels, grüne Kristallfackeln, Giftpfützen. Schleime teilen sich, wenn sie sterben."
+    ],
+    [
+      "Schattenreich",
+      "Raum 31–45",
+      "Schattenlord",
+      "Violett glimmende Risse, Nebel, Schattenwesen, die blenden. Der Lord teleportiert."
+    ],
+    [
+      "Glutkammer",
+      "Raum 46–60",
+      "Glutgolem",
+      "Basalt, Glutadern, Lavarisse und Feuerschalen. Der Golem stampft und der Boden bricht."
+    ]
+  ],
+  "villageEyebrow": "Das Dorf",
+  "villageTitle": "Der warme Gegenpol zum Dungeon",
+  "villageText": "Zwischen den Runs verbesserst du dich dauerhaft. Dorfgold aus dem Dungeon und Seelenkristalle von Bossen fließen in Schmiede, Handelsposten und Chronik.",
+  "villageCaption": "Dorf mit Schmiede, Handelsposten, Chronik, Gildenhaus und Dungeon-Eingang",
+  "villageList": [
+    [
+      "Schmiede",
+      "",
+      "Permanente Verbesserungen: mehr Herzen, Startschild, Schärfe, Dash, zweite Startwaffe."
+    ],
+    [
+      "Handelsposten",
+      "",
+      "Proviant gegen Seelenkristalle, gilt für den nächsten Run."
+    ],
+    ["Chronik", "", "Rekorde, Kills, Spielzeit und deine besten Runs."],
+    ["Gildenhaus", "geplant", "Lobby für Koop-Runs und Gilden."],
+    ["Zuhause", "", "Startpunkt und Kleiderschrank für deine Kleidungsfarbe."]
+  ],
+  "coopEyebrow": "Koop & Gilden",
+  "coopTitle": "Gemeinsam tiefer",
+  "coopText": "Bald steigt ihr zu viert ins Dunkel. Gründet eine Gilde, füllt die Gildenkasse und klettert gemeinsam die Ranglisten hoch.",
+  "coopHost": "Host",
+  "coopCardTitle": "Koop bis zu vier",
+  "coopCardText": "Bis zu vier Spieler, jeder in seiner eigenen Farbe. Fällt jemand, holt ihr ihn zurück.",
+  "guildCardTitle": "Gilden mit Kasse und Schmiede",
+  "guildCardText": "Bis zu 30 Mitglieder, Beitritt per Einladungscode. Die Gildenkasse finanziert Gilden-Schmiede-Stufen, von denen alle profitieren. Gilden-Runs nur mit Mitgliedern.",
+  "guildChips": ["Gildenkasse", "Gilden-Schmiede", "Gilden-Rangliste"],
+  "lbEyebrow": "Ranglisten",
+  "lbTitle": "Wer kommt am tiefsten?",
+  "lbText": "Drei Tafeln: Solo, Gruppe und Gilden, je Saison und für alle Zeiten. Es zählt der tiefste Raum, bei Gleichstand die schnellere Zeit.",
+  "lbPeriods": ["Saison Oktober", "Allzeit"],
+  "lbTabs": ["Solo", "Gruppe", "Gilden"],
+  "lbHeads": ["Spieler", "Gruppe", "Gilde"],
+  "lbRank": "Platz",
+  "lbRoom": "Raum",
+  "lbTime": "Zeit",
+  "lbNote": "Beispieldaten, bis die ersten Runs eintreffen.",
+  "lbAll": "Alle Ranglisten",
+  "footerText": "Soulwick ist ein Dungeon-Roguelite in Pixel-Art. Ein Licht, ein Dorf, ein Dungeon ohne Ende. Allein oder bald mit Freunden.",
+  "footerGame": "Spiel",
+  "footerLegal": "Rechtliches",
+  "imprint": "Impressum",
+  "privacy": "Datenschutz",
+  "deleteAccount": "Konto löschen",
+  "legalNote": "Rechtstexte kommen aus eRecht24. Solange keiner vorliegt, zeigt die Seite einen Platzhalter.",
+  "footerMade": "Deutsch · English",
+  "meta": {
+    "title": "Soulwick – Das letzte Licht im endlosen Dunkel",
+    "description": "Soulwick ist ein 2D-Top-down-Dungeon-Roguelite in Pixel-Art: ein endloser Dungeon, vier Biome mit Bossen, fünf Waffen, viele Upgrades und ein Dorf, das mit jedem Run wächst. Koop, Gilden und Ranglisten sind in Arbeit."
+  },
+  "navLabel": "Hauptnavigation",
+  "langLabel": "Sprache",
+  "keyartAlt": "Keyart: die Spielfigur mit Magierstab vor dem Dungeon-Eingang bei Nacht",
+  "hudLabel": "Lebensanzeige: drei Herzen",
+  "walkersLabel": "Spielfigur und Gegner laufen über den Dungeonboden",
+  "villageSceneAlt": "Dorf-Szene aus dem Spiel: Gebäude, Wege und Bewohner",
+  "coopVitrineAlt": "Vier Spielerfiguren in verschiedenen Farben",
+  "guildVitrineAlt": "Gildenwappen und das Gildenhaus",
+  "lbSeason": "Saison {month}",
+  "lbTabsLabel": "Tafel wählen",
+  "lbPeriodLabel": "Zeitraum wählen",
+  "lbCycle": "Zyklus {n}",
+  "lbMembers": "{n} Mitglieder",
+  "lbEmpty": "Noch keine Einträge in dieser Tafel.",
+  "lbUnavailable": "Ranglisten sind gerade nicht erreichbar.",
+  "lbLive": "Live aus der Testphase.",
+  "footerCredit": "Mit <heart></heart> gemacht von WebBude"
+}

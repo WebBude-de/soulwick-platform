@@ -1,0 +1,30 @@
+{
+  "name": "@soulwick/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Soulwick game API: accounts, guilds, guild progress, run reports, leaderboards, admin.",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "admin:create": "bun src/scripts/create-admin.ts",
+    "seed:dev": "bun src/scripts/seed-dev.ts"
+  },
+  "dependencies": {
+    "@hono/bun": "^1.0.1",
+    "@soulwick/contracts": "workspace:*",
+    "@soulwick/db": "workspace:*",
+    "better-auth": "^1.7.6",
+    "hono": "^4.13.13",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@soulwick/config": "workspace:*",
+    "@types/bun": "^1.4.2",
+    "@types/pg": "^8.23.1",
+    "pg": "^8.23.1",
+    "typescript": "~6.0.3"
+  }
+}
