@@ -115,6 +115,8 @@ export const testConfig = (overrides: Record<string, string> = {}): Config =>
     DELETION_REQUESTS_PER_HOUR: "100000",
     GUEST_LOGINS_PER_MINUTE: "100000",
     GUEST_ACCOUNTS_PER_HOUR: "100000",
+    BUG_REPORTS_PER_HOUR: "100000",
+    BUG_REPORTS_PER_IP_PER_HOUR: "100000",
     KNOWN_GAME_VERSIONS: "0.9.0,1.0.0",
     MIN_SECONDS_PER_ROOM: "8",
     LOG_LEVEL: process.env.TEST_LOG_LEVEL ?? "silent",

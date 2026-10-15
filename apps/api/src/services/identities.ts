@@ -1,4 +1,4 @@
-import type { IdentitySummary } from "@soulwick/contracts";
+import type { IdentitySummary, PlayerAppearance } from "@soulwick/contracts";
 import type {
   Db,
   IdentityProvider,
@@ -8,6 +8,7 @@ import type {
 import { ApiError, isUniqueViolation } from "../lib/errors.ts";
 import { iso } from "../lib/validate.ts";
 import type { DbOrTx } from "./db-types.ts";
+import { appearanceData } from "./profile.ts";
 
 type IdentityRef = Pick<PlayerIdentity, "provider" | "providerUserId">;
 
@@ -58,6 +59,8 @@ export async function loginWithIdentity(
     provider: IdentityProvider;
     providerUserId: string;
     name: string;
+    /** Character of a new account (P-034); ignored for existing accounts. */
+    appearance?: PlayerAppearance;
     now: Date;
   }
 ): Promise<{ player: Player; created: boolean }> {
@@ -82,6 +85,7 @@ export async function loginWithIdentity(
     const player = await db.player.create({
       data: {
         name,
+        appearance: appearanceData(input.appearance),
         lastSeenAt: now,
         identities: { create: { provider, providerUserId, lastUsedAt: now } },
       },

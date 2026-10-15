@@ -72,12 +72,14 @@ Admin-Bereich lokal zum Anzeigen brauchen:
 | Gilden | „Dochtwächter“ `[DOCHT]`, Einladungscode `DOCHT2345`, 4 Mitglieder (Gründer Lumen, Offizier, 2 Mitglieder), Gildenkasse 1250 und Schmiede-Stufen; „Aschenrunde“ `[ASCHE]`, Code `ASCHE2345`, 4 Mitglieder (Gründer Glutfunke, **Lumen als Offizier**, 2 Mitglieder), Kasse 420. Lumen ist damit in zwei Gilden (D-147) |
 | Runs | 20 Runs (`solo`, `quick`, `guild`) über die aktuelle und die vorige Saison, Seeds `dev-seed-01` … `dev-seed-20`; einer ist markiert (`too_fast`), zwei Spieler teilen sich einen Rang; dazu 15 Runs über die letzten zwei Wochen (`dev-seed-21` … `dev-seed-35`, davon ein Gilden-Run der „Aschenrunde“) für die Admin-Statistik |
 | Notiz | eine Moderations-Notiz des Moderators zu „Sternasche“ (P-023) |
+| Aussehen | Spieler 1–8 bekommen eine feste Figur mit Farben (`appearance`, P-034), 9 und 10 behalten die Standardfigur (`null`); gesetzt wird nur, solange kein Aussehen gespeichert ist |
+| Bug-Meldungen | 3 Meldungen (P-033) von Lumen, Glutfunke und Wachsherz mit Platzhalter-Screenshots (PNG-Verläufe 480×270, kein echtes Bild), Markierungen, Strichen und Ort; zwei `new`, eine `seen` (vom Moderator) |
 | Löschprotokoll | 4 Einträge (Website, im Spiel, Admin; zwei davon „war gesperrt“) über die letzten zwei Wochen, ohne Namen (P-026) |
 | Sperre | Spieler „Sternasche“ für 7 Tage gesperrt (durch den Moderator); seine Runs fehlen in den Ranglisten, seine Anmeldung liefert `403 banned` |
 | Protokoll | Einträge `admin.create`, `player.ban` und `player.note_add`, damit die Protokoll-Seite gefüllt ist |
 
 Der Seed ist **idempotent**: Jeder Datensatz hat einen festen Schlüssel (E-Mail, Geräte-ID,
-Gilden-Kürzel, Run-Seed, Sperrgrund, Notiztext, ID der Löschprotokoll-Zeile). Ein zweiter Lauf ergänzt nur Fehlendes und überschreibt keine
+Gilden-Kürzel, Run-Seed, Sperrgrund, Notiztext, ID der Löschprotokoll-Zeile bzw. der Bug-Meldung). Ein zweiter Lauf ergänzt nur Fehlendes und überschreibt keine
 Änderungen aus dem Admin-Bereich (auch die Passwörter vorhandener Zugänge bleiben, z. B. nach
 „Mein Konto“).
 Komplett neu aufsetzen: `bun run db:reset` (löscht die lokale Datenbank, spielt alle Migrationen und den
@@ -111,6 +113,9 @@ Der Seed **verweigert `NODE_ENV=production`**. Im Docker-Image ist er nur für d
 | `RATE_LIMIT_PER_MINUTE` | nein | `120` | TESTWERT: Anfragen je IP und Minute (Admin-Login: 10) |
 | `LINK_ATTEMPTS_PER_MINUTE` | nein | `10` | TESTWERT: `POST /me/link` je IP und Minute (Verknüpfungscodes nicht erratbar) |
 | `DELETION_REQUESTS_PER_HOUR` | nein | `5` | TESTWERT: `POST /account-deletion/verify` je IP und Stunde (P-026; zusätzlich höchstens 5 falsche Codes je Spielername) |
+| `BUG_REPORTS_PER_HOUR` | nein | `10` | TESTWERT: `POST /bug-reports` je Spieler und Stunde (P-033; jeder angemeldete Versuch zählt) |
+| `BUG_REPORTS_PER_IP_PER_HOUR` | nein | `20` | TESTWERT: `POST /bug-reports` je IP und Stunde (mehrere Spieler hinter einer IP) |
+| `BUG_REPORT_RETENTION_DAYS` | nein | `90` | TESTWERT: Bug-Meldungen werden so viele Tage nach dem Eingang automatisch gelöscht (beim Start der API und dann alle 24 h) |
 | `TRUST_PROXY` | nein | `true` | Client-IP aus `X-Forwarded-For` (hinter Dokploy/Traefik); lokal `false` (`.env.example`) |
 | `MIN_SECONDS_PER_ROOM` | nein | `8` | TESTWERT: schnellere Runs werden markiert |
 | `KNOWN_GAME_VERSIONS` | nein | leer | Bekannte Spielversionen, kommagetrennt; leer = keine Prüfung |
@@ -160,7 +165,7 @@ Spieler (Header `Authorization: Bearer <token>`):
 - `GET /auth/token` (Bearer, nur Spieler): `{token, expiresAt}`, JWT für `hello.token` am Relay (EdDSA,
   15 min, Claims `sub` = Spieler-ID, `name`, `iat`, `exp`, `iss`, `aud` = `soulwick-relay`);
   `GET /auth/jwks` (öffentlich): Schlüssel dazu
-- `GET /me`, `DELETE /me`, `GET /me/identities`, `DELETE /me/identities/:provider`, `POST /me/link-code`,
+- `GET /me`, `PATCH /me` (`{ name?, appearance? }`, Konto-Profil P-034, siehe unten), `DELETE /me`, `GET /me/identities`, `DELETE /me/identities/:provider`, `POST /me/link-code`,
   `POST /me/link` (Konten verknüpfen nach D-121/D-122), `POST /me/deletion-code` (Einmal-Löschcode)
 - `POST /account-deletion/verify`, `POST /account-deletion/confirm` (öffentlich, Lösch-Seite der Website, P-026)
 - Gilden (D-147, P-031; bis 5 Gilden je Spieler, TESTWERT): `GET /me/guilds`, `POST /guilds`,
@@ -178,6 +183,8 @@ Spieler (Header `Authorization: Bearer <token>`):
   Auszahlung; fremde ID → `409 report_id_conflict`
 - `GET /leaderboards/:kind?period=all|season&season=YYYY-MM&limit=50` (`solo`, `group`, `guild`; öffentlich, mit Token zusätzlich `own`)
 - `GET /public/guilds/:tag` (öffentlich, für die Webseite)
+- `POST /bug-reports` (P-033, auch Gastkonten): Bug-Meldung aus dem Spiel mit Screenshot, siehe
+  „Bug-Meldungen“ unten
 
 Gesperrte Spieler erhalten auf jeder angemeldeten Route `403 {"error":"banned","reason","expiresAt"}`.
 
@@ -221,9 +228,60 @@ Admin-API v2 (P18, P-023/P-024; Schemas in `packages/contracts/src/admin.ts`):
 | `GET /admin/guilds?status=active\|disbanded\|all` | Moderator | `status` gewinnt über `includeDisbanded` |
 | `GET /admin/audit?from=&to=&actionPrefix=&targetType=` | Moderator | `from`/`to` als Tag (`2026-10-15`, UTC, inklusive) oder Zeitpunkt; `actionPrefix` z. B. `relay.` |
 
+## Konto-Profil (P-034, D-152)
+
+Ein Konto hat **einen** Charakter: Anzeigename und Aussehen. Spielstände sind nur „Welten“ und geben dem
+Konto keinen Namen mehr. Schemas `PlayerAppearance`, `PlayerCharacter` (`common.ts`) und
+`UpdateProfileRequest` (`player.ts`).
+
+- **Anlegen:** `POST /auth/device`, `/auth/dev`, `/auth/steam`, `/auth/google-play` nehmen optional
+  `name` und `appearance`; beides gilt nur beim Anlegen eines Kontos. Ohne Namen heißt ein neues
+  Geräte-Konto `Spieler-1234` (Zufallsziffern, nie aus der Geräte-ID). Bestehende Konten bleiben
+  unverändert.
+- **Ändern:** `PATCH /me { name?, appearance? }` → `PlayerSelf` (mit `appearance`). `appearance: null`
+  setzt auf die Standardfigur zurück. Der gleiche Name noch einmal zählt nicht.
+- **Grenze:** 3 eigene Namenswechsel je 24 Stunden (`MAX_NAME_CHANGES`, `NAME_CHANGE_WINDOW_HOURS`,
+  TESTWERT), gezählt in `player_name_changes`; darüber `429 name_change_limited` mit `retryAfter`
+  (Sekunden, auch als `Retry-After`), dann wird nichts von der Anfrage übernommen. Admins und
+  Moderatoren benennen über `PATCH /admin/players/:id {name}` ohne Grenze um (Protokoll
+  `player.rename`, Verlauf mit `byAdmin`).
+- **Anzeige:** `appearance` steht in `PlayerSelf`, `GuildDetail.members[]` und (nur lesen)
+  `AdminPlayerDetail`, dort zusätzlich `nameHistory` (neueste zuerst, höchstens 20). Der Relay-Status
+  bleibt ohne Aussehen.
+- **Aufbewahrung:** Namenswechsel 90 Tage (`NAME_HISTORY_RETENTION_DAYS`, TESTWERT), gelöscht vom
+  Aufräumjob (`services/housekeeping.ts`) und mit dem Konto; beim Zusammenführen zweier Konten bleiben
+  Name und Aussehen des bleibenden Kontos, der Verlauf wandert mit.
+- **Offen:** Ein Filter für anstößige Namen fehlt noch (Store-Pflicht); bis dahin benennen Moderatoren
+  im Admin-Panel um.
+
+## Bug-Meldungen (P-033)
+
+Das Feedback-Werkzeug im Spiel (F9) lädt Screenshot, Markierungen, Notiz und Kategorien hoch; Admins
+und Moderatoren werten sie im Admin-Panel aus. Schemas und Grenzen in
+`packages/contracts/src/bug-report.ts`.
+
+| Route | Rolle | Antwort / Fehler |
+| --- | --- | --- |
+| `POST /bug-reports` `CreateBugReportRequest` | Spieler (auch Gast) | `201 {id}`; `400 validation_error`, `400 invalid_json`, `400 invalid_image` (kein Base64, kein WebP/JPEG/PNG), `413 payload_too_large` (Body > 2,25 MiB oder Bild > 1,5 MiB), `401`, `403 banned`, `429 rate_limited` (`Retry-After`) |
+| `GET /admin/bug-reports?status=&platform=&category=&playerId=&cursor=&limit=50` | Moderator | `AdminBugReportList`: `items[]` ohne Bild (`notePreview`, `markCount`, `strokeCount`, `location` aus `context.location`), `nextCursor` (null = letzte Seite), `total`, `counts` je Status (ohne den Status-Filter) |
+| `GET /admin/bug-reports/:id` | Moderator | `AdminBugReportDetail`: alles außer den Bild-Bytes, dazu `imageMime`, `imageBytes`, `imageUrl`, `expiresAt`; `404 bug_report_not_found` |
+| `GET /admin/bug-reports/:id/image` | Moderator | Bild-Bytes mit gespeichertem `Content-Type`, `Cache-Control: private, max-age=300` |
+| `PATCH /admin/bug-reports/:id` `{ status }` | Moderator | `AdminBugReportDetail`; `new` \| `seen` \| `done` \| `wont_fix`; Protokoll `bug_report.status` (`from`/`to`) |
+| `DELETE /admin/bug-reports/:id` | Admin | 204; Protokoll `bug_report.delete` (ohne Notiz und Bild) |
+
+- **Bild:** reines Base64 (kein `data:`-Präfix); der Typ kommt nur aus den Magic Bytes (PNG-Signatur,
+  JPEG `FF D8 FF`, `RIFF….WEBP`). Gespeichert als `bytea` in `bug_reports.image`.
+- **Body-Grenze** 2,25 MiB gilt nur für diese Route (`hono/body-limit`); alle anderen Routen bleiben
+  unverändert.
+- **Aufbewahrung:** `BUG_REPORT_RETENTION_DAYS` (90, TESTWERT); `services/housekeeping.ts` löscht
+  beim Start der API und dann alle 24 Stunden. Mit dem Konto werden die Meldungen gelöscht
+  (Fremdschlüssel mit Kaskade), beim Zusammenführen zweier Konten wandern sie mit (D-122).
+- `GET /admin/stats` meldet `newBugReports` (Status `new`), die Lösch-Vorschau der Website
+  `bugReportCount`.
+
 ## Anmeldung, Konten, Versionen (P14–P16)
 
-- **Gast je Gerät** (`POST /auth/device`, `{ deviceId, name }`, P-028): ohne Schlüssel; `deviceId` ist eine
+- **Gast je Gerät** (`POST /auth/device`, `{ deviceId, name?, appearance? }`, P-028, P-034): ohne Schlüssel; `deviceId` ist eine
   zufällige UUID v4, die das Spiel einmal pro Installation erzeugt (32–128 Zeichen, nur `A-Z a-z 0-9 -`).
   Dieselbe `device`-Identität wie `/auth/dev`, Antwort wie dort. Später per Verknüpfungscode mit
   Steam/Google Play verbinden. Fehler: `400 validation_error`, `403 guest_auth_disabled`

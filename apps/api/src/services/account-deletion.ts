@@ -21,6 +21,7 @@ import { forEachSequential } from "../lib/sequential.ts";
 import { signDeletionToken, verifyDeletionToken } from "../lib/tokens.ts";
 import { writeAudit } from "./audit.ts";
 import { findActiveBan } from "./bans.ts";
+import { countBugReportsOf } from "./bug-reports.ts";
 import type { Db, Tx } from "./db-types.ts";
 import { findMemberships, removeMember } from "./guilds.ts";
 
@@ -164,6 +165,7 @@ export async function verifyDeletionCode(
   const runCount = await db.runPlayer.count({
     where: { playerId: row.player.id },
   });
+  const bugReportCount = await countBugReportsOf(db, row.player.id);
   const { token, expiresAt } = await signDeletionToken(
     row.player.id,
     row.id,
@@ -181,6 +183,7 @@ export async function verifyDeletionCode(
         : null,
       guilds,
       runCount,
+      bugReportCount,
     },
   };
 }
@@ -194,7 +197,7 @@ export type DeletedAccount = Pick<
 /**
  * Deletes an account; the one implementation behind DELETE /me, the website confirmation and
  * DELETE /admin/players/:id. Guild membership is removed first (founder role passes on, P-102;
- * the last member disbands the guild); identities, bans, link and deletion codes, notes and run
+ * the last member disbands the guild); identities, bans, link and deletion codes, notes, bug reports and run
  * participation rows go with the player (ON DELETE CASCADE), so runs stay for guild boards but
  * no longer reference the player. Writes the deletion log row (no name, P-026).
  */

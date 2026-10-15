@@ -6,6 +6,7 @@ import {
   GuildTag,
   IsoDateTime,
   PaginationQuery,
+  PlayerAppearance,
   PlayerName,
   RunMode,
   Uuid,
@@ -142,6 +143,8 @@ export const AdminStats = z.object({
   activeGuilds7d: z.number().int().optional(),
   /** Deleted accounts (all channels) in the last 7 days, from the deletion log (P-026). */
   deletions7d: z.number().int().optional(),
+  /** Bug reports with status `new` (P-033). Optional for older API builds. */
+  newBugReports: z.number().int().optional(),
 });
 export type AdminStats = z.infer<typeof AdminStats>;
 
@@ -264,6 +267,11 @@ export const AdminRun = z.object({
 });
 export type AdminRun = z.infer<typeof AdminRun>;
 
+/** TESTWERT: name changes are kept this many days (rate limit and moderation history, P-034). */
+export const NAME_HISTORY_RETENTION_DAYS = 90;
+/** Most entries in AdminPlayerDetail.nameHistory. */
+export const ADMIN_NAME_HISTORY_LIMIT = 20;
+
 /** Number of runs in AdminPlayerDetail.recentRuns (newest first). */
 export const ADMIN_PLAYER_RECENT_RUNS = 20;
 
@@ -291,6 +299,23 @@ export const AdminPlayerDetail = AdminPlayerListItem.extend({
   runsTotal: z.number().int().optional(),
   /** Moderation notes on this player (P-023; optional for older API builds). */
   noteCount: z.number().int().optional(),
+  /** The account's character (P-034, read only); null = default. Optional for older API builds. */
+  appearance: PlayerAppearance.nullable().optional(),
+  /**
+   * Recent name changes, newest first (P-034; kept NAME_HISTORY_RETENTION_DAYS, at most
+   * ADMIN_NAME_HISTORY_LIMIT entries). `byAdmin` = renamed in the admin panel. Optional for older
+   * API builds.
+   */
+  nameHistory: z
+    .array(
+      z.object({
+        oldName: z.string(),
+        newName: z.string(),
+        changedAt: IsoDateTime,
+        byAdmin: z.boolean(),
+      })
+    )
+    .optional(),
 });
 export type AdminPlayerDetail = z.infer<typeof AdminPlayerDetail>;
 
@@ -354,6 +379,10 @@ export const CreatePlayerNoteRequest = z.object({
 });
 export type CreatePlayerNoteRequest = z.infer<typeof CreatePlayerNoteRequest>;
 
+/**
+ * PATCH /admin/players/:id (moderator and admin) -> `{ id, name }`: renames without the players'
+ * limit; audit `player.rename`, recorded in the name history with `byAdmin`.
+ */
 export const RenamePlayerRequest = z.object({ name: PlayerName });
 export type RenamePlayerRequest = z.infer<typeof RenamePlayerRequest>;
 
@@ -524,6 +553,8 @@ export const AuditAction = z.enum([
   "relay.kick",
   "admin.password_change",
   "admin.email_change",
+  "bug_report.status",
+  "bug_report.delete",
 ]);
 export type AuditAction = z.infer<typeof AuditAction>;
 

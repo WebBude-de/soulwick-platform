@@ -1,4 +1,5 @@
 export * from "./admin.ts";
+export * from "./bug-report.ts";
 export * from "./common.ts";
 export * from "./guild.ts";
 export * from "./identity.ts";

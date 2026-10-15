@@ -23,6 +23,7 @@ import { generateInviteCode } from "../lib/invite-code.ts";
 import { iso } from "../lib/validate.ts";
 import type { Db, DbOrTx, Tx } from "./db-types.ts";
 import { findIdentities, steamIdOf } from "./identities.ts";
+import { appearanceOf } from "./profile.ts";
 
 /**
  * Guilds (D-080, D-081, D-147, P-031): a player is in up to MAX_GUILDS_PER_PLAYER active guilds,
@@ -122,6 +123,7 @@ export async function toPlayerSelf(
     createdAt: iso(player.createdAt),
     guild: guilds[0] ?? null,
     guilds,
+    appearance: appearanceOf(player.appearance),
   };
 }
 
@@ -139,7 +141,7 @@ export const higherRole = (a: GuildRole, b: GuildRole): GuildRole =>
 export async function listMembers(db: DbOrTx, guildId: string) {
   const rows = await db.guildMember.findMany({
     where: { guildId },
-    include: { player: { select: { name: true } } },
+    include: { player: { select: { name: true, appearance: true } } },
     orderBy: { joinedAt: "asc" },
   });
   return rows
@@ -149,6 +151,7 @@ export async function listMembers(db: DbOrTx, guildId: string) {
       name: r.player.name,
       role: r.role,
       joinedAt: iso(r.joinedAt),
+      appearance: appearanceOf(r.player.appearance),
     }));
 }
 

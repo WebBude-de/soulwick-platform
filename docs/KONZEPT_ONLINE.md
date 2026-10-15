@@ -1,6 +1,6 @@
 # KONZEPT Online – Relay, Anmeldung, Deployment und Stores
 
-> **Stand:** 15.10.2026 · **Status:** Architektur **entschieden** (Spiel-Repo D-119, Projektmitglied 14.10.2026), alles Weitere ist **Vorschlag** von Claude oder **OFFEN**. Die Plattform-Seite ist gebaut (Relay P13, Anmeldung P14, Konten P15, Versionen P16, Gast P20); der Betrieb auf dem Server steht noch aus (P2, P17, [../infra/DOKPLOY.md](../infra/DOKPLOY.md)).
+> **Stand:** 16.10.2026 · **Status:** Architektur **entschieden** (Spiel-Repo D-119, Projektmitglied 14.10.2026), alles Weitere ist **Vorschlag** von Claude oder **OFFEN**. Die Plattform-Seite ist gebaut (Relay P13, Anmeldung P14, Konten P15, Versionen P16, Gast P20); der Betrieb auf dem Server steht noch aus (P2, P17, [../infra/DOKPLOY.md](../infra/DOKPLOY.md)).
 > **Für wen:** Entwickler und Agenten, die Relay, Anmeldung, Deployment und Store-Anbindung bauen. Umsetzung als Pakete: [ROADMAP.md](ROADMAP.md) P13–P17 (Plattform), `soulwick/docs/ROADMAP_CROSSPLAY.md` CP1, CP3, CP7 und `soulwick/docs/ROADMAP_MULTIPLAYER.md` MP2–MP6 (Spiel).
 > **Entscheidungen:** Spiel-Repo D-083, D-084, D-085, D-108, **D-119**; hier [DECISIONS.md](DECISIONS.md) P-008, P-014, **P-016 bis P-018**, **P-027** (Better Auth, Relay-JWT über JWKS, 15.10.2026), **P-031**/**P-032** (mehrere Gilden je Spieler, Gilden-Raum nur für Mitglieder, Gildenkasse nach Gilden-Run; D-147). Bei Widerspruch gilt das Spiel-Repo.
 > **Kennzeichnung:** **ENTSCHIEDEN** = Projektmitglied hat entschieden · **VORSCHLAG** = von Claude ausgearbeitet, vom Team zu bestätigen · **OFFEN** = noch nicht entschieden, nicht still festlegen · **TESTWERT** = Zahl zum Nachjustieren.
@@ -22,6 +22,8 @@
 | Geschäftsmodell (Käufe, Werbung, Steam-Preis) | **OFFEN** (CP0 Frage 1) | D-108 |
 | Touch-Schema | **OFFEN**, der Prototyp in CP2 entscheidet | – |
 | Relay-Regionen | **OFFEN** (CP0 Frage 10); zuerst eine Instanz | – |
+| Konto-Profil: ein Charakter (Name + Aussehen) je Konto, Spielstände sind nur Welten | **ENTSCHIEDEN** (D-152, 16.10.2026), Grenzen TESTWERT | P-034, §3.4a |
+| Bug-Meldungen aus dem Spiel mit Screenshot, 90 Tage, Löschung mit dem Konto | **ENTSCHIEDEN** (Auftrag 16.10.2026), Zahlen TESTWERT | P-033, §3.7a |
 
 ## 1. Zielarchitektur
 
@@ -156,7 +158,7 @@ Spiel erzeugt beim ersten Start eine zufällige Geräte-ID (bei `-- instance=n` 
 
 ### 3.1a Gastkonto je Gerät (ENTSCHIEDEN, P-028)
 
-Wie die Gastkonten bei Among Us: Das Spiel erzeugt beim ersten Start eine zufällige UUID v4 (einmal pro Installation, 32–128 Zeichen, nur `A-Z a-z 0-9 -`) und ruft `POST /auth/device` mit `{ deviceId, name }` auf, **ohne** Dev-Schlüssel. Antwort wie `/auth/dev`; dieselbe `device`-Identität, ein Gerät mit altem Dev-Login landet also im selben Konto. Die Geräte-ID ist das einzige Geheimnis des Kontos: nie anzeigen, nie loggen. Später verknüpft der Spieler das Gastkonto per Verknüpfungscode (§3.5) mit Steam oder Google Play; **ohne Verknüpfung ist das Konto mit dem Gerät (bzw. der Installation) verloren**, das Spiel weist darauf hin (CP1). Fehler: `400 validation_error`, `403 guest_auth_disabled` (Schalter `GUEST_AUTH_ENABLED=false`), `403 banned`, `429 rate_limited` (je IP 10 Anmeldungen je Minute und 20 neue Gastkonten je Stunde, TESTWERT). `GET /public/config` meldet `guestAuth`.
+Wie die Gastkonten bei Among Us: Das Spiel erzeugt beim ersten Start eine zufällige UUID v4 (einmal pro Installation, 32–128 Zeichen, nur `A-Z a-z 0-9 -`) und ruft `POST /auth/device` mit `{ deviceId, name?, appearance? }` auf (Profil nur beim Anlegen, §3.4a), **ohne** Dev-Schlüssel. Antwort wie `/auth/dev`; dieselbe `device`-Identität, ein Gerät mit altem Dev-Login landet also im selben Konto. Die Geräte-ID ist das einzige Geheimnis des Kontos: nie anzeigen, nie loggen. Später verknüpft der Spieler das Gastkonto per Verknüpfungscode (§3.5) mit Steam oder Google Play; **ohne Verknüpfung ist das Konto mit dem Gerät (bzw. der Installation) verloren**, das Spiel weist darauf hin (CP1). Fehler: `400 validation_error`, `403 guest_auth_disabled` (Schalter `GUEST_AUTH_ENABLED=false`), `403 banned`, `429 rate_limited` (je IP 10 Anmeldungen je Minute und 20 neue Gastkonten je Stunde, TESTWERT). `GET /public/config` meldet `guestAuth`.
 
 ### 3.2 Steam
 
@@ -181,6 +183,17 @@ Wie die Gastkonten bei Among Us: Das Spiel erzeugt beim ersten Start eine zufäl
 3. API prüft: `publicKeyURL` liegt auf einer Apple-Domain, Zertifikat laden (cachen), Signatur über `teamPlayerID` + Bundle-ID + `timestamp` (uint64, Big Endian) + `salt` prüfen, `timestamp` nicht älter als wenige Minuten (TESTWERT).
 4. Identität `game_center` (Wert `teamPlayerID`) → Session (P-027).
 5. Solange nur Game Center und Play Games angeboten werden (kein Social-Login), ist „Sign in with Apple“ voraussichtlich nicht nötig (CP0 Frage 8, OFFEN).
+
+### 3.4a Konto-Profil: ein Charakter je Konto (ENTSCHIEDEN, D-152, P-034; Grenzen TESTWERT)
+
+Ein Konto hat **einen** Charakter: Anzeigename und Aussehen (Figur `wick`/`ember`/`moss`/`frost` plus Farben `hair`, `outfit`, `skin`, optional `accent`, je Palettenindex 0..7). Spielstände sind nur noch „Welten“ (wie Minecraft-Maps) und geben dem Konto keinen Namen. Der Name ist ein Anzeigename, **nicht eindeutig**.
+
+- **Erstes Anmelden:** Das Spiel schickt den Profilnamen und das Aussehen mit (`POST /auth/device { deviceId, name?, appearance? }`, ebenso `/auth/dev`, `/auth/steam`, `/auth/google-play`). Beides gilt nur beim Anlegen; ohne Namen heißt das Konto `Spieler-1234` (Zufallsziffern). Bestehende Konten behalten ihr Profil, ein mitgeschickter Name wird ignoriert.
+- **Ändern:** `PATCH /me { name?, appearance? }` → `PlayerSelf`. Höchstens 3 eigene Namenswechsel je 24 Stunden (`429 name_change_limited` mit `retryAfter`); das Aussehen ist jederzeit frei änderbar; `appearance: null` = Standardfigur.
+- **Sichtbar:** in `GET /me`, in den Mitgliederlisten der Gilden (`GuildDetail.members[].appearance`) und im Admin-Panel (nur lesen, dazu der Namensverlauf). Moderatoren benennen anstößige Namen ohne Grenze um.
+- **Offen:** automatischer Filter gegen anstößige Namen (Store-Pflicht, §6/§7).
+
+**Haken für das Spiel:** Profil-Editor (Name + Figur + Farben) beim ersten Online-Start bzw. im Konto-Panel; Werte aus `PlayerSelf.appearance` übernehmen (null oder unbekannte Figur → Standardfigur); Änderungen mit `PATCH /me`; den Spielstand-Namen nicht mehr an die Anmeldung schicken.
 
 ### 3.5 Konto verknüpfen (Verknüpfungscode, wie Among Us)
 
@@ -210,6 +223,18 @@ Niemand prüft oder entscheidet Löschungen von Hand. Alle Wege nutzen dieselbe 
 - **Löschprotokoll:** Jede Löschung schreibt eine Zeile in `account_deletions`: Zeitpunkt, Kanal (`web_code`, `in_game`, `admin`), „war gesperrt“ und ein HMAC der Spieler-ID (nur für Rückfragen „wurde Konto X gelöscht?“). Kein Name, keine Identität. Admin-Panel: Seite „Löschprotokoll“ (`GET /admin/account-deletions`, nur lesen, Zähler je Kanal).
 
 **Haken für das Spiel (CP1):** Im Konto-Panel ein Knopf „Löschcode für die Website“ → `POST /me/deletion-code`, Code groß anzeigen (z. B. `ABCD-EFGH`) mit Ablaufzeit aus `expiresAt` und dem Hinweis auf `playsoulwick.com/delete-account`; bei `403 banned` den Hinweis auf die Support-Adresse zeigen. Dazu der Knopf „Konto jetzt löschen“ → `DELETE /me` (mit Rückfrage).
+
+### 3.7a Bug-Meldungen aus dem Spiel (ENTSCHIEDEN, P-033; Zahlen TESTWERT)
+
+Das Feedback-Werkzeug (heute F9, nur lokal) wird für alle Spieler zur **Bug-Meldung**: Der Spieler markiert Stellen auf einem Screenshot (Rechtecke mit kurzer Notiz, Freihand-Striche), schreibt eine Notiz und wählt Kategorien; das Spiel lädt alles mit `POST /bug-reports` hoch (Spieler-Session, auch Gastkonten). Admins und Moderatoren sehen die Meldungen im Admin-Panel, setzen den Status (`neu`, `gesehen`, `erledigt`, `wird nicht behoben`); löschen dürfen nur Admins.
+
+- **Was gespeichert wird:** Spieler-ID (Fremdschlüssel), Zeitpunkt, Notiz, Kategorien, Markierungen und Striche (relative Koordinaten), Spiel-Kontext (z. B. Ort, Szene, Seed, Auflösung, Sprache; frei, ≤ 16 KiB), Spielversion, Plattform, der Screenshot (WebP/JPEG/PNG, ≤ 1,5 MiB, Typ aus den Magic Bytes) sowie Status, bearbeitender Admin und Zeitpunkt. **Keine** IP-Adresse, keine Geräte-ID, keine Store-ID in der Meldung. Der Kontext soll keine personenbezogenen Daten enthalten (keine Dateipfade mit Benutzernamen, keine fremden Namen).
+- **Aufbewahrung:** 90 Tage ab Eingang (`BUG_REPORT_RETENTION_DAYS`, TESTWERT), dann automatisch gelöscht (`services/housekeeping.ts`: beim Start der API und danach alle 24 h).
+- **Kontolöschung:** Die Meldungen gehen mit dem Konto (Kaskade), weil der Screenshot persönliche Daten zeigen kann (Spielername, Gildenname, Chat später). Die Lösch-Vorschau der Website nennt ihre Anzahl. Beim Zusammenführen zweier Konten (§3.6) wandern sie zum bleibenden Konto.
+- **Schutz:** 10 Meldungen je Spieler und Stunde, 20 je IP und Stunde (TESTWERT), Body ≤ 2,25 MiB nur auf dieser Route, gesperrte Spieler `403 banned`.
+- **Datenschutzerklärung (offen):** Die eRecht24-Erklärung braucht einen Zusatz „Fehlermeldungen aus dem Spiel“ (Zweck: Fehlerbehebung, Rechtsgrundlage berechtigtes Interesse bzw. Einwilligung durch aktives Absenden, Inhalt wie oben, 90 Tage, Löschung mit dem Konto); dazu die Store-Angaben (Google „Datensicherheit“: Absturz-/Diagnosedaten und Fotos/Screenshots, optional, nicht geteilt; Apple „App-Datenschutz“ entsprechend). Das Spiel sollte vor dem ersten Absenden einmal darauf hinweisen.
+
+**Haken für das Spiel:** F9-Werkzeug um „Absenden“ erweitern: Screenshot als WebP (Godot `Image.save_webp_to_buffer`, Qualität ~0,8) oder JPEG, auf höchstens 1,5 MiB bringen (sonst verkleinern), `Marshalls.raw_to_base64`, Koordinaten durch Bildbreite/-höhe teilen, Striche auf ≤ 256 Punkte ausdünnen. Antworten: `201` → Danke-Hinweis; `429` → „Später erneut versuchen“ (`Retry-After`); `413`/`400 invalid_image` → kleiner bzw. als JPEG erneut; `403 banned` → Hinweis wie bei der Anmeldung. Ohne Anmeldung (offline) lokal speichern wie bisher.
 
 ### 3.8 Version-Sperre
 
@@ -298,7 +323,7 @@ Stand der Preise: 14.10.2026, vor dem Bezahlen bei den Anbietern prüfen.
 4. **Eingabe-Abstraktion zuerst (MP1):** `player.gd` liest Tastatur und Maus direkt; ohne Eingabe-Objekt gibt es weder Netzwerk noch Touch noch Gamepad (Steam Deck).
 5. **Versionen:** Crossplay heißt gleiche Protokollversion auf allen Stores; Update-Sperre im Hauptmenü, wenn zu alt (§3.8).
 6. **Store-Pflichten:** Kontolöschung in der App **und** als Web-Seite (Google), Datenschutz-Angaben (Google „Datensicherheit“, Apple „App-Datenschutz“), IARC-Altersfreigabe, Melden und Filtern von Namen und Gildennamen, Zielgruppe in der Play Console **ab 13**.
-7. **Datenschutz:** Datenschutzerklärung (eRecht24, P-013) um Steam-, Google- und Apple-IDs sowie Relay-Verbindungsdaten (IP, Spieler-ID, Zeitpunkt, keine Inhalte) ergänzen. AGENTS.md Regel 6 („nur Steam-ID bzw. Geräte-ID“) wird dabei mit erweitert.
+7. **Datenschutz:** Datenschutzerklärung (eRecht24, P-013) um Steam-, Google- und Apple-IDs, Relay-Verbindungsdaten (IP, Spieler-ID, Zeitpunkt, keine Inhalte) und die Bug-Meldungen aus dem Spiel (Screenshot, Notiz, Kontext, 90 Tage, §3.7a, P-033) ergänzen. AGENTS.md Regel 6 („nur Steam-ID bzw. Geräte-ID“) wird dabei mit erweitert.
 8. **Cheats:** Der Host meldet Runs; die Plausibilitätsprüfung bleibt. Ranglisten gegebenenfalls nur von PC-Hosts zählen oder später über den dedizierten Server.
 9. **Betrieb:** Relay-Traffic beobachten (Inklusivtraffic), Monitoring, Backups, Status-Anzeige im Spiel bei Server-Ausfall (Einzelspieler bleibt offline spielbar).
 10. **Geschäftsmodell (OFFEN):** bestimmt Käufe, Werbung und Steam-Preis; erst danach CP6 (Tabellen `purchases`/`entitlements`).

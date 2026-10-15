@@ -61,6 +61,7 @@ export async function overviewStats(
     runsTotal,
     modes,
     activeGuilds7d,
+    newBugReports,
   ] = await Promise.all([
     db.$queryRaw<
       { n: number }[]
@@ -81,6 +82,7 @@ export async function overviewStats(
         members: { some: { player: { lastSeenAt: { gte: week } } } },
       },
     }),
+    db.bugReport.count({ where: { status: "new" } }),
   ]);
   return {
     players,
@@ -97,6 +99,7 @@ export async function overviewStats(
     runsByMode: modes,
     activeGuilds7d,
     deletions7d,
+    newBugReports,
   };
 }
 

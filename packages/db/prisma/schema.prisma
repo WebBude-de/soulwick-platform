@@ -56,6 +56,16 @@ enum AccountDeletionChannel {
   @@map("account_deletion_channel")
 }
 
+/// Processing state of a bug report in the admin panel (P-033).
+enum BugReportStatus {
+  new
+  seen
+  done
+  wont_fix
+
+  @@map("bug_report_status")
+}
+
 // ---------------------------------------------------------------------------
 // Players and identities
 // ---------------------------------------------------------------------------
@@ -65,6 +75,8 @@ model Player {
   name       String
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   lastSeenAt DateTime @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  /// The account's character (P-034, D-152): {character, colors}; null = the game's default.
+  appearance Json?
 
   identities      PlayerIdentity[]
   bans            Ban[]
@@ -76,6 +88,10 @@ model Player {
   linkCode        LinkCode?
   deletionCode    DeletionCode?
   notes           PlayerNote[]
+  /// Bug reports from the game (P-033); deleted with the account (the screenshot may show personal data).
+  bugReports      BugReport[]
+  /// Name changes (P-034): limit for PATCH /me and moderation history.
+  nameChanges     PlayerNameChange[]
   /// Better Auth user that carries the sessions of this player (P-027); created at first login.
   authUser        User?
 
@@ -182,6 +198,8 @@ model User {
   bansRevoked  Ban[]        @relation("BanRevokedBy")
   auditEntries AuditLog[]
   playerNotes  PlayerNote[]
+  bugReportsHandled BugReport[]
+  playerRenames     PlayerNameChange[]
 
   @@index([role], map: "auth_users_role_idx")
   @@map("auth_users")
@@ -297,6 +315,26 @@ model PlayerNote {
   @@map("player_notes")
 }
 
+/// One name change of a player (P-034): counts for the limit of PATCH /me (rows without admin)
+/// and shows the history in the admin panel. Goes with the player; older rows than
+/// NAME_HISTORY_RETENTION_DAYS (TESTWERT 90) are removed by the housekeeping job.
+model PlayerNameChange {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId  String   @map("player_id") @db.Uuid
+  oldName   String   @map("old_name")
+  newName   String   @map("new_name")
+  changedAt DateTime @default(now()) @map("changed_at") @db.Timestamptz(6)
+  /// Set when an admin or moderator renamed the player; null = the player.
+  adminId   String?  @map("admin_id") @db.Uuid
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  admin  User?  @relation(fields: [adminId], references: [id], onDelete: SetNull)
+
+  @@index([playerId, changedAt], map: "player_name_changes_player_id_changed_at_idx")
+  @@index([changedAt], map: "player_name_changes_changed_at_idx")
+  @@map("player_name_changes")
+}
+
 model AuditLog {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   adminId    String?  @map("admin_id") @db.Uuid
@@ -409,4 +447,43 @@ model RunPlayer {
   @@id([runId, playerId])
   @@index([playerId], map: "run_players_player_id_idx")
   @@map("run_players")
+}
+
+// ---------------------------------------------------------------------------
+// Bug reports from the game (P-033)
+// ---------------------------------------------------------------------------
+
+/// Bug report sent from the in-game feedback tool: screenshot (bytea, at most 1.5 MiB, type from
+/// the magic bytes), marks and freehand strokes in relative coordinates, note, categories and a
+/// free-form game context. Deleted with the player and automatically after the retention period
+/// (BUG_REPORT_RETENTION_DAYS, TESTWERT 90 days). `platform` and `categories` are plain text,
+/// validated by the contract, so new values need no migration.
+model BugReport {
+  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId    String          @map("player_id") @db.Uuid
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  status      BugReportStatus @default(new)
+  note        String          @default("")
+  categories  String[]        @default([])
+  /// [{x, y, w, h, note}], relative 0..1.
+  marks       Json            @default("[]")
+  /// [[[x, y], ...], ...], relative 0..1.
+  strokes     Json            @default("[]")
+  context     Json            @default("{}")
+  gameVersion String          @map("game_version")
+  platform    String
+  imageMime   String          @map("image_mime")
+  image       Bytes
+  /// Admin or moderator who last set a status other than `new`; cleared if the account disappears.
+  handledBy   String?         @map("handled_by") @db.Uuid
+  handledAt   DateTime?       @map("handled_at") @db.Timestamptz(6)
+
+  player        Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  handledByUser User?  @relation(fields: [handledBy], references: [id], onDelete: SetNull)
+
+  /// Admin list per status, newest first, and the cleanup by age.
+  @@index([status, createdAt], map: "bug_reports_status_created_at_idx")
+  @@index([createdAt], map: "bug_reports_created_at_idx")
+  @@index([playerId], map: "bug_reports_player_id_idx")
+  @@map("bug_reports")
 }

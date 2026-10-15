@@ -3,11 +3,13 @@
  * P-014; player 1 additionally with a fake `steam` identity), two guilds with progress (player 1
  * is in both, D-147), twenty runs across the current and the previous season (one flagged) plus
  * fifteen runs spread over the last two weeks (admin statistics, P-023), one temporary ban, one moderation note, four
- * entries in the deletion log (P-026, no personal data) and the matching audit entries, so the
+ * entries in the deletion log (P-026, no personal data), three bug reports with placeholder
+ * screenshots (P-033), a character (appearance, P-034) for players 1-8 and the matching audit
+ * entries, so the
  * website leaderboards and every admin page show data locally.
  *
  * Idempotent: every record has a fixed key (email, device id, steam id, guild tag, run seed, ban
- * reason, note text, deletion log id);
+ * reason, note text, deletion log id, bug report id);
  * re-running only adds what is missing and never overwrites changes made through the admin panel
  * (existing admin accounts keep their password, e.g. one changed under "Mein Konto").
  * Refuses to run with NODE_ENV=production.
@@ -21,14 +23,24 @@
  *   In the Docker image (development environment only):
  *   NODE_ENV=development bun apps/api/src/scripts/seed-dev.ts
  */
-import { AdminPassword, type RunMode } from "@soulwick/contracts";
+import {
+  AdminPassword,
+  type BugReportCategory,
+  type BugReportMark,
+  type BugReportPlatform,
+  type PlayerAppearance,
+  PlayerCharacter,
+  type RunMode,
+} from "@soulwick/contracts";
 import {
   type AccountDeletionChannel,
   createPrisma,
   type Player,
+  Prisma,
   type Tx,
   type User,
 } from "@soulwick/db";
+import { placeholderPng, type Rgb } from "../lib/placeholder-png.ts";
 import { createAdminAccount } from "../services/admin-users.ts";
 import { writeAudit } from "../services/audit.ts";
 
@@ -125,6 +137,23 @@ const PLAYERS: PlayerSpec[] = [
   { n: 10, name: "Rauchquarz", createdDaysAgo: 5, seenDaysAgo: 2 },
 ];
 
+/** Players 9 and 10 keep the default character (no appearance chosen yet, P-034). */
+const PLAYERS_WITH_DEFAULT_LOOK = new Set([9, 10]);
+
+/** A fixed character per seeded player (P-034), cycling through figures and palette indexes. */
+function appearanceOfSeedPlayer(n: number): PlayerAppearance {
+  const characters = PlayerCharacter.options;
+  return {
+    character: characters[(n - 1) % characters.length] ?? "wick",
+    colors: {
+      hair: n % 8,
+      outfit: (n * 3) % 8,
+      skin: (n * 5) % 8,
+      ...(n % 2 === 0 ? { accent: (n * 7) % 8 } : {}),
+    },
+  };
+}
+
 interface GuildSpec {
   createdDaysAgo: number;
   inviteCode: string;
@@ -186,6 +215,84 @@ const BAN_DAYS = 7;
 /** Moderation note on the banned player (P-023), written by the moderator. */
 const NOTE_TEXT =
   "Dev-Seed: mehrfach wegen unsportlichen Verhaltens gemeldet, vor der Sperre verwarnt.";
+
+/**
+ * Bug reports from the game (P-033) for the admin page: fixed ids, placeholder PNG screenshots
+ * (gradients, no real screenshot). Day offsets relative to now; `seen` is set by the moderator.
+ */
+const BUG_REPORTS: {
+  id: string;
+  player: number;
+  daysAgo: number;
+  status: "new" | "seen" | "done";
+  note: string;
+  categories: BugReportCategory[];
+  marks: BugReportMark[];
+  strokes: [number, number][][];
+  context: Record<string, unknown>;
+  platform: BugReportPlatform;
+  tint: Rgb;
+}[] = [
+  {
+    id: "00000000-0000-4000-8000-0000000b0001",
+    player: 1,
+    daysAgo: 0.2,
+    status: "new",
+    note: "Die Fackel links neben der Tür leuchtet durch die Wand in den Nachbarraum.",
+    categories: ["light", "graphics"],
+    marks: [
+      { x: 0.08, y: 0.3, w: 0.18, h: 0.22, note: "Lichtkegel hinter der Wand" },
+      { x: 0.62, y: 0.55, w: 0.12, h: 0.1, note: "" },
+    ],
+    strokes: [
+      [
+        [0.2, 0.6],
+        [0.28, 0.58],
+        [0.36, 0.6],
+        [0.44, 0.64],
+      ],
+    ],
+    context: {
+      location: "Krypta, Raum 7 (Arena Tore)",
+      scene: "res://dungeon/rooms/combat/arena_tore_crypt.tscn",
+      seed: "dev-seed-run-01",
+      resolution: "1920x1080",
+      locale: "de",
+    },
+    platform: "windows",
+    tint: [217, 138, 58],
+  },
+  {
+    id: "00000000-0000-4000-8000-0000000b0002",
+    player: 5,
+    daysAgo: 1.5,
+    status: "new",
+    note: "Text im Schmiede-Menü läuft über den Rand.",
+    categories: ["ui", "text"],
+    marks: [{ x: 0.35, y: 0.7, w: 0.4, h: 0.08, note: "abgeschnitten" }],
+    strokes: [],
+    context: {
+      location: "Dorf, Schmiede",
+      resolution: "1280x720",
+      locale: "en",
+    },
+    platform: "linux",
+    tint: [90, 140, 220],
+  },
+  {
+    id: "00000000-0000-4000-8000-0000000b0003",
+    player: 3,
+    daysAgo: 4,
+    status: "seen",
+    note: "Gegner bleibt an der Säule hängen und greift nicht mehr an.",
+    categories: ["gameplay", "bug"],
+    marks: [{ x: 0.48, y: 0.4, w: 0.1, h: 0.14, note: "steckt fest" }],
+    strokes: [],
+    context: { location: "Schattenreich, Raum 3", seed: "dev-seed-run-02" },
+    platform: "android",
+    tint: [150, 80, 200],
+  },
+];
 
 interface RunSpec {
   /** Position inside the season, 0 = start of month, 1 = now (current) or end of month (previous). */
@@ -550,6 +657,7 @@ interface Summary {
   banCreated: boolean;
   guildsCreated: number;
   newAdmins: number;
+  newBugReports: number;
   newDeletions: number;
   newPlayers: number;
   newRuns: number;
@@ -621,6 +729,7 @@ async function seed(tx: Tx): Promise<Summary> {
     noteCreated: false,
     newDeletions: 0,
     newAdmins: 0,
+    newBugReports: 0,
   };
 
   // --- admins --------------------------------------------------------------------------------
@@ -651,6 +760,17 @@ async function seed(tx: Tx): Promise<Summary> {
     byNumber.set(spec.n, player);
     if (created) {
       summary.newPlayers += 1;
+    }
+    // Character (P-034): only set while none is stored, so a look chosen via PATCH /me stays.
+    if (!PLAYERS_WITH_DEFAULT_LOOK.has(spec.n)) {
+      await tx.player.updateMany({
+        where: { id: player.id, appearance: { equals: Prisma.DbNull } },
+        data: {
+          appearance: appearanceOfSeedPlayer(
+            spec.n
+          ) as unknown as Prisma.InputJsonObject,
+        },
+      });
     }
   }
   const player = (n: number): Player => {
@@ -827,6 +947,29 @@ async function seed(tx: Tx): Promise<Summary> {
   });
   summary.newDeletions = newDeletions;
 
+  // --- bug reports from the game (P-033) ------------------------------------------------------
+  const { count: newBugReports } = await tx.bugReport.createMany({
+    data: BUG_REPORTS.map((r) => ({
+      id: r.id,
+      playerId: player(r.player).id,
+      createdAt: daysAgo(r.daysAgo),
+      status: r.status,
+      note: r.note,
+      categories: r.categories,
+      marks: r.marks,
+      strokes: r.strokes,
+      context: r.context as Prisma.InputJsonObject,
+      gameVersion: "1.0.0",
+      platform: r.platform,
+      imageMime: "image/png",
+      image: placeholderPng(480, 270, r.tint),
+      handledBy: r.status === "new" ? null : moderator.id,
+      handledAt: r.status === "new" ? null : daysAgo(r.daysAgo - 0.5),
+    })),
+    skipDuplicates: true,
+  });
+  summary.newBugReports = newBugReports;
+
   return summary;
 }
 
@@ -855,6 +998,7 @@ try {
       `  Ban:      ${bannedName} until ${banExpires.toISOString()}${summary.banCreated ? "" : " (existed)"}`,
       `  Note:     moderation note on ${bannedName}${summary.noteCreated ? "" : " (existed)"}`,
       `  Deleted:  ${DELETIONS.length} entries in the deletion log (${summary.newDeletions} new)`,
+      `  Bugs:     ${BUG_REPORTS.length} bug reports with placeholder screenshots (${summary.newBugReports} new)`,
       "  Web:      http://localhost:3000/ranglisten - Admin: http://localhost:3001",
     ].join("\n")
   );

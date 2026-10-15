@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { GuildRole, IsoDateTime, PlayerName, Uuid } from "./common.ts";
+import {
+  GuildRole,
+  IsoDateTime,
+  PlayerAppearance,
+  PlayerName,
+  Uuid,
+} from "./common.ts";
 import { ROOM_CODE_ALPHABET } from "./lobby.ts";
 import { AuthResponse } from "./player.ts";
 
@@ -30,6 +36,8 @@ export const GooglePlayAuthRequest = z.object({
   serverAuthCode: z.string().trim().min(10).max(2048),
   /** Display name used when the account is created. */
   name: PlayerName.optional(),
+  /** Character used when the account is created (P-034). */
+  appearance: PlayerAppearance.optional(),
 });
 export type GooglePlayAuthRequest = z.infer<typeof GooglePlayAuthRequest>;
 
@@ -243,6 +251,8 @@ export const AccountDeletionPreview = z.object({
     .optional(),
   /** Runs the player took part in (they stay anonymised in the guild boards). */
   runCount: z.number().int().min(0),
+  /** Bug reports the player sent; they are deleted with the account (P-033). Optional for older API builds. */
+  bugReportCount: z.number().int().min(0).optional(),
 });
 export type AccountDeletionPreview = z.infer<typeof AccountDeletionPreview>;
 

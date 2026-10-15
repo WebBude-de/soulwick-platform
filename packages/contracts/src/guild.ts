@@ -5,6 +5,7 @@ import {
   GuildTag,
   InviteCode,
   IsoDateTime,
+  PlayerAppearance,
   Uuid,
 } from "./common.ts";
 
@@ -55,6 +56,8 @@ export const GuildMember = z.object({
   name: z.string(),
   role: GuildRole,
   joinedAt: IsoDateTime,
+  /** The member's character (P-034); null = default character. Optional for older API builds. */
+  appearance: PlayerAppearance.nullable().optional(),
 });
 export type GuildMember = z.infer<typeof GuildMember>;
 

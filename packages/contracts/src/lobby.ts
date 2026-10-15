@@ -59,6 +59,7 @@ export const ClientPlatform = z.enum([
   "macos",
   "android",
   "ios",
+  "web",
 ]);
 export type ClientPlatform = z.infer<typeof ClientPlatform>;
 

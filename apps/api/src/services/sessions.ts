@@ -13,6 +13,7 @@ import { findActiveBan } from "./bans.ts";
 import { verifyGooglePlayCode } from "./google-play.ts";
 import { toPlayerSelf } from "./guilds.ts";
 import { loginWithIdentity } from "./identities.ts";
+import { defaultPlayerName } from "./profile.ts";
 import { verifySteamTicket } from "./steam.ts";
 
 /** Name for accounts created through a store login without a name from the game. */
@@ -35,7 +36,8 @@ export function playerLoginCallbacks(
           return {
             provider: "device",
             providerUserId: credential.deviceId,
-            name: credential.name,
+            name: credential.name ?? defaultPlayerName(),
+            appearance: credential.appearance,
           };
         case "steam": {
           const steamId = await verifySteamTicket(deps, credential.ticket);
@@ -43,6 +45,7 @@ export function playerLoginCallbacks(
             provider: "steam",
             providerUserId: steamId,
             name: credential.name ?? fallbackName(steamId),
+            appearance: credential.appearance,
           };
         }
         case "google_play": {
@@ -54,6 +57,7 @@ export function playerLoginCallbacks(
             provider: "google_play",
             providerUserId: playerId,
             name: credential.name ?? fallbackName(playerId),
+            appearance: credential.appearance,
           };
         }
         default:

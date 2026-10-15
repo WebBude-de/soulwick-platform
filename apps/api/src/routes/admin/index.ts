@@ -27,6 +27,7 @@ import {
 } from "../../services/admin-users.ts";
 import type { AppEnv, Deps } from "../../types.ts";
 import { adminAccountDeletionRoutes } from "./account-deletions.ts";
+import { adminBugReportRoutes } from "./bug-reports.ts";
 import { adminGuildRoutes } from "./guilds.ts";
 import { adminPlayerRoutes } from "./players.ts";
 import { adminRelayRoutes } from "./relay.ts";
@@ -122,6 +123,7 @@ export function adminRoutes(deps: Deps) {
   app.route("/runs", adminRunRoutes(deps));
   app.route("/account-deletions", adminAccountDeletionRoutes(deps));
   app.route("/relay", adminRelayRoutes(deps));
+  app.route("/bug-reports", adminBugReportRoutes(deps));
 
   app.get("/audit", async (c) => {
     const q = parseQuery(c, AuditQuery);

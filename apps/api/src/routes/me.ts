@@ -7,8 +7,10 @@ import {
   type LinkCodeResponse,
   MAX_GUILDS_PER_PLAYER,
   type MyGuildList,
+  UpdateProfileRequest,
 } from "@soulwick/contracts";
 import { Hono } from "hono";
+import { ApiError } from "../lib/errors.ts";
 import { createLogger } from "../lib/logger.ts";
 import { rateLimit } from "../lib/rate-limit.ts";
 import { hmacSecret } from "../lib/secrets.ts";
@@ -24,6 +26,7 @@ import {
   listIdentitySummaries,
   unlinkProvider,
 } from "../services/identities.ts";
+import { updateProfile } from "../services/profile.ts";
 import { issuePlayerSession } from "../services/sessions.ts";
 import type { AppEnv, Deps } from "../types.ts";
 
@@ -36,6 +39,25 @@ export function meRoutes(deps: Deps) {
   app.get("/", async (c) =>
     c.json(await toPlayerSelf(deps.db, c.get("player")))
   );
+
+  /** Account profile (P-034, D-152): display name and character; see UpdateProfileRequest. */
+  app.patch("/", async (c) => {
+    const body = await parseBody(c, UpdateProfileRequest);
+    try {
+      const player = await updateProfile(deps.db, {
+        playerId: c.get("player").id,
+        name: body.name,
+        appearance: body.appearance,
+        now: now(),
+      });
+      return c.json(await toPlayerSelf(deps.db, player));
+    } catch (err) {
+      if (err instanceof ApiError && err.code === "name_change_limited") {
+        c.header("Retry-After", String(err.extra?.retryAfter ?? ""));
+      }
+      throw err;
+    }
+  });
 
   /**
    * Deletes the account (privacy); see `deletePlayerAccount` for what goes and what stays. Writes

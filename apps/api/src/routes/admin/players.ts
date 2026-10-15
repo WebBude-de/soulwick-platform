@@ -31,6 +31,11 @@ import { writeAudit } from "../../services/audit.ts";
 import { activeBanWhere, isBanActive } from "../../services/bans.ts";
 import { findMemberships } from "../../services/guilds.ts";
 import { hasDeviceIdentity, steamIdOf } from "../../services/identities.ts";
+import {
+  appearanceOf,
+  nameHistoryOf,
+  recordNameChange,
+} from "../../services/profile.ts";
 import type { AppEnv, Deps } from "../../types.ts";
 import { registerPlayerNoteRoutes } from "./player-notes.ts";
 
@@ -183,6 +188,8 @@ export function adminPlayerRoutes(deps: Deps) {
       recentRuns: recent.items,
       runsTotal: recent.total,
       noteCount,
+      appearance: appearanceOf(row.appearance),
+      nameHistory: await nameHistoryOf(deps.db, id),
     };
     return c.json(detail);
   });
@@ -269,6 +276,15 @@ export function adminPlayerRoutes(deps: Deps) {
     const admin = c.get("admin");
     await deps.db.$transaction(async (tx) => {
       await tx.player.update({ where: { id }, data: { name } });
+      if (name !== player.name) {
+        await recordNameChange(tx, {
+          playerId: id,
+          oldName: player.name,
+          newName: name,
+          now: now(),
+          adminId: admin.id,
+        });
+      }
       await writeAudit(tx, {
         adminId: admin.id,
         action: "player.rename",

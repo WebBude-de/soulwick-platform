@@ -14,6 +14,10 @@ und in der Relay-Umgebung gemeinsam erhöhen.
 Verknüpfungscodes und das Zusammenführen von Konten (D-121, D-122) sowie die automatische
 Kontolöschung mit Einmal-Löschcode (P14, P15, P-026); das Löschprotokoll für das Admin-Panel steht in
 `src/admin.ts`.
+Das Konto-Profil (ein Charakter je Konto, P-034) steht in `src/common.ts` (`PlayerAppearance`,
+`PlayerCharacter`) und `src/player.ts` (`UpdateProfileRequest` für `PATCH /me`).
+`src/bug-report.ts` enthält die Bug-Meldungen aus dem Spiel (`POST /bug-reports` mit Screenshot,
+Markierungen und Kategorien) und ihre Admin-Routen samt Grenzen (`BUG_REPORT_MAX_*`, P-033).
 `PublicConfig` und die Felder `minGameVersion`/`protocolVersion` in `HealthResponse` (`src/common.ts`)
 melden die Umgebung an Spiel-Builds (P16); `PublicConfig.supportEmail` ist die Support-Adresse der
 Website (P-026).

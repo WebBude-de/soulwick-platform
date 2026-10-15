@@ -9,6 +9,7 @@ import { rateLimit } from "./lib/rate-limit.ts";
 import { accountDeletionRoutes } from "./routes/account-deletion.ts";
 import { adminRoutes } from "./routes/admin/index.ts";
 import { authRoutes } from "./routes/auth.ts";
+import { bugReportRoutes } from "./routes/bug-reports.ts";
 import { guildRoutes } from "./routes/guilds.ts";
 import {
   hasValidRelayKey,
@@ -88,6 +89,7 @@ export function createApp(base: BaseDeps) {
   app.route("/me", meRoutes(deps));
   app.route("/guilds", guildRoutes(deps));
   app.route("/runs", runRoutes(deps));
+  app.route("/bug-reports", bugReportRoutes(deps));
   app.route("/leaderboards", leaderboardRoutes(deps));
   app.route("/public", publicRoutes(deps));
   app.route("/legal", legalRoutes(deps));

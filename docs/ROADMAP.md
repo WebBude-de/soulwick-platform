@@ -1,6 +1,6 @@
 # ROADMAP – Soulwick Platform
 
-> **Stand:** 15.10.2026 · **Fokus jetzt: Website zuerst**, davor die Umstellung auf Bun/Turbo/Prisma (P7, P8). Die Pakete P1–P6 entsprechen MP7, MP7b, MP8 und MP9 aus `soulwick/docs/ROADMAP_MULTIPLAYER.md`, hier nur der **Plattform-Teil**. Spielseitige Punkte (GDScript-Client, Gildengebäude, Anzeige im Spiel) bleiben in der Spiel-Roadmap. Das Zielbild Crossplay (Steam, Google Play, App Store) steht in `soulwick/docs/ROADMAP_CROSSPLAY.md` (D-108); die Architektur (Host + eigener Relay, Steam → Android → iOS, Publisher WebBude) ist mit **D-119** entschieden (14.10.2026). Konzept für die Online-Pakete P13–P17: [KONZEPT_ONLINE.md](KONZEPT_ONLINE.md).
+> **Stand:** 16.10.2026 · **Fokus jetzt: Website zuerst**, davor die Umstellung auf Bun/Turbo/Prisma (P7, P8). Die Pakete P1–P6 entsprechen MP7, MP7b, MP8 und MP9 aus `soulwick/docs/ROADMAP_MULTIPLAYER.md`, hier nur der **Plattform-Teil**. Spielseitige Punkte (GDScript-Client, Gildengebäude, Anzeige im Spiel) bleiben in der Spiel-Roadmap. Das Zielbild Crossplay (Steam, Google Play, App Store) steht in `soulwick/docs/ROADMAP_CROSSPLAY.md` (D-108); die Architektur (Host + eigener Relay, Steam → Android → iOS, Publisher WebBude) ist mit **D-119** entschieden (14.10.2026). Konzept für die Online-Pakete P13–P17: [KONZEPT_ONLINE.md](KONZEPT_ONLINE.md).
 > **Abhaken** nur mit Nachweis (Prüfbefehle grün, Datum). Jedes Paket ist für **einen Agenten** geschnitten und nennt seine Dateien; der Koordinator hakt nach Prüfung ab.
 
 ## Überblick und Reihenfolge
@@ -22,6 +22,8 @@
 | **P18** | Admin-API v2: Statistik, Live-Räume (Relay), Moderation | **API, Relay und Admin-Panel fertig (15.10.2026)**, 218/218 Tests; offen: Variablen in Dokploy (Integrator) | P13, P15 |
 | **P19** | Better Auth für Admins und Spieler, Relay-JWT über JWKS (P-027) | **API, Relay und Admin-Panel fertig (15.10.2026)**, 246/246 Tests; offen: Variablen in Dokploy | P8, P13, P14 |
 | **P20** | Gast-Anmeldung je Gerät `POST /auth/device` (P-028) | **API fertig (15.10.2026)**; offen: Spiel-Client (Gast statt Dev-Schlüssel), Variablen in Dokploy prüfen, Hinweis „Konto verknüpfen“ im Spiel (CP1) | P14, P15 (Verknüpfungscode) |
+| **P21** | Bug-Meldungen aus dem Spiel mit Screenshot, Auswertung im Admin-Panel (P-033) | **API fertig (16.10.2026)**; offen: Admin-Seite (admin-dev), Absenden im Spiel (F9), Zusatz Datenschutzerklärung, Variablen in Dokploy | P19 (Sessions), P20 (Gastkonten) |
+| **P22** | Konto-Profil: ein Charakter (Name + Aussehen) je Konto (P-034, D-152) | **API fertig (16.10.2026)**; offen: Profil-Editor im Spiel, Anzeige im Admin-Panel (admin-dev), Namensfilter | P20 |
 | P2 | Online gehen (Dokploy) | geplant | P7, P8 (Images auf Bun, Prisma-Migrationen) |
 | P3 | Website fertig (alte Fassung) | offene Punkte gehen in P9, P10, P12 auf | – |
 | P4 | Gilden im Spiel nutzbar | geplant | **MP0** (Spiel-Repo), **CP0** (Fragen 3/4 entschieden, D-119), P13 (Gilden-Räume) |
@@ -318,6 +320,36 @@ Doku für alle Punkte fertig (14.10.2026) in [infra/DOKPLOY.md](../infra/DOKPLOY
 - [ ] Spiel-Client: Gast-Anmeldung statt Dev-Schlüssel, wenn `guestAuth` true ist (Spiel-Repo).
 - [ ] Dokploy: `GUEST_AUTH_ENABLED`, `GUEST_LOGINS_PER_MINUTE`, `GUEST_ACCOUNTS_PER_HOUR` je Umgebung setzen (Standardwerte genügen).
 - [ ] Hinweis im Spiel: „Ohne Verknüpfung geht das Gastkonto mit dem Gerät verloren“ (CP1).
+
+## P21 – Bug-Meldungen aus dem Spiel (P-033)
+
+**Ziel:** Alle Spieler der Beta/Testphase melden Fehler direkt aus dem Spiel: Screenshot mit Markierungen und Strichen, Notiz, Kategorien, Spiel-Kontext. Admins und Moderatoren werten sie im Admin-Panel aus. Entscheidung: P-033; Konzept: [KONZEPT_ONLINE.md](KONZEPT_ONLINE.md) §3.7a.
+**Dateien:** `packages/contracts/src/bug-report.ts` (neu), `admin.ts` (`newBugReports`, Protokoll-Aktionen), `identity.ts` (`bugReportCount`); `packages/db/prisma/schema.prisma` + Migration `bug_reports`; `apps/api/src/routes/bug-reports.ts`, `routes/admin/bug-reports.ts`, `services/{bug-reports,housekeeping}.ts`, `lib/{image,placeholder-png}.ts`, `config.ts`, `index.ts`; Test `apps/api/test/bug-reports.test.ts`; Dev-Seed; Doku.
+
+- [x] *(16.10.2026)* Vertrag `CreateBugReportRequest` / `CreateBugReportResponse`, Admin-Schemas `AdminBugReportQuery`, `AdminBugReportList`, `AdminBugReportDetail`, `UpdateBugReportRequest`, Grenzen `BUG_REPORT_MAX_*`.
+- [x] *(16.10.2026; Migration `20261015221623_bug_reports`, `db:verify` grün, 9 Migrationen, auf die lokale Dev-Datenbank eingespielt)* Tabelle `bug_reports` (Bild als `bytea`, Kaskade mit dem Spieler, `handled_by` → `auth_users`).
+- [x] *(16.10.2026)* `POST /bug-reports`: Bildtyp aus den Magic Bytes, Body-Grenze 2,25 MiB nur hier, Rate-Limits je Spieler und IP (TESTWERT), gesperrt → 403.
+- [x] *(16.10.2026)* Admin: Liste mit Cursor, Filtern und Zählern je Status, Detail, Bild (`Cache-Control: private`), Status setzen (Moderator, Protokoll), Löschen (Admin, Protokoll); `newBugReports` in `GET /admin/stats`; `bugReportCount` in der Lösch-Vorschau; Meldungen wandern beim Zusammenführen mit.
+- [x] *(16.10.2026)* Aufbewahrung 90 Tage (TESTWERT): Aufräumen beim Start und alle 24 h (`services/housekeeping.ts`).
+- [x] *(16.10.2026; `bug-reports.test.ts` 14 Tests; live gegen eigene API auf Port 8797 mit echtem PNG: Upload, Liste mit Cursor, Detail, Bild bytegleich, Status, Löschen, 413 bei 1,7-MB-PNG und 3-MB-Body)* Tests und Live-Prüfung.
+- [x] *(16.10.2026; zweimal hintereinander gegen die lokale Datenbank)* Dev-Seed: 3 Meldungen mit Platzhalter-Screenshots.
+- [ ] Admin-Panel: Seite „Bug-Meldungen“ (Liste mit Status-Reitern, Detail mit Bild und eingezeichneten Markierungen/Strichen, Status setzen, Löschen nur Admin), Kennzahl „neue Bug-Meldungen“ in der Übersicht; Bild serverseitig mit dem Admin-Token holen und durchreichen (admin-dev).
+- [ ] Spiel: „Absenden“ im F9-Werkzeug (Haken in KONZEPT_ONLINE §3.7a; Spiel-Repo).
+- [ ] Datenschutzerklärung: Zusatz „Fehlermeldungen aus dem Spiel“ bei eRecht24 und Store-Angaben (Projektmitglied).
+- [ ] Dokploy: `BUG_REPORTS_PER_HOUR`, `BUG_REPORTS_PER_IP_PER_HOUR`, `BUG_REPORT_RETENTION_DAYS` nur setzen, wenn vom Standard abweichend (Integrator, `infra/DOKPLOY.md`).
+
+## P22 – Konto-Profil statt Spielstand-Name (P-034, D-152)
+
+**Ziel:** Ein Konto hat einen Charakter (Anzeigename + Aussehen); Spielstände sind nur Welten. Entscheidung: P-034 (D-152 im Spiel-Repo); Konzept: [KONZEPT_ONLINE.md](KONZEPT_ONLINE.md) §3.4a.
+**Dateien:** `packages/contracts/src/{common,player,identity,guild,admin}.ts`; `packages/db/prisma/schema.prisma` + Migration `player_profile`; `apps/api/src/routes/{me,auth}.ts`, `routes/admin/players.ts`, `services/{profile,sessions,identities,guilds,account-link,housekeeping}.ts`, `auth/player-plugin.ts`; Test `apps/api/test/profile.test.ts`; Dev-Seed; Doku.
+
+- [x] *(16.10.2026)* Vertrag `PlayerCharacter`, `PlayerAppearance`, `UpdateProfileRequest`; `appearance` in `PlayerSelf`, `GuildMember`, `AdminPlayerDetail` (+ `nameHistory`); `name` bei `/auth/device` und `/auth/dev` optional, `appearance` bei allen Logins optional.
+- [x] *(16.10.2026; `db:verify` grün, 10 Migrationen, lokal eingespielt)* Migration `player_profile`: `players.appearance jsonb`, Tabelle `player_name_changes`.
+- [x] *(16.10.2026)* `PATCH /me` mit Grenze 3 Namenswechsel je 24 h (TESTWERT, `429 name_change_limited`), Admin-Umbenennung ohne Grenze mit Verlauf; Verlauf 90 Tage im Aufräumjob; Zusammenführen nimmt den Verlauf mit.
+- [x] *(16.10.2026; `profile.test.ts` 7 Tests, live gegen eigene API geprüft)* Tests und Live-Prüfung; Dev-Seed mit Figuren für Spieler 1–8.
+- [ ] Spiel: Profil-Editor, Spielstand-Name nicht mehr an die Anmeldung schicken (Haken KONZEPT_ONLINE §3.4a).
+- [ ] Admin-Panel: Figur und Namensverlauf in den Spieler-Details zeigen (admin-dev).
+- [ ] Filter gegen anstößige Namen (Store-Pflicht; Baustein fehlt).
 
 ## Später
 

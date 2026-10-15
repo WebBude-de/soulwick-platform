@@ -119,6 +119,7 @@ describe("automatic account deletion (P-026)", () => {
       guild: null,
       guilds: [],
       runCount: 0,
+      bugReportCount: 0,
     });
     const ttl = Date.parse(body.expiresAt) - Date.now();
     expect(ttl).toBeGreaterThan(DELETION_TOKEN_TTL_SECONDS * 1000 - 5000);
@@ -191,6 +192,7 @@ describe("automatic account deletion (P-026)", () => {
         { name: "Andere Gilde", tag: "WEB2", role: "member" },
       ],
       runCount: 1,
+      bugReportCount: 0,
     });
 
     const logBefore = await ctx.db.accountDeletion.count({

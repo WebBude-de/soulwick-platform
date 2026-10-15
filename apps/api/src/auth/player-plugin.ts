@@ -1,4 +1,4 @@
-import type { IdentityProvider } from "@soulwick/contracts";
+import { type IdentityProvider, PlayerAppearance } from "@soulwick/contracts";
 import type { Player } from "@soulwick/db";
 import type {
   BetterAuthPlugin,
@@ -27,22 +27,27 @@ const PlayerCredential = z.discriminatedUnion("provider", [
   z.object({
     provider: z.literal("device"),
     deviceId: z.string().min(1),
-    name: z.string().min(1),
+    name: z.string().min(1).optional(),
+    appearance: PlayerAppearance.optional(),
   }),
   z.object({
     provider: z.literal("steam"),
     ticket: z.string().min(1),
     name: z.string().min(1).optional(),
+    appearance: PlayerAppearance.optional(),
   }),
   z.object({
     provider: z.literal("google_play"),
     serverAuthCode: z.string().min(1),
     name: z.string().min(1).optional(),
+    appearance: PlayerAppearance.optional(),
   }),
 ]);
 export type PlayerCredential = z.infer<typeof PlayerCredential>;
 
 export interface VerifiedIdentity {
+  /** Character of a new account (P-034); used only when the account is created. */
+  appearance?: PlayerAppearance;
   /** Used only when the account is created. */
   name: string;
   provider: IdentityProvider;

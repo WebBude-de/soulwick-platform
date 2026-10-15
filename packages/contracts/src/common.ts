@@ -35,6 +35,36 @@ export const PlayerName = z
   .max(24)
   .regex(/^[\p{L}\p{N} _.-]+$/u, "letters, digits, space, _ . - only");
 
+// --- account profile (P-034, D-152) -------------------------------------------------------------
+
+/**
+ * The account's one character (D-152): save games are only "worlds" and no longer name the
+ * account. Values may be added later (additive); a game build that does not know a value shows
+ * its default character.
+ */
+export const PlayerCharacter = z.enum(["wick", "ember", "moss", "frost"]);
+export type PlayerCharacter = z.infer<typeof PlayerCharacter>;
+
+/** TESTWERT: highest palette index per colour slot (8 choices, 0..7). */
+export const PLAYER_APPEARANCE_COLOR_MAX = 7;
+
+const PaletteIndex = z.number().int().min(0).max(PLAYER_APPEARANCE_COLOR_MAX);
+
+/**
+ * Look of the account's character: one of the figures plus palette indexes (all freely
+ * selectable). null/missing on an account = the game uses its default character.
+ */
+export const PlayerAppearance = z.object({
+  character: PlayerCharacter,
+  colors: z.object({
+    hair: PaletteIndex,
+    outfit: PaletteIndex,
+    skin: PaletteIndex,
+    accent: PaletteIndex.optional(),
+  }),
+});
+export type PlayerAppearance = z.infer<typeof PlayerAppearance>;
+
 export const GuildName = z
   .string()
   .trim()

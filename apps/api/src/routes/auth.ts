@@ -69,6 +69,7 @@ export function authRoutes(deps: Deps) {
         provider: "device",
         deviceId: body.deviceId,
         name: body.name,
+        appearance: body.appearance,
       })
     );
   });
@@ -117,6 +118,7 @@ export function authRoutes(deps: Deps) {
         provider: "device",
         deviceId: body.deviceId,
         name: body.name,
+        appearance: body.appearance,
       });
       if (isNew) {
         newGuestAccounts.hit(ip);
@@ -140,6 +142,7 @@ export function authRoutes(deps: Deps) {
         provider: "steam",
         ticket: body.ticket,
         name: body.name,
+        appearance: body.appearance,
       })
     );
   });
@@ -159,6 +162,7 @@ export function authRoutes(deps: Deps) {
         provider: "google_play",
         serverAuthCode: body.serverAuthCode,
         name: body.name,
+        appearance: body.appearance,
       })
     );
   });

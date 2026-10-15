@@ -105,6 +105,7 @@ describe("admin statistics", () => {
       runsByMode: { solo: 3, quick: 1, guild: 0 },
       activeGuilds7d: 1,
       deletions7d: 0,
+      newBugReports: 0,
     });
   });
 

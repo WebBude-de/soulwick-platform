@@ -8,7 +8,13 @@ export async function writeAudit(
   entry: {
     adminId: string;
     action: AuditAction;
-    targetType: "player" | "guild" | "run" | "admin_user" | "relay_room";
+    targetType:
+      | "player"
+      | "guild"
+      | "run"
+      | "admin_user"
+      | "relay_room"
+      | "bug_report";
     targetId: string | null;
     details?: Record<string, unknown>;
   }

@@ -1,10 +1,22 @@
 import { z } from "zod";
-import { GuildRole, IsoDateTime, PlayerName, Uuid } from "./common.ts";
+import {
+  GuildRole,
+  IsoDateTime,
+  PlayerAppearance,
+  PlayerName,
+  Uuid,
+} from "./common.ts";
 
+/**
+ * POST /auth/dev. `name` and `appearance` are only used when the account is created (the game sends
+ * the account profile, D-152); optional since P-034: a new account without a name is called
+ * "Spieler-1234" (random digits) until the player sets a name with `PATCH /me`.
+ */
 export const DevAuthRequest = z.object({
-  name: PlayerName,
+  name: PlayerName.optional(),
   /** Random id generated once per installation by the game. */
   deviceId: z.string().trim().min(16).max(128),
+  appearance: PlayerAppearance.optional(),
 });
 export type DevAuthRequest = z.infer<typeof DevAuthRequest>;
 
@@ -22,15 +34,17 @@ export type GuestDeviceId = z.infer<typeof GuestDeviceId>;
 
 /**
  * POST /auth/device: guest login per device (P-028), no key needed. Same `device` identity as
- * `/auth/dev`, so a device that used the dev login lands on the same account. The name is only
- * used when the account is created. Later the guest account is linked to Steam / Google Play via
+ * `/auth/dev`, so a device that used the dev login lands on the same account. `name` and
+ * `appearance` are only used when the account is created and are optional (P-034, like
+ * `DevAuthRequest`); existing accounts keep their profile. Later the guest account is linked to Steam / Google Play via
  * `POST /me/link-code` + `POST /me/link`. Answer: `AuthResponse`. Errors: 400 `validation_error`,
  * 403 `guest_auth_disabled`, 403 `banned`, 429 `rate_limited` (logins per IP and minute, or new
  * guest accounts per IP and hour).
  */
 export const DeviceAuthRequest = z.object({
-  name: PlayerName,
+  name: PlayerName.optional(),
   deviceId: GuestDeviceId,
+  appearance: PlayerAppearance.optional(),
 });
 export type DeviceAuthRequest = z.infer<typeof DeviceAuthRequest>;
 
@@ -43,6 +57,8 @@ export const SteamAuthRequest = z.object({
     .max(8192),
   /** Display name used when the account is created (e.g. Steam persona name). */
   name: PlayerName.optional(),
+  /** Character used when the account is created (P-034). */
+  appearance: PlayerAppearance.optional(),
 });
 export type SteamAuthRequest = z.infer<typeof SteamAuthRequest>;
 
@@ -66,8 +82,36 @@ export const PlayerSelf = z.object({
   guild: PlayerGuildRef.nullable(),
   /** All active guilds of the player, oldest membership first (D-147, at most MAX_GUILDS_PER_PLAYER). */
   guilds: z.array(PlayerGuildRef),
+  /**
+   * The account's character (P-034, D-152); null = not chosen yet, the game shows its default.
+   * Optional for older API builds.
+   */
+  appearance: PlayerAppearance.nullable().optional(),
 });
 export type PlayerSelf = z.infer<typeof PlayerSelf>;
+
+/** TESTWERT: name changes per player through `PATCH /me` in NAME_CHANGE_WINDOW_HOURS (admins: no limit). */
+export const MAX_NAME_CHANGES = 3;
+/** TESTWERT: sliding window of the name change limit. */
+export const NAME_CHANGE_WINDOW_HOURS = 24;
+
+/**
+ * PATCH /me (player session) -> 200 `PlayerSelf`: changes the account profile (D-152). At least
+ * one field. `name` is a display name (not unique); setting the current name again is a no-op and
+ * does not count. `appearance` replaces the whole look; `null` resets it to the default character.
+ * Errors: 400 `validation_error`, 401, 403 `banned`, 429 `name_change_limited` (more than
+ * MAX_NAME_CHANGES name changes in NAME_CHANGE_WINDOW_HOURS; body `retryAfter` and header
+ * `Retry-After` in seconds; the appearance part of such a request is not applied either).
+ */
+export const UpdateProfileRequest = z
+  .object({
+    name: PlayerName.optional(),
+    appearance: PlayerAppearance.nullable().optional(),
+  })
+  .refine((v) => v.name !== undefined || v.appearance !== undefined, {
+    message: "name or appearance required",
+  });
+export type UpdateProfileRequest = z.infer<typeof UpdateProfileRequest>;
 
 /**
  * Answer of every player login (`POST /auth/dev`, `/auth/device`, `/auth/steam`,

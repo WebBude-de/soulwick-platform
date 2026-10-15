@@ -175,6 +175,7 @@ const hasProgress = (s: AccountSummary) => s.guild !== null || s.runCount > 0;
  *   MAX_GUILDS_PER_PLAYER (oldest membership first); in a guild both are in, one row with the
  *   higher role remains; the rest are left with the founder hand-off of P-102;
  * - run participations move; a run both accounts took part in keeps one row; reporter moves;
+ * - bug reports (P-033) and the name history (P-034) move; keep's name and appearance stay;
  * - name and `created_at` of keep stay, `last_seen_at` becomes the later of both.
  */
 async function absorbAccount(
@@ -205,6 +206,15 @@ async function absorbAccount(
     data: { reportedBy: keep.id },
   });
   await tx.ban.updateMany({
+    where: { playerId: drop.id },
+    data: { playerId: keep.id },
+  });
+  // Same person: their bug reports (P-033) and name history (P-034) stay with the kept account.
+  await tx.bugReport.updateMany({
+    where: { playerId: drop.id },
+    data: { playerId: keep.id },
+  });
+  await tx.playerNameChange.updateMany({
     where: { playerId: drop.id },
     data: { playerId: keep.id },
   });

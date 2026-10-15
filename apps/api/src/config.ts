@@ -1,4 +1,8 @@
-import { PROTOCOL_VERSION, RELAY_WS_PATH } from "@soulwick/contracts";
+import {
+  BUG_REPORT_RETENTION_DAYS_DEFAULT,
+  PROTOCOL_VERSION,
+  RELAY_WS_PATH,
+} from "@soulwick/contracts";
 import { z } from "zod";
 
 const bool = z
@@ -99,6 +103,17 @@ const ConfigSchema = z
     LINK_ATTEMPTS_PER_MINUTE: z.coerce.number().int().min(1).default(10),
     /** TESTWERT: POST /account-deletion/verify per IP and hour (public deletion page, P-026). */
     DELETION_REQUESTS_PER_HOUR: z.coerce.number().int().min(1).default(5),
+    /** TESTWERT: POST /bug-reports per player and hour (P-033). */
+    BUG_REPORTS_PER_HOUR: z.coerce.number().int().min(1).default(10),
+    /** TESTWERT: POST /bug-reports per IP and hour (several players can share one IP). */
+    BUG_REPORTS_PER_IP_PER_HOUR: z.coerce.number().int().min(1).default(20),
+    /** TESTWERT: bug reports are deleted this many days after they were sent (P-033). */
+    BUG_REPORT_RETENTION_DAYS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(3650)
+      .default(BUG_REPORT_RETENTION_DAYS_DEFAULT),
     /** Behind Dokploy/Traefik the client IP comes from X-Forwarded-For. */
     TRUST_PROXY: z
       .enum(["true", "false", "1", "0"])
