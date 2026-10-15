@@ -519,10 +519,18 @@ export const RelayPlayerStatus = z.object({
   playerId: Uuid,
   name: z.string(),
   banned: z.boolean(),
-  /** Current (active) guild of the player, null if none. */
+  /**
+   * @deprecated Oldest active guild of the player (null if none); kept for older relays. Since
+   * D-147 a player can be in several guilds: check `guildIds`.
+   */
   guildId: Uuid.nullable(),
   /** Whether the player is a member of the queried `guildId`; null without the query parameter. */
   guildMember: z.boolean().nullable(),
+  /**
+   * All active guilds of the player (D-147, P-031). The relay admits a player to a guild room when
+   * the room's guild is in this list. Optional: older APIs only send `guildId`.
+   */
+  guildIds: z.array(Uuid).optional(),
 });
 export type RelayPlayerStatus = z.infer<typeof RelayPlayerStatus>;
 

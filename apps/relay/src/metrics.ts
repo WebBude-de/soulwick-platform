@@ -26,6 +26,8 @@ export class Metrics {
   readonly framesDropped: Record<string, number> = {};
   readonly errors: Record<string, number> = {};
   slowConsumersClosed = 0;
+  /** Largest binary frame received so far (bytes); compare with MAX_FRAME_BYTES. */
+  maxFrameIn = 0;
   private readonly samples: { at: number; in: number; out: number }[] = [];
 
   constructor(now: number) {

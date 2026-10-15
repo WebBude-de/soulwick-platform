@@ -2,6 +2,7 @@ import { createHmac, randomInt, randomUUID } from "node:crypto";
 import {
   type AccountDeletionChannel,
   type AccountDeletionPreview,
+  type AdminDeletedGuildMembership,
   type AdminDeletePlayerResponse,
   DELETION_CODE_LENGTH,
   DELETION_CODE_MAX_ATTEMPTS,
@@ -16,11 +17,12 @@ import {
   isUniqueViolation,
   withCause,
 } from "../lib/errors.ts";
+import { forEachSequential } from "../lib/sequential.ts";
 import { signDeletionToken, verifyDeletionToken } from "../lib/tokens.ts";
 import { writeAudit } from "./audit.ts";
 import { findActiveBan } from "./bans.ts";
 import type { Db, Tx } from "./db-types.ts";
-import { findMembership, removeMember } from "./guilds.ts";
+import { findMemberships, removeMember } from "./guilds.ts";
 
 /**
  * Automatic account deletion (P-026, KONZEPT_ONLINE.md §3.7): one-time deletion codes for the
@@ -153,7 +155,12 @@ export async function verifyDeletionCode(
     });
     throw invalidCode();
   }
-  const membership = await findMembership(db, row.player.id);
+  const memberships = await findMemberships(db, row.player.id);
+  const guilds = memberships.map((m) => ({
+    name: m.name,
+    tag: m.tag,
+    role: m.role,
+  }));
   const runCount = await db.runPlayer.count({
     where: { playerId: row.player.id },
   });
@@ -169,7 +176,10 @@ export async function verifyDeletionCode(
     expiresAt,
     account: {
       playerName: row.player.name,
-      guild: membership ? { name: membership.name, tag: membership.tag } : null,
+      guild: memberships[0]
+        ? { name: memberships[0].name, tag: memberships[0].tag }
+        : null,
+      guilds,
       runCount,
     },
   };
@@ -179,7 +189,7 @@ export async function verifyDeletionCode(
 export type DeletedAccount = Pick<
   AdminDeletePlayerResponse,
   "guild" | "wasBanned"
->;
+> & { guilds: AdminDeletedGuildMembership[] };
 
 /**
  * Deletes an account; the one implementation behind DELETE /me, the website confirmation and
@@ -199,17 +209,20 @@ export async function deletePlayerAccount(
 ): Promise<DeletedAccount> {
   const { playerId, channel, secret, now } = input;
   const wasBanned = (await findActiveBan(tx, playerId, now)) !== null;
-  const membership = await findMembership(tx, playerId);
-  let guild: DeletedAccount["guild"] = null;
-  if (membership) {
-    const result = await removeMember(tx, membership.guildId, playerId, now);
-    guild = {
-      id: membership.guildId,
-      tag: membership.tag,
-      disbanded: result.disbanded,
-      newFounderId: result.newFounderId,
-    };
-  }
+  // Every guild the player is in (D-147), one after the other: each hand-over is independent.
+  const guilds: AdminDeletedGuildMembership[] = [];
+  await forEachSequential(
+    await findMemberships(tx, playerId),
+    async (membership) => {
+      const result = await removeMember(tx, membership.guildId, playerId, now);
+      guilds.push({
+        id: membership.guildId,
+        tag: membership.tag,
+        disbanded: result.disbanded,
+        newFounderId: result.newFounderId,
+      });
+    }
+  );
   await tx.player.delete({ where: { id: playerId } });
   await tx.accountDeletion.create({
     data: {
@@ -219,7 +232,7 @@ export async function deletePlayerAccount(
       playerHash: deletionLogHash(playerId, secret),
     },
   });
-  return { guild, wasBanned };
+  return { guild: guilds[0] ?? null, guilds, wasBanned };
 }
 
 const invalidToken = () =>
@@ -312,7 +325,7 @@ export async function adminDeletePlayer(
         if (!player) {
           throw playerNotFound();
         }
-        const { guild, wasBanned } = await deletePlayerAccount(tx, {
+        const { guild, guilds, wasBanned } = await deletePlayerAccount(tx, {
           playerId: player.id,
           channel: "admin",
           secret: input.secret,
@@ -329,9 +342,17 @@ export async function adminDeletePlayer(
             ...(guild
               ? { guildId: guild.id, guildDisbanded: guild.disbanded }
               : {}),
+            ...(guilds.length > 1
+              ? {
+                  guilds: guilds.map((g) => ({
+                    id: g.id,
+                    disbanded: g.disbanded,
+                  })),
+                }
+              : {}),
           },
         });
-        return { id: player.id, name: player.name, guild, wasBanned };
+        return { id: player.id, name: player.name, guild, guilds, wasBanned };
       },
       { timeout: DELETE_TIMEOUT_MS }
     );

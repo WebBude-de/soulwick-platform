@@ -5,6 +5,8 @@ import {
   LinkAccountRequest,
   type LinkAccountResponse,
   type LinkCodeResponse,
+  MAX_GUILDS_PER_PLAYER,
+  type MyGuildList,
 } from "@soulwick/contracts";
 import { Hono } from "hono";
 import { createLogger } from "../lib/logger.ts";
@@ -17,7 +19,7 @@ import {
   deleteOwnAccount,
 } from "../services/account-deletion.ts";
 import { createLinkCode, redeemLinkCode } from "../services/account-link.ts";
-import { toPlayerSelf } from "../services/guilds.ts";
+import { listMyGuilds, toPlayerSelf } from "../services/guilds.ts";
 import {
   listIdentitySummaries,
   unlinkProvider,
@@ -48,9 +50,18 @@ export function meRoutes(deps: Deps) {
     logger.info("account_deleted", {
       channel: "in_game",
       wasBanned: result.wasBanned,
-      guildDisbanded: result.guild?.disbanded ?? false,
+      guildDisbanded: result.guilds?.some((g) => g.disbanded) ?? false,
     });
     return c.body(null, 204);
+  });
+
+  /** Own active guilds for the online menu (D-147), oldest membership first. */
+  app.get("/guilds", async (c) => {
+    const body: MyGuildList = {
+      items: await listMyGuilds(deps.db, c.get("player").id),
+      maxGuilds: MAX_GUILDS_PER_PLAYER,
+    };
+    return c.json(body);
   });
 
   // --- identities and linking (D-121, D-122, KONZEPT_ONLINE.md §3.5) ---------------------------
@@ -108,7 +119,7 @@ export function meRoutes(deps: Deps) {
         removedPlayerId: result.removedPlayerId,
         removedCaller: result.removedCaller,
         merged: result.merged,
-        guild: result.guild,
+        guilds: result.guilds,
       });
       const session = await issuePlayerSession(deps, result.remaining);
       const response: LinkAccountResponse = {

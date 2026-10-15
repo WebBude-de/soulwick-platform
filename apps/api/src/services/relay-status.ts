@@ -1,11 +1,12 @@
 import type { RelayPlayerStatus } from "@soulwick/contracts";
 import { findActiveBan } from "./bans.ts";
 import type { DbOrTx } from "./db-types.ts";
-import { findMembership } from "./guilds.ts";
+import { findMemberships } from "./guilds.ts";
 
 /**
  * What the relay needs to admit a player (KONZEPT_ONLINE.md §2.7): ban status and guild
- * membership. Null if the player does not exist (deleted account with a still valid token).
+ * memberships (D-147, P-031: `guildIds` lists every active guild). Null if the player does not
+ * exist (deleted account with a still valid token).
  */
 export async function getRelayPlayerStatus(
   db: DbOrTx,
@@ -20,16 +21,17 @@ export async function getRelayPlayerStatus(
   if (!player) {
     return null;
   }
-  const [ban, membership] = await Promise.all([
+  const [ban, memberships] = await Promise.all([
     findActiveBan(db, player.id, now),
-    findMembership(db, player.id),
+    findMemberships(db, player.id),
   ]);
-  const currentGuildId = membership?.guildId ?? null;
+  const guildIds = memberships.map((m) => m.guildId);
   return {
     playerId: player.id,
     name: player.name,
     banned: ban !== null,
-    guildId: currentGuildId,
-    guildMember: guildId === undefined ? null : currentGuildId === guildId,
+    guildId: guildIds[0] ?? null,
+    guildMember: guildId === undefined ? null : guildIds.includes(guildId),
+    guildIds,
   };
 }

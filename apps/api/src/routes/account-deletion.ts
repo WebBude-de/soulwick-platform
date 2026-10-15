@@ -65,7 +65,7 @@ export function accountDeletionRoutes(deps: Deps) {
     logger.info("account_deleted", {
       channel: "web_code",
       wasBanned: result.wasBanned,
-      guildDisbanded: result.guild?.disbanded ?? false,
+      guildDisbanded: result.guilds?.some((g) => g.disbanded) ?? false,
     });
     const response: AccountDeletionConfirmResponse = {
       deleted: true,

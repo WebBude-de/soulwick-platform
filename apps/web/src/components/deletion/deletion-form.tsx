@@ -2,6 +2,7 @@
 
 import { useFormatter, useTranslations } from "next-intl";
 import {
+  Fragment,
   type ReactElement,
   type ReactNode,
   type RefObject,
@@ -24,6 +25,9 @@ import {
   EMPTY_VALUES,
   HONEYPOT_FIELD,
   INTENT_FIELD,
+  PREVIEW_GUILD_NAME_FIELD,
+  PREVIEW_GUILD_TAG_FIELD,
+  previewGuilds,
 } from "@/lib/deletion-form";
 
 const INITIAL_STATE: DeletionFormState = { status: "idle" };
@@ -291,29 +295,28 @@ function ConfirmStep({
 }) {
   const t = useTranslations("deletion.confirm");
   const uid = useId();
-  const guildLabel = account.guild
-    ? `${account.guild.name} [${account.guild.tag}]`
-    : null;
+  const guilds = previewGuilds(account);
+  const guildLabels = guilds.map((guild) => `${guild.name} [${guild.tag}]`);
 
   return (
     <form action={action} className="flex flex-col gap-6">
       <input name={CONFIRM_FIELD} type="hidden" value={confirmation} />
       <input name="previewName" type="hidden" value={account.playerName} />
       <input name="previewRuns" type="hidden" value={account.runCount} />
-      {account.guild ? (
-        <>
+      {guilds.map((guild) => (
+        <Fragment key={guild.tag}>
           <input
-            name="previewGuildName"
+            name={PREVIEW_GUILD_NAME_FIELD}
             type="hidden"
-            value={account.guild.name}
+            value={guild.name}
           />
           <input
-            name="previewGuildTag"
+            name={PREVIEW_GUILD_TAG_FIELD}
             type="hidden"
-            value={account.guild.tag}
+            value={guild.tag}
           />
-        </>
-      ) : null}
+        </Fragment>
+      ))}
 
       <div
         className="flex flex-col gap-2 outline-none"
@@ -339,8 +342,20 @@ function ConfirmStep({
         <dd className="break-all font-pixel text-gold text-xl">
           {account.playerName}
         </dd>
-        <dt className="text-muted text-sm">{t("guildLabel")}</dt>
-        <dd className="break-words text-text">{guildLabel ?? t("noGuild")}</dd>
+        <dt className="text-muted text-sm">
+          {t("guildLabel", { count: guilds.length })}
+        </dt>
+        <dd className="break-words text-text">
+          {guildLabels.length > 0 ? (
+            <ul className="flex flex-col gap-1">
+              {guildLabels.map((label) => (
+                <li key={label}>{label}</li>
+              ))}
+            </ul>
+          ) : (
+            t("noGuild")
+          )}
+        </dd>
         <dt className="text-muted text-sm">{t("runsLabel")}</dt>
         <dd className="font-pixel text-lg text-text">{account.runCount}</dd>
       </dl>
@@ -350,8 +365,16 @@ function ConfirmStep({
         <ul className="flex flex-col gap-2.5 text-sm text-soft">
           <GoneItem>{t("gone.account")}</GoneItem>
           <GoneItem>{t("gone.logins")}</GoneItem>
-          {guildLabel ? (
-            <GoneItem>{t("gone.guild", { guild: guildLabel })}</GoneItem>
+          {guildLabels.length > 0 ? (
+            <GoneItem>
+              {t("gone.guild", {
+                count: guildLabels.length,
+                guild: guildLabels[0] ?? "",
+              })}
+            </GoneItem>
+          ) : null}
+          {guildLabels.length > 0 ? (
+            <GoneItem>{t("gone.founder")}</GoneItem>
           ) : null}
           <GoneItem>{t("gone.runs", { count: account.runCount })}</GoneItem>
         </ul>

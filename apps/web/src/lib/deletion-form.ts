@@ -42,11 +42,31 @@ export type DeletionNotice =
   | "confirmExpired"
   | "cancelled";
 
+export interface DeletionGuild {
+  name: string;
+  tag: string;
+}
+
 export interface DeletionPreview {
-  guild: { name: string; tag: string } | null;
+  /** Oldest current guild (kept for API builds without `guilds`). */
+  guild: DeletionGuild | null;
+  /** All current guilds (D-147); optional, older API builds only send `guild`. */
+  guilds?: DeletionGuild[];
   playerName: string;
   runCount: number;
 }
+
+/** Every guild of the account, falling back to the single `guild` of older API builds. */
+export function previewGuilds(account: DeletionPreview): DeletionGuild[] {
+  if (account.guilds) {
+    return account.guilds;
+  }
+  return account.guild ? [account.guild] : [];
+}
+
+/** Hidden fields that carry the guilds of the preview through the confirmation step. */
+export const PREVIEW_GUILD_NAME_FIELD = "previewGuildName";
+export const PREVIEW_GUILD_TAG_FIELD = "previewGuildTag";
 
 export type DeletionFormState =
   | { status: "idle" }

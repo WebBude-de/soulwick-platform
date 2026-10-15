@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { formatDateTime, formatDateTimeShort } from "@/lib/format";
 import { type IconName, PixelIcon } from "./pixel-icon";
 
 export function PageTitle({
@@ -249,6 +250,64 @@ export function ErrorBox({ message }: { message: string }) {
         {message}
       </p>
     </div>
+  );
+}
+
+/** Short date and time for table cells ("13.10.26, 23:46"); the long form as tooltip. */
+export function When({
+  iso,
+  className = "",
+}: {
+  iso: string | null | undefined;
+  className?: string;
+}) {
+  if (!iso) {
+    return <span className="text-muted">–</span>;
+  }
+  return (
+    <time
+      className={`whitespace-nowrap font-data ${className}`}
+      dateTime={iso}
+      title={formatDateTime(iso)}
+    >
+      {formatDateTimeShort(iso)}
+    </time>
+  );
+}
+
+/** Action cell content: compact buttons side by side, right-aligned. */
+export function RowActions({ children }: { children: ReactNode }) {
+  return <div className="row-actions">{children}</div>;
+}
+
+/**
+ * Name (player, guild, e-mail) on one line: cut with an ellipsis at `max`, full text as tooltip.
+ * Player names are save-game names of guest accounts and can be long.
+ */
+export function Truncate({
+  children,
+  href,
+  max = "max-w-48",
+  className = "",
+}: {
+  children: string;
+  href?: string;
+  /** Tailwind max-width class. */
+  max?: string;
+  className?: string;
+}) {
+  return href ? (
+    <Link
+      className={`link cell-truncate font-semibold ${max} ${className}`}
+      href={href}
+      title={children}
+    >
+      {children}
+    </Link>
+  ) : (
+    <span className={`cell-truncate ${max} ${className}`} title={children}>
+      {children}
+    </span>
   );
 }
 

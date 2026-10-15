@@ -15,8 +15,12 @@ import {
   type DeletionFieldError,
   type DeletionFormState,
   type DeletionFormValues,
+  type DeletionGuild,
+  type DeletionPreview,
   HONEYPOT_FIELD,
   INTENT_FIELD,
+  PREVIEW_GUILD_NAME_FIELD,
+  PREVIEW_GUILD_TAG_FIELD,
 } from "@/lib/deletion-form";
 
 /**
@@ -162,16 +166,26 @@ function text(formData: FormData, name: string): string {
 function readPreview(formData: FormData) {
   const playerName = text(formData, "previewName");
   const runCount = Number.parseInt(text(formData, "previewRuns"), 10);
-  const guildName = text(formData, "previewGuildName");
-  const guildTag = text(formData, "previewGuildTag");
   if (!playerName || Number.isNaN(runCount)) {
     return null;
   }
-  return {
+  // One name/tag pair per guild, in the order the API listed them.
+  const names = formData.getAll(PREVIEW_GUILD_NAME_FIELD);
+  const tags = formData.getAll(PREVIEW_GUILD_TAG_FIELD);
+  const guilds: DeletionGuild[] = [];
+  names.forEach((name, i) => {
+    const tag = tags[i];
+    if (typeof name === "string" && typeof tag === "string" && name && tag) {
+      guilds.push({ name: name.trim(), tag: tag.trim() });
+    }
+  });
+  const preview: DeletionPreview = {
     playerName,
     runCount,
-    guild: guildName && guildTag ? { name: guildName, tag: guildTag } : null,
+    guild: guilds[0] ?? null,
+    guilds,
   };
+  return preview;
 }
 
 /**

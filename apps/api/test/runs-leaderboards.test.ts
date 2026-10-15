@@ -277,5 +277,24 @@ describe("leaderboards", () => {
       (await ctx.req("GET", "/leaderboards/solo?season=2020-13&period=season"))
         .status
     ).toBe(400);
+
+    // D-147: in several guilds, `own` is the best placed own guild; player boards list the
+    // player once, with the tag of the oldest guild.
+    const joined = await ctx.req("POST", "/guilds/join", {
+      token: f1.token,
+      body: { inviteCode: g2.inviteCode },
+    });
+    expect(joined.status).toBe(200);
+    const both = await ctx.req("GET", "/leaderboards/guild", {
+      token: f1.token,
+    });
+    expect(both.json.own).toMatchObject({ id: g2.id, rank: 1 });
+    const group = await ctx.req("GET", "/leaderboards/group", {
+      token: f1.token,
+    });
+    expect(
+      group.json.entries.filter((e: { id: string }) => e.id === f1.id)
+    ).toHaveLength(1);
+    expect(group.json.own).toMatchObject({ id: f1.id, tag: "ONE" });
   });
 });

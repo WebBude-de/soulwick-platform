@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /** Version of the HTTP contract. Bump on breaking changes; the API reports it in `GET /health`. */
-export const API_VERSION = "1.0.0";
+export const API_VERSION = "1.1.0";
 
 export const RunMode = z.enum(["solo", "quick", "guild"]);
 export type RunMode = z.infer<typeof RunMode>;

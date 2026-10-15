@@ -13,6 +13,8 @@ import {
   Pager,
   PageTitle,
   TableCard,
+  Truncate,
+  When,
 } from "@/components/ui";
 import { type ApiResult, api } from "@/lib/api";
 import {
@@ -288,8 +290,8 @@ export default async function DeletionLogPage({
               <tbody>
                 {result.data.items.map((d) => (
                   <tr key={d.id}>
-                    <td className="whitespace-nowrap font-data" title={d.id}>
-                      {formatDateTime(d.deletedAt)}
+                    <td>
+                      <When iso={d.deletedAt} />
                     </td>
                     <td>
                       <Chip tone="muted">
@@ -304,7 +306,9 @@ export default async function DeletionLogPage({
                       )}
                     </td>
                     <td className="text-muted">
-                      {DELETION_CHANNEL_HINT[d.channel] ?? "–"}
+                      <Truncate max="max-w-xl">
+                        {DELETION_CHANNEL_HINT[d.channel] ?? "–"}
+                      </Truncate>
                     </td>
                   </tr>
                 ))}

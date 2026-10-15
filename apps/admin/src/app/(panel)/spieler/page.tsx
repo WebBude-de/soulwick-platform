@@ -9,14 +9,29 @@ import {
   Pager,
   PageTitle,
   TableCard,
+  Truncate,
+  When,
 } from "@/components/ui";
 import { api } from "@/lib/api";
-import { formatDateTime, param } from "@/lib/format";
+import { param } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Spieler" };
 const LIMIT = 50;
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+/** Guild tags of a player (several guilds, D-147) on one line; all tags in the tooltip. */
+function GuildTags({ tags }: { tags: string[] }) {
+  if (tags.length === 0) {
+    return <span className="text-muted">–</span>;
+  }
+  const all = tags.map((t) => `[${t}]`).join(" ");
+  return (
+    <span className="cell-truncate max-w-48 font-data" title={all}>
+      {all}
+    </span>
+  );
+}
 
 export default async function PlayersPage({
   searchParams,
@@ -83,7 +98,7 @@ export default async function PlayersPage({
               <tr>
                 <th>Name</th>
                 <th>Status</th>
-                <th>Gilde</th>
+                <th>Gilden</th>
                 <th>Konto</th>
                 <th>Zuletzt gesehen</th>
                 <th>Erstellt</th>
@@ -93,12 +108,9 @@ export default async function PlayersPage({
               {result.data.items.map((p) => (
                 <tr key={p.id}>
                   <td>
-                    <Link
-                      className="link font-semibold"
-                      href={`/spieler/${p.id}`}
-                    >
+                    <Truncate href={`/spieler/${p.id}`} max="max-w-64">
                       {p.name}
-                    </Link>
+                    </Truncate>
                   </td>
                   <td>
                     {p.banned ? (
@@ -107,25 +119,27 @@ export default async function PlayersPage({
                       <Chip tone="active">aktiv</Chip>
                     )}
                   </td>
-                  <td className="font-data">
-                    {p.guildTag ? `[${p.guildTag}]` : "–"}
+                  <td>
+                    <GuildTags
+                      tags={p.guildTags ?? (p.guildTag ? [p.guildTag] : [])}
+                    />
                   </td>
-                  <td className="text-muted">
+                  <td className="whitespace-nowrap text-muted">
                     {p.steamId ? (
                       <>
                         Steam <span className="font-data">{p.steamId}</span>
                       </>
                     ) : p.hasDeviceId ? (
-                      "Geräte-ID (Test)"
+                      "Gastkonto (Gerät)"
                     ) : (
                       "–"
                     )}
                   </td>
-                  <td className="whitespace-nowrap font-data">
-                    {formatDateTime(p.lastSeenAt)}
+                  <td>
+                    <When iso={p.lastSeenAt} />
                   </td>
-                  <td className="whitespace-nowrap font-data text-muted">
-                    {formatDateTime(p.createdAt)}
+                  <td>
+                    <When className="text-muted" iso={p.createdAt} />
                   </td>
                 </tr>
               ))}

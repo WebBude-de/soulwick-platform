@@ -21,7 +21,10 @@ export const LeaderboardEntry = z.object({
   /** Player id (solo/group) or guild id (guild). */
   id: Uuid,
   name: z.string(),
-  /** Guild tag: the guild itself (guild board) or the player's current guild (player boards). */
+  /**
+   * Guild tag: the guild itself (guild board) or the player's oldest active guild (player boards;
+   * D-147 allows several).
+   */
   tag: z.string().nullable(),
   roomReached: z.number().int(),
   durationSeconds: z.number().int(),
@@ -37,7 +40,10 @@ export const LeaderboardResponse = z.object({
   period: LeaderboardPeriod,
   season: SeasonId.nullable(),
   entries: z.array(LeaderboardEntry),
-  /** Own entry (player boards) or own guild's entry (guild board) when called with a player token. */
+  /**
+   * Own entry (player boards) or the best placed of the own guilds (guild board) when called with
+   * a player token.
+   */
   own: LeaderboardEntry.nullable(),
 });
 export type LeaderboardResponse = z.infer<typeof LeaderboardResponse>;

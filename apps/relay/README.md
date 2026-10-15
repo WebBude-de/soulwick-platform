@@ -23,7 +23,9 @@ bun run --cwd apps/relay dev --sim-latency=120 --sim-loss=5   # schlechtes Netz 
 der Relay die öffentlichen Schlüssel der Spieler-JWTs (`/auth/jwks`, P-027) und fragt Sperr- und
 Gildenstatus. Ohne `RELAY_INTERNAL_KEY` (oder wenn die API nicht antwortet) funktionieren Schnelle Spiele
 weiter, Gildenräume antworten `api_unavailable`; ohne je geladene Schlüssel wird jedes `hello` mit
-`unauthorized` abgelehnt. Handy per USB: `adb reverse tcp:8790 tcp:8790`.
+`unauthorized` abgelehnt. In einen Gildenraum darf, wer die Gilde in `guildIds` des Status hat (mehrere
+Gilden je Spieler, D-147/P-031; ältere APIs: `guildId`); sagt die zwischengespeicherte Antwort „kein
+Mitglied“, fragt der Relay vor `not_guild_member` einmal frisch nach. Handy per USB: `adb reverse tcp:8790 tcp:8790`.
 
 ## Protokoll (Kurzfassung für den GDScript-Client)
 
@@ -83,7 +85,11 @@ Beitritt nur mit gleicher `gameVersion` wie der Host und nur in der Lobby (vor `
 ein Raum in der Lobby schließt nach 10 Minuten ohne `start` (Uhr startet bei `create` und bei jedem `end_run`
 neu). Ein Raum kann beliebig viele Runs nacheinander haben; vom Host entfernte Spieler bleiben für den ganzen
 Raum gesperrt. Alte Clients, die nie `end_run` senden, verhalten sich wie bisher (ein Run je Raum).
-Der Relay pingt alle 15 s (WebSocket-Ping, Godot antwortet automatisch) und trennt nach 30 s Stille.
+Der Relay pingt alle 15 s (WebSocket-Ping, Godot antwortet automatisch) und trennt nach 30 s Stille
+(Close 4000); jede Nachricht und jedes Spielpaket zählt als Lebenszeichen. Das Spiel schickt nach
+`welcome` zusätzlich alle 20 s einen eigenen `ping` (misst die Laufzeit, hält Cloudflare und Traefik
+beschäftigt) und gibt die Verbindung selbst nach 50 s ohne Daten auf. Das Relay-JWT wird nur bei
+`hello` geprüft: Sein Ablauf (15 min) beendet keine laufende Verbindung.
 
 ## HTTP
 
@@ -136,4 +142,8 @@ Die `/internal/*`-Endpunkte brauchen keine neue `PROTOCOL_VERSION` (nur der Grun
 
 **Betrieb:** genau **eine** Replica je Umgebung (Räume im Speicher). Ein Neustart schließt alle Räume
 (`room_closed` mit `shutdown`, dann Close 1001); das Spiel behandelt das wie einen Host-Abbruch.
+Deshalb den Relay nicht automatisch bei jedem Push deployen (`infra/DOKPLOY.md` §6). Im Log: `signal`
+und `shutdown` beim Stoppen; `connection_close` je Verbindung mit `code`, `room`, `peerId`, `silentMs`
+(Stille vor dem Ende) und `maxFrameIn` (größtes Paket); `slow_consumer` mit `buffered`. `/metrics`
+meldet zusätzlich `maxFrameIn`.
 Dokploy-Einrichtung: ROADMAP P17.

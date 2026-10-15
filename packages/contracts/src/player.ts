@@ -59,7 +59,13 @@ export const PlayerSelf = z.object({
   name: z.string(),
   steamId: z.string().nullable(),
   createdAt: IsoDateTime,
+  /**
+   * @deprecated Since D-147 a player can be in several guilds: this is the oldest membership
+   * (same as `guilds[0]`), kept for older game builds. Use `guilds`.
+   */
   guild: PlayerGuildRef.nullable(),
+  /** All active guilds of the player, oldest membership first (D-147, at most MAX_GUILDS_PER_PLAYER). */
+  guilds: z.array(PlayerGuildRef),
 });
 export type PlayerSelf = z.infer<typeof PlayerSelf>;
 

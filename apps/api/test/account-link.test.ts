@@ -4,6 +4,7 @@ import {
   LINK_CODE_ALPHABET,
   LINK_CODE_LENGTH,
   LINK_CODE_TTL_SECONDS,
+  MAX_GUILDS_PER_PLAYER,
 } from "@soulwick/contracts";
 import { createTestContext, DEV_KEY, type TestContext } from "./helpers.ts";
 
@@ -269,7 +270,7 @@ describe("identities and account linking (P15, D-121, D-122)", () => {
       expect((await loginAgain(newer.deviceId)).json.player.id).toBe(older.id);
     });
 
-    it("guild: the remaining account keeps its guild; the removed founder's guild gets a new founder (P-102)", async () => {
+    it("guilds: memberships of the removed account move over with their role (D-147)", async () => {
       const keep = await device("Gildenbleiber");
       await setCreatedAt(keep.id, 20);
       await createGuild(keep.token, "Bleibende Gilde", "BLEIB");
@@ -285,13 +286,78 @@ describe("identities and account linking (P15, D-121, D-122)", () => {
 
       const conflict = await link(drop.token, await linkCode(keep.token));
       expect(conflict.status).toBe(409);
+      expect(conflict.json.remaining.guilds).toEqual([
+        { name: "Bleibende Gilde", tag: "BLEIB", role: "founder" },
+      ]);
       const res = await link(drop.token, await linkCode(keep.token), true);
       expect(res.status).toBe(200);
+      // `guild` stays the oldest membership; `guilds` lists both.
       expect(res.json.player.guild).toMatchObject({
         tag: "BLEIB",
         role: "founder",
       });
+      expect(
+        res.json.player.guilds.map((g: { tag: string; role: string }) => [
+          g.tag,
+          g.role,
+        ])
+      ).toEqual([
+        ["BLEIB", "founder"],
+        ["VERL", "founder"],
+      ]);
 
+      const guild = await ctx.db.guild.findUniqueOrThrow({
+        where: { id: dropGuild.id },
+      });
+      expect(guild.founderId).toBe(keep.id);
+      const roles = await ctx.db.guildMember.findMany({
+        where: { guildId: dropGuild.id },
+        orderBy: { joinedAt: "asc" },
+      });
+      expect(roles.map((r) => [r.playerId, r.role])).toEqual([
+        [keep.id, "founder"],
+        [member.id, "member"],
+      ]);
+    });
+
+    it("guilds: a shared guild keeps one row with the higher role", async () => {
+      const keep = await device("Doppelt Alt");
+      await setCreatedAt(keep.id, 20);
+      const drop = await device("Doppelt Neu");
+      const shared = await createGuild(drop.token, "Geteilte Gilde", "TEIL");
+      await join(keep.token, shared.inviteCode);
+
+      const res = await link(drop.token, await linkCode(keep.token), true);
+      expect(res.status).toBe(200);
+      expect(res.json.player.guilds).toEqual([
+        expect.objectContaining({ id: shared.id, role: "founder" }),
+      ]);
+      const rows = await ctx.db.guildMember.findMany({
+        where: { guildId: shared.id },
+      });
+      expect(rows).toEqual([
+        expect.objectContaining({ playerId: keep.id, role: "founder" }),
+      ]);
+      const guild = await ctx.db.guild.findUniqueOrThrow({
+        where: { id: shared.id },
+      });
+      expect(guild.founderId).toBe(keep.id);
+    });
+
+    it("guilds: beyond the guild limit the removed account leaves (founder hand-over P-102)", async () => {
+      const keep = await device("Volles Konto");
+      await setCreatedAt(keep.id, 20);
+      for (let i = 0; i < MAX_GUILDS_PER_PLAYER; i += 1) {
+        await createGuild(keep.token, `Volle Gilde ${i}`, `VOL${i}`);
+      }
+      const drop = await device("Ueberzaehlig");
+      const dropGuild = await createGuild(drop.token, "Uebrige Gilde", "UEBRI");
+      const member = await device("Erbe");
+      await join(member.token, dropGuild.inviteCode);
+
+      const res = await link(drop.token, await linkCode(keep.token), true);
+      expect(res.status).toBe(200);
+      expect(res.json.player.guilds).toHaveLength(MAX_GUILDS_PER_PLAYER);
       const guild = await ctx.db.guild.findUniqueOrThrow({
         where: { id: dropGuild.id },
       });

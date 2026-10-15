@@ -60,7 +60,7 @@ Spiel (Godot, Host-Modell)          Browser                              eRecht2
 | `player_identities` | id, `player_id` (→ `players`, Kaskade), `provider` (Enum `steam` / `device` / `google_play` / `game_center`), `provider_user_id`, `created_at`, `last_used_at`; eindeutig über (`provider`, `provider_user_id`); mehrere Identitäten je Spieler. Verknüpfen per Code, Zusammenführen (D-122) und Entkoppeln über `/me/link-code`, `/me/link`, `/me/identities` (P15). |
 | `bans` | Spieler, Grund, `created_by_admin_id`, `expires_at` (null = dauerhaft), `revoked_at`, `revoked_by` |
 | `guilds` | Name, Kürzel (2–5), Einladungscode, Gründer, `created_at`, `disbanded_at` |
-| `guild_members` | Gilde, Spieler (eindeutig → höchstens eine Gilde), Rolle `founder` / `officer` / `member`, `joined_at` |
+| `guild_members` | Gilde, Spieler (Schlüssel Gilde + Spieler; bis zu 5 Gilden je Spieler, D-147/P-031, Grenze in der API), Rolle `founder` / `officer` / `member`, `joined_at` |
 | `guild_progress` | je Gilde: Kasse, Schmiede-Stufen (jsonb), `version` für optimistische Sperre |
 | `runs` | Modus, Gilde?, erreichter Raum, Dauer, Seed, Spielversion, `reported_by`, `flagged`, `flag_reason` |
 | `run_players` | Teilnehmer je Run |
@@ -85,7 +85,7 @@ Regeln: Eindeutigkeit von Gildenname und Kürzel gilt nur für aktive Gilden (P-
 
 **Gilden-Fortschritt (Kasse, Schmiede):** `GET` liefert Werte + `version`. `PATCH` sendet neue absolute Werte + gelesene `version`; stimmt sie nicht mehr, antwortet die API `409 version_conflict` mit dem aktuellen Stand, der Client rechnet neu. So gibt es kein doppeltes Abbuchen bei gleichzeitigen Käufen.
 
-**Run-Bericht:** Host sendet `POST /runs` (Modus, Teilnehmer ≤ 4, Raum, Dauer, Seed, Spielversion). Prüfungen: Host ist Teilnehmer; Gilden-Run nur von Mitgliedern; Plausibilität (Mindestsekunden je Raum `MIN_SECONDS_PER_ROOM`, bekannte Versionen `KNOWN_GAME_VERSIONS`) → verdächtige Runs werden mit `flag_reason` **markiert**, nicht abgelehnt.
+**Run-Bericht:** Host sendet `POST /runs` (Modus, Teilnehmer ≤ 4, Raum, Dauer, Seed, Spielversion). Prüfungen: Host ist Teilnehmer; Gilden-Run nur von Mitgliedern, mit `endReason` und `remainingGold` zahlt er in die Gildenkasse (Portal 100 %, sonst 50 %, markierte Runs nichts; P-032); Plausibilität (Mindestsekunden je Raum `MIN_SECONDS_PER_ROOM`, bekannte Versionen `KNOWN_GAME_VERSIONS`) → verdächtige Runs werden mit `flag_reason` **markiert**, nicht abgelehnt.
 
 **Ranglisten:** `GET /leaderboards/:kind` (`solo`, `group`, `guild`) mit `period=all|season`, `season=YYYY-MM`, `limit`. Sortierung: höchster Raum, dann kürzere Dauer; Gleichstand = gleicher Rang. Markierte Runs und Runs mit aktuell gesperrten Teilnehmern fehlen. Mit Spieler-Token zusätzlich die eigene Position.
 

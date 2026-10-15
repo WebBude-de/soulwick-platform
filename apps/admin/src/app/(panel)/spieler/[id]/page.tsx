@@ -14,7 +14,7 @@ import {
   renamePlayer,
   unbanPlayer,
 } from "@/app/actions";
-import { DangerAction } from "@/components/danger-action";
+import { DangerAction, RowDangerAction } from "@/components/danger-action";
 import { RunTable } from "@/components/run-table";
 import {
   Chip,
@@ -24,6 +24,8 @@ import {
   Flash,
   PageTitle,
   Section,
+  Truncate,
+  When,
 } from "@/components/ui";
 import { type ApiResult, api, getMe, isAdmin } from "@/lib/api";
 import { formatDateTime, GUILD_ROLE_LABEL } from "@/lib/format";
@@ -54,6 +56,8 @@ export default async function PlayerDetailPage({
     return <ErrorBox message={result.message} />;
   }
   const p = result.data;
+  // Several guilds per player (D-147), oldest membership first; older API builds only send `guild`.
+  const guilds = p.guilds ?? (p.guild ? [p.guild] : []);
   const notes = await api<AdminPlayerNoteList>(
     `/admin/players/${encodeURIComponent(p.id)}/notes`
   );
@@ -94,27 +98,40 @@ export default async function PlayerDetailPage({
                   Steam-ID <span className="font-data">{p.steamId}</span>
                 </>
               ) : p.hasDeviceId ? (
-                "Geräte-ID (Testphase)"
+                "Gastkonto (Gerät)"
               ) : (
                 "–"
               ),
             },
             {
-              label: "Gilde",
-              value: p.guild ? (
-                <>
-                  <Link className="link" href={`/gilden/${p.guild.id}`}>
-                    <span className="font-data">[{p.guild.tag}]</span>{" "}
-                    {p.guild.name}
-                  </Link>
-                  <span className="text-muted">
-                    {" "}
-                    · {GUILD_ROLE_LABEL[p.guild.role]}
-                  </span>
-                </>
-              ) : (
-                "–"
-              ),
+              label: guilds.length > 1 ? "Gilden" : "Gilde",
+              value:
+                guilds.length === 0 ? (
+                  "–"
+                ) : (
+                  <ul className="space-y-1">
+                    {guilds.map((g) => (
+                      <li
+                        className="flex min-w-0 items-center gap-2"
+                        key={g.id}
+                      >
+                        <Link
+                          className="link flex min-w-0 items-center gap-1.5"
+                          href={`/gilden/${g.id}`}
+                          title={`[${g.tag}] ${g.name}`}
+                        >
+                          <span className="font-data">[{g.tag}]</span>
+                          <span className="cell-truncate max-w-72">
+                            {g.name}
+                          </span>
+                        </Link>
+                        <span className="whitespace-nowrap text-muted">
+                          · {GUILD_ROLE_LABEL[g.role] ?? g.role}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ),
             },
             {
               label: "Erstellt",
@@ -237,31 +254,34 @@ export default async function PlayerDetailPage({
             <tbody>
               {p.bans.map((b) => (
                 <tr key={b.id}>
-                  <td className="wrap-break-word max-w-md">{b.reason}</td>
+                  <td className="wrap-break-word">{b.reason}</td>
                   <td>
                     {b.active ? (
                       <Chip tone="danger">aktiv</Chip>
                     ) : b.revokedAt ? (
-                      <div className="space-y-1">
-                        <Chip tone="muted">aufgehoben</Chip>
-                        <div className="text-muted text-xs">
-                          <span className="font-data">
-                            {formatDateTime(b.revokedAt)}
-                          </span>
-                          {b.revokedBy ? ` · ${b.revokedBy}` : ""}
-                        </div>
-                      </div>
+                      <Chip
+                        title={`aufgehoben ${formatDateTime(b.revokedAt)}${b.revokedBy ? ` von ${b.revokedBy}` : ""}`}
+                        tone="muted"
+                      >
+                        aufgehoben
+                      </Chip>
                     ) : (
                       <Chip tone="muted">abgelaufen</Chip>
                     )}
                   </td>
-                  <td className="whitespace-nowrap font-data">
-                    {formatDateTime(b.createdAt)}
+                  <td>
+                    <When iso={b.createdAt} />
                   </td>
-                  <td className="whitespace-nowrap font-data">
-                    {b.expiresAt ? formatDateTime(b.expiresAt) : "dauerhaft"}
+                  <td>
+                    {b.expiresAt ? (
+                      <When iso={b.expiresAt} />
+                    ) : (
+                      <span className="whitespace-nowrap">dauerhaft</span>
+                    )}
                   </td>
-                  <td className="break-all text-muted">{b.createdBy ?? "–"}</td>
+                  <td className="text-muted">
+                    <Truncate max="max-w-56">{b.createdBy ?? "–"}</Truncate>
+                  </td>
                 </tr>
               ))}
               {p.bans.length === 0 ? (
@@ -293,9 +313,13 @@ export default async function PlayerDetailPage({
               <>
                 <p>
                   Löscht das Konto endgültig: Identitäten, Sperren und
-                  Run-Teilnahmen. Die Gildenmitgliedschaft endet (die
-                  Gründerrolle geht weiter, als letztes Mitglied wird die Gilde
-                  aufgelöst). Das lässt sich nicht rückgängig machen.
+                  Run-Teilnahmen.{" "}
+                  {guilds.length === 0
+                    ? ""
+                    : guilds.length === 1
+                      ? "Die Mitgliedschaft in der Gilde endet (die Gründerrolle geht weiter, als letztes Mitglied wird die Gilde aufgelöst). "
+                      : `Alle ${guilds.length} Gildenmitgliedschaften enden (Gründerrollen gehen weiter, wo der Spieler letztes Mitglied ist, wird die Gilde aufgelöst). `}
+                  Das lässt sich nicht rückgängig machen.
                 </p>
                 <p className="text-muted">
                   Spieler löschen ihr Konto selbst (im Spiel oder auf der
@@ -353,19 +377,27 @@ function Notes({
               className="rounded border-2 border-line bg-bg-deep p-3"
               key={note.id}
             >
-              <div className="mb-1 flex flex-wrap items-center justify-between gap-2 text-muted text-xs">
-                <span>
-                  <span className="font-data">
-                    {formatDateTime(note.createdAt)}
-                  </span>{" "}
-                  · {note.authorEmail ?? "(gelöschter Zugang)"}
+              <div className="mb-1 flex items-center justify-between gap-3 text-muted text-xs">
+                <span className="flex min-w-0 items-center gap-2">
+                  <When iso={note.createdAt} />
+                  <span aria-hidden="true">·</span>
+                  <Truncate max="max-w-72">
+                    {note.authorEmail ?? "(gelöschter Zugang)"}
+                  </Truncate>
                 </span>
                 {isAdmin(me) || note.authorId === me.id ? (
-                  <DangerAction
+                  <RowDangerAction
                     action={deletePlayerNote.bind(null, playerId, note.id)}
-                    small
+                    description={
+                      <p className="wrap-break-word line-clamp-3">
+                        {note.text}
+                      </p>
+                    }
+                    icon="trash"
+                    iconOnly
+                    id={`note-delete-${note.id}`}
+                    label="Notiz löschen"
                     submitLabel="Notiz löschen"
-                    trigger="Löschen…"
                   />
                 ) : null}
               </div>

@@ -27,7 +27,7 @@
     "gone": {
       "account": "Your account and your player name",
       "logins": "The links to Steam, Google Play or your device that you sign in with",
-      "guild": "Your guild membership"
+      "guild": "Your guild memberships"
     },
     "keptTitle": "What stays",
     "kept": {
@@ -101,14 +101,15 @@
     "title": "Is this your account?",
     "intro": "You have {minutes} minutes to confirm the deletion.",
     "nameLabel": "Player name",
-    "guildLabel": "Guild",
+    "guildLabel": "{count, plural, one {Guild} other {Guilds}}",
     "noGuild": "none",
     "runsLabel": "Runs",
     "goneTitle": "What happens when you delete",
     "gone": {
       "account": "Your account and your player name are deleted.",
       "logins": "The links to Steam, Google Play or your device are removed.",
-      "guild": "Your membership in {guild} ends. If you lead the guild, another member takes over; without other members the guild is disbanded.",
+      "guild": "{count, plural, one {Your membership in {guild} ends.} other {Your memberships in all # guilds end.}}",
+      "founder": "If you founded a guild, its oldest member takes over the lead. If you are the last person in it, the guild is disbanded.",
       "runs": "{count, plural, =0 {You have no runs yet, so no leaderboard place disappears.} one {Your run stays without your name; your leaderboard place disappears.} other {Your # runs stay without your name; your leaderboard places disappear.}}"
     },
     "final": "This cannot be undone.",

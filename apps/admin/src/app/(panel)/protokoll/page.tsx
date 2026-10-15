@@ -8,6 +8,8 @@ import {
   Pager,
   PageTitle,
   TableCard,
+  Truncate,
+  When,
 } from "@/components/ui";
 import { api } from "@/lib/api";
 import {
@@ -15,7 +17,6 @@ import {
   AUDIT_TARGET_LABEL,
   auditDetails,
   auditTone,
-  formatDateTime,
   param,
   shortId,
 } from "@/lib/format";
@@ -69,6 +70,9 @@ const FILTER_ACTIONS = AuditAction.options.filter((a) =>
 );
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
+/** A bare UUID in the details (ban, note, player id): shortened, full id as tooltip. */
+const UUID_VALUE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ID = /^[\w-]{1,64}$/;
 
 /** Reads and validates the filter params (German names in the URL, API names in the query). */
@@ -238,16 +242,18 @@ export default async function AuditPage({
                 const details = auditDetails(e.details);
                 return (
                   <tr key={e.id}>
-                    <td className="whitespace-nowrap font-data">
-                      {formatDateTime(e.createdAt)}
+                    <td>
+                      <When iso={e.createdAt} />
                     </td>
                     <td>
                       <Chip tone={auditTone(e.action)}>
                         {AUDIT_ACTION_LABEL[e.action] ?? e.action}
                       </Chip>
                     </td>
-                    <td className="break-all text-muted">
-                      {e.adminEmail ?? "(gelöschter Zugang)"}
+                    <td className="text-muted">
+                      <Truncate max="max-w-52">
+                        {e.adminEmail ?? "(gelöschter Zugang)"}
+                      </Truncate>
                     </td>
                     <td className="whitespace-nowrap" title={e.targetId ?? ""}>
                       {href ? (
@@ -258,17 +264,23 @@ export default async function AuditPage({
                         target
                       )}
                     </td>
-                    <td className="max-w-md text-xs">
+                    <td className="text-xs">
                       {details.length === 0 ? (
                         <span className="text-muted">–</span>
                       ) : (
-                        <ul className="space-y-0.5">
+                        <ul className="flex flex-wrap gap-x-3 gap-y-0.5">
                           {details.map((d) => (
-                            <li className="break-all" key={d.key}>
+                            <li className="wrap-anywhere" key={d.key}>
                               {d.label ? (
                                 <span className="text-muted">{d.label}: </span>
                               ) : null}
-                              {d.value}
+                              {UUID_VALUE.test(d.value) ? (
+                                <span className="font-data" title={d.value}>
+                                  {shortId(d.value)}
+                                </span>
+                              ) : (
+                                d.value
+                              )}
                             </li>
                           ))}
                         </ul>

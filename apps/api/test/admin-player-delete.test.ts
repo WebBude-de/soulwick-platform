@@ -57,6 +57,14 @@ describe("DELETE /admin/players/:id", () => {
         disbanded: false,
         newFounderId: officer.id,
       },
+      guilds: [
+        {
+          id: guild.json.id,
+          tag: "LOE1",
+          disbanded: false,
+          newFounderId: officer.id,
+        },
+      ],
       wasBanned: false,
     });
 

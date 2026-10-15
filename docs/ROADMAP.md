@@ -64,9 +64,10 @@ Die offenen Punkte sind in **P9** (Seiten, zwei Sprachen), **P10** (Rechtstexte)
 
 **Wartet ausdrücklich auf** die Multiplayer-Entscheidungen **MP0** (`soulwick/docs/ROADMAP_MULTIPLAYER.md`) und die Crossplay-Entscheidungen **CP0** (`soulwick/docs/ROADMAP_CROSSPLAY.md`): Lobby/Relay ist mit D-119 entschieden, das Konto-Modell ist noch OFFEN. Gilden-Runs laufen über den Relay im Modus `guild`; die Mitgliedschaft prüft der Relay über die API (**P13**, interner Endpunkt).
 
+- [x] *(15.10.2026; Migration `multi_guilds`, `db:verify` grün; `bun test` 306/306, live gegen eigene API 8797 und eigenen Relay 8798 mit Seed-Spielern geprüft)* **Gilden vollständig online (D-147, P-031):** bis zu 5 Gilden je Spieler (TESTWERT), `GET /me/guilds`, Gilden-Routen mit Gilden-ID (`/guilds/:id`, `…/leave`, `…/members/:playerId`, `…/invite-code`, `…/progress`), Rechte Gründer/Offizier/Mitglied, alte `/guilds/me*`-Routen entfernt (`API_VERSION` 1.1.0); Relay lässt in Gilden-Räume nur Mitglieder (`guildIds` im internen Status-Endpunkt, frische Nachfrage bei „kein Mitglied“); Konto verknüpfen und löschen mit mehreren Gilden; Dev-Seed mit zweiter Gilde „Aschenrunde“, Lumen in beiden.
 - [ ] Gilden-Wappen (8 Stück) und Wappen-Auswahl in Verträgen und API.
 - [ ] Gilden-Schmiede: Stufen, Kosten, Wirkung als Vertrag (gleiche Werte wie im Spiel); Kauf aus der Gildenkasse über die API mit Versionsprüfung.
-- [ ] Auszahlung nach Gilden-Run in die Gildenkasse (50-/100-%-Regel), gemeldet durch den Host, geprüft gegen den Run-Bericht.
+- [x] *(15.10.2026; P-032, Tests in `apps/api/test/guilds.test.ts`)* Auszahlung nach Gilden-Run in die Gildenkasse (50-/100-%-Regel), gemeldet durch den Host (`POST /runs` mit `endReason` und `remainingGold`), geprüft gegen den Run-Bericht (Melder muss Mitglied sein, markierte Runs zahlen nichts); Schutz gegen doppelte Meldung über `reportId` (Migration `run_report_id`; gleiche ID → 200 mit gespeichertem Ergebnis, auch bei gleichzeitigen Wiederholungen nur eine Auszahlung).
 - [ ] Spiel-Repo: GDScript-Client (`HTTPRequest`) nach `packages/contracts`; Spiel bleibt offline spielbar.
 
 **Fertig, wenn:** Drei Personen eine Gilde gründen bzw. beitreten, einen Gilden-Run spielen und die Gildenkasse danach für alle gleich ist.

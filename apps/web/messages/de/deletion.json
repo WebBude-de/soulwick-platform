@@ -27,7 +27,7 @@
     "gone": {
       "account": "Dein Konto mit deinem Spielernamen",
       "logins": "Die Verknüpfungen mit Steam, Google Play oder deinem Gerät, über die du dich anmeldest",
-      "guild": "Deine Mitgliedschaft in einer Gilde"
+      "guild": "Deine Mitgliedschaften in Gilden"
     },
     "keptTitle": "Was bleibt",
     "kept": {
@@ -101,14 +101,15 @@
     "title": "Ist das dein Konto?",
     "intro": "Du hast {minutes} Minuten Zeit, die Löschung zu bestätigen.",
     "nameLabel": "Spielername",
-    "guildLabel": "Gilde",
+    "guildLabel": "{count, plural, one {Gilde} other {Gilden}}",
     "noGuild": "keine",
     "runsLabel": "Runs",
     "goneTitle": "Das passiert beim Löschen",
     "gone": {
       "account": "Dein Konto und dein Spielername werden gelöscht.",
       "logins": "Die Verknüpfungen mit Steam, Google Play oder deinem Gerät werden entfernt.",
-      "guild": "Deine Mitgliedschaft in {guild} endet. Führst du die Gilde, übernimmt ein anderes Mitglied; ohne weitere Mitglieder wird sie aufgelöst.",
+      "guild": "{count, plural, one {Deine Mitgliedschaft in {guild} endet.} other {Deine Mitgliedschaften in allen # Gilden enden.}}",
+      "founder": "Hast du eine Gilde gegründet, übernimmt das älteste Mitglied die Leitung. Bist du die letzte Person in der Gilde, wird sie aufgelöst.",
       "runs": "{count, plural, =0 {Du hast noch keine Runs, also verschwindet auch kein Ranglistenplatz.} one {Dein Run bleibt ohne deinen Namen erhalten, dein Ranglistenplatz verschwindet.} other {Deine # Runs bleiben ohne deinen Namen erhalten, deine Ranglistenplätze verschwinden.}}"
     },
     "final": "Das lässt sich nicht rückgängig machen.",

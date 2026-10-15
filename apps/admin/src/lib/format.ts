@@ -7,6 +7,16 @@ const dateTime = new Intl.DateTimeFormat("de-DE", {
 export const formatDateTime = (iso: string | null | undefined) =>
   iso ? dateTime.format(new Date(iso)) : "–";
 
+const dateTimeShort = new Intl.DateTimeFormat("de-DE", {
+  dateStyle: "short",
+  timeStyle: "short",
+  timeZone: "Europe/Berlin",
+});
+
+/** "13.10.26, 23:46" for table cells (fixed width with tabular figures). */
+export const formatDateTimeShort = (iso: string | null | undefined) =>
+  iso ? dateTimeShort.format(new Date(iso)) : "–";
+
 export function formatDuration(totalSeconds: number): string {
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
@@ -19,6 +29,12 @@ export function formatDuration(totalSeconds: number): string {
 export const RUN_MODE_LABEL: Record<string, string> = {
   solo: "Solo",
   quick: "Schnelles Spiel",
+  guild: "Gilde",
+};
+/** Short mode names for narrow table columns (full name as tooltip). */
+export const RUN_MODE_SHORT: Record<string, string> = {
+  solo: "Solo",
+  quick: "Schnell",
   guild: "Gilde",
 };
 export const GUILD_ROLE_LABEL: Record<string, string> = {

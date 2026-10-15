@@ -45,6 +45,8 @@ export class FakeStatusSource implements PlayerStatusSource {
   down: boolean;
   calls = 0;
   readonly forgotten: string[] = [];
+  /** Stale answers, as a caching source would return them until `forget`. */
+  readonly cached = new Map<string, RelayPlayerStatus>();
 
   constructor() {
     this.down = false;
@@ -52,6 +54,7 @@ export class FakeStatusSource implements PlayerStatusSource {
 
   forget(playerId: string) {
     this.forgotten.push(playerId);
+    this.cached.delete(playerId);
   }
 
   add(name: string, extra: Partial<RelayPlayerStatus> = {}): RelayPlayerStatus {
@@ -72,7 +75,7 @@ export class FakeStatusSource implements PlayerStatusSource {
     if (this.down) {
       return Promise.resolve({ kind: "unavailable" });
     }
-    const status = this.players.get(playerId);
+    const status = this.cached.get(playerId) ?? this.players.get(playerId);
     return Promise.resolve(
       status ? { kind: "ok", status } : { kind: "not_found" }
     );

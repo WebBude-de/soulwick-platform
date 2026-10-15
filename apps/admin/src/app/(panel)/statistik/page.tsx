@@ -52,7 +52,7 @@ function Figure({
 }) {
   return (
     <div className="card flex flex-col gap-2 p-4">
-      <span className="font-bold font-pixel text-[32px] text-text leading-none">
+      <span className="font-bold font-data text-[30px] text-text leading-none">
         {value}
       </span>
       <span>

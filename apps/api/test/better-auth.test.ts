@@ -260,8 +260,7 @@ describe("better auth (P-027)", () => {
         ["POST", "/me/link-code"],
         ["POST", "/me/deletion-code"],
         ["POST", "/guilds", { name: "Sitzungsgilde", tag: "SITZ" }],
-        ["GET", "/guilds/me"],
-        ["GET", "/guilds/me/progress"],
+        ["GET", "/me/guilds"],
         ["GET", "/auth/token"],
       ];
       for (const [method, path, body] of routes) {
@@ -310,7 +309,7 @@ describe("better auth (P-027)", () => {
       for (const [method, path] of [
         ["GET", "/me"],
         ["GET", "/auth/token"],
-        ["GET", "/guilds/me"],
+        ["GET", "/me/guilds"],
       ] as const) {
         const res = await t.ctx.req(method, path, { token: admin.token });
         expect(res.status, `${method} ${path}`).toBe(401);

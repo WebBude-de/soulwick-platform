@@ -202,6 +202,9 @@ export async function createTestContext(
       durationSeconds: number;
       seed: string;
       gameVersion: string;
+      endReason: string;
+      remainingGold: number;
+      reportId: string;
     }>
   ) {
     return req("POST", "/runs", {

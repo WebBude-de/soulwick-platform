@@ -46,8 +46,9 @@ Das Spiel läuft komplett ohne Server. Die Plattform ergänzt nur, was einen Ser
 
 ### 3.2 Gilden (D-080, D-081)
 
-- Gründen (Name, Kürzel), Beitritt per Einladungscode, jederzeit verlassen. Höchstens eine Gilde je
-  Spieler, höchstens 30 Mitglieder. Gründer kann Mitglieder entfernen und den Code erneuern.
+- Gründen (Name, Kürzel), Beitritt per Einladungscode, jederzeit verlassen. Bis zu 5 Gilden je
+  Spieler, höchstens 30 Mitglieder (TESTWERTE, D-147, P-031). Gründer und Offiziere entfernen Mitglieder und
+  erneuern den Code; der Gründer ernennt Offiziere.
 - **Gilden-Fortschritt** (Vorschlag D-081): Gildenkasse und Schmiede-Stufen auf dem Server; gleichzeitige
   Käufe über eine Versionsnummer abgesichert (kein doppeltes Abbuchen). Gilden-Runs nur mit Mitgliedern.
 

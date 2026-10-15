@@ -16,10 +16,11 @@ import {
   type RoomPeer,
   type RunEndReason,
 } from "@soulwick/contracts";
-import type {
-  PlayerStatusResult,
-  PlayerStatusSource,
-  PlayerTokenVerifier,
+import {
+  isGuildMember,
+  type PlayerStatusResult,
+  type PlayerStatusSource,
+  type PlayerTokenVerifier,
 } from "./auth.ts";
 import type { Config } from "./config.ts";
 import { ConnectionLimiter } from "./limits.ts";
@@ -95,12 +96,15 @@ export class Client {
   queue: Promise<void> = Promise.resolve();
   bytesIn = 0;
   bytesOut = 0;
+  /** Largest binary frame this connection sent (bytes), for the close log. Set in the constructor. */
+  maxFrameIn: number;
 
   constructor(id: number, transport: Transport, now: number, config: Config) {
     this.id = id;
     this.transport = transport;
     this.openedAt = now;
     this.closed = false;
+    this.maxFrameIn = 0;
     this.lastSeenAt = now;
     this.lastMessageAt = now;
     this.lastPingAt = now;
@@ -231,6 +235,8 @@ export class Relay {
     const metrics = this.deps.metrics;
     this.received(client, bytes.length, now);
     metrics.framesIn += 1;
+    client.maxFrameIn = Math.max(client.maxFrameIn, bytes.length);
+    metrics.maxFrameIn = Math.max(metrics.maxFrameIn, bytes.length);
     if (!client.player) {
       this.fail(
         client,
@@ -293,13 +299,24 @@ export class Relay {
     }
     client.closed = true;
     this.clients.delete(client);
+    // Captured before leaving: the close log says which room lost whom (host or client).
+    const now = this.deps.now();
+    const room = client.room?.code;
+    const peerId = client.room ? client.peerId : undefined;
+    const started = client.room?.started;
     this.leaveRoom(client, "disconnected");
     this.deps.logger.info("connection_close", {
       conn: client.id,
       playerId: client.player?.playerId,
       code,
       reason: reason || undefined,
-      seconds: Math.round((this.deps.now() - client.openedAt) / 1000),
+      room,
+      peerId,
+      started,
+      seconds: Math.round((now - client.openedAt) / 1000),
+      // Silence before the close: ~HEARTBEAT_TIMEOUT = dead link, ~0 = active socket cut off.
+      silentMs: now - client.lastSeenAt,
+      maxFrameIn: client.maxFrameIn || undefined,
       bytesIn: client.bytesIn,
       bytesOut: client.bytesOut,
     });
@@ -345,6 +362,7 @@ export class Relay {
 
   /** Closes every room (`shutdown`) and every connection (1001). */
   shutdown(): void {
+    this.deps.logger.info("shutdown", this.stats());
     for (const room of [...this.rooms.values()]) {
       this.closeRoom(room, "shutdown");
     }
@@ -596,7 +614,8 @@ export class Relay {
     if (this.alreadyInRoom(client, "create")) {
       return;
     }
-    const result = await this.statusOf(client);
+    const guildId = msg.mode === "guild" ? (msg.guildId ?? null) : null;
+    const result = await this.statusFor(client, guildId);
     if (
       !result ||
       this.rejectPlayer(client, result, "create") ||
@@ -604,7 +623,6 @@ export class Relay {
     ) {
       return;
     }
-    const guildId = msg.mode === "guild" ? (msg.guildId ?? null) : null;
     if (guildId && !this.checkGuild(client, result, guildId, "create")) {
       return;
     }
@@ -643,13 +661,14 @@ export class Relay {
     client: Client,
     msg: Extract<RelayClientMessage, { type: "join" }>
   ) {
-    if (
-      this.alreadyInRoom(client, "join") ||
-      !this.joinable(client, msg.code)
-    ) {
+    if (this.alreadyInRoom(client, "join")) {
       return;
     }
-    const result = await this.statusOf(client);
+    const target = this.joinable(client, msg.code);
+    if (!target) {
+      return;
+    }
+    const result = await this.statusFor(client, target.guildId);
     if (
       !result ||
       this.rejectPlayer(client, result, "join") ||
@@ -942,6 +961,26 @@ export class Relay {
     return client.closed ? null : result;
   }
 
+  /**
+   * Like `statusOf`; for a guild room a cached "not a member" is asked again once, because the
+   * player may have joined the guild after the answer was cached (D-147, P-031). Positive answers
+   * stay cached (STATUS_CACHE_SECONDS).
+   */
+  private async statusFor(
+    client: Client,
+    guildId: string | null
+  ): Promise<PlayerStatusResult | null> {
+    const result = await this.statusOf(client);
+    if (
+      !(result && guildId && result.kind === "ok" && this.deps.status.forget) ||
+      isGuildMember(result.status, guildId)
+    ) {
+      return result;
+    }
+    this.deps.status.forget(result.status.playerId);
+    return await this.statusOf(client);
+  }
+
   /** Closes the connection for deleted or banned players. True = rejected. */
   private rejectPlayer(
     client: Client,
@@ -987,7 +1026,7 @@ export class Relay {
       );
       return false;
     }
-    if (result.status.guildId !== guildId) {
+    if (!isGuildMember(result.status, guildId)) {
       this.sendError(
         client,
         "not_guild_member",
@@ -1073,6 +1112,8 @@ export class Relay {
         conn: target.id,
         playerId: target.player?.playerId,
         room: target.room?.code,
+        buffered: target.transport.bufferedAmount(),
+        frameBytes: bytes.length,
       });
       this.disconnect(target, RELAY_CLOSE_CODES.slowConsumer, "slow consumer");
       return;

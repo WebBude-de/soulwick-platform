@@ -18,6 +18,7 @@ import {
   RelayKickRequest,
   RelayKickResponse,
   RelayRoomList,
+  RelayRoomSummary,
 } from "./lobby.ts";
 
 /** Wraps a page of results with the total count of matching rows. */
@@ -222,7 +223,10 @@ export const AdminPlayerListItem = z.object({
   createdAt: IsoDateTime,
   lastSeenAt: IsoDateTime,
   banned: z.boolean(),
+  /** Tag of the oldest active guild (same as `guildTags[0]`), null if none. */
   guildTag: z.string().nullable(),
+  /** Tags of all active guilds, oldest membership first (D-147). Optional for older API builds. */
+  guildTags: z.array(z.string()).optional(),
 });
 export type AdminPlayerListItem = z.infer<typeof AdminPlayerListItem>;
 
@@ -263,10 +267,22 @@ export type AdminRun = z.infer<typeof AdminRun>;
 /** Number of runs in AdminPlayerDetail.recentRuns (newest first). */
 export const ADMIN_PLAYER_RECENT_RUNS = 20;
 
+export const AdminPlayerGuild = z.object({
+  id: Uuid,
+  name: z.string(),
+  tag: z.string(),
+  role: GuildRole,
+});
+export type AdminPlayerGuild = z.infer<typeof AdminPlayerGuild>;
+
 export const AdminPlayerDetail = AdminPlayerListItem.extend({
-  guild: z
-    .object({ id: Uuid, name: z.string(), tag: z.string(), role: GuildRole })
-    .nullable(),
+  /** Oldest active guild membership (same as `guilds[0]`), null if none. */
+  guild: AdminPlayerGuild.nullable(),
+  /**
+   * All active guilds, oldest membership first (D-147: up to MAX_GUILDS_PER_PLAYER). Optional for
+   * older API builds.
+   */
+  guilds: z.array(AdminPlayerGuild).optional(),
   /** Full ban history, newest first (active and expired/revoked). */
   bans: z.array(AdminBan),
   /** The last ADMIN_PLAYER_RECENT_RUNS runs the player took part in, newest first. */
@@ -515,15 +531,27 @@ export type AuditAction = z.infer<typeof AuditAction>;
 
 /**
  * GET /admin/relay/rooms (moderator and admin): the relay's `GET /internal/rooms`, passed
- * through. POST /admin/relay/rooms/:code/close `{ reason }` and POST
+ * through and enriched with `guildTag`/`guildName` (D-147). POST /admin/relay/rooms/:code/close `{ reason }` and POST
  * /admin/relay/rooms/:code/kick `{ playerId, reason }` (moderator and admin; audit
  * `relay.room_close` with target `relay_room`/code, `relay.kick` with target `player`).
  * Errors: 501 `relay_not_configured` (no RELAY_INTERNAL_URL/KEY), 502 `relay_unavailable` (relay
  * not reachable, timeout, wrong key, unexpected answer), 404 `room_not_found`, 404
  * `player_not_in_room`, 400 `validation_error`.
  */
-export const AdminRelayRoomList = RelayRoomList;
-export type AdminRelayRoomList = RelayRoomList;
+export const AdminRelayRoom = RelayRoomSummary.extend({
+  /**
+   * Tag and name of the room's guild (guild rooms; D-147), null for quick rooms or a guild that no
+   * longer exists. Added by the API; optional for older API builds.
+   */
+  guildTag: z.string().nullable().optional(),
+  guildName: z.string().nullable().optional(),
+});
+export type AdminRelayRoom = z.infer<typeof AdminRelayRoom>;
+
+export const AdminRelayRoomList = RelayRoomList.extend({
+  rooms: z.array(AdminRelayRoom),
+});
+export type AdminRelayRoomList = z.infer<typeof AdminRelayRoomList>;
 export const AdminRelayCloseRoomRequest = RelayCloseRoomRequest;
 export type AdminRelayCloseRoomRequest = RelayCloseRoomRequest;
 export const AdminRelayCloseRoomResponse = RelayCloseRoomResponse;
@@ -592,23 +620,28 @@ export const AdminDeletePlayerRequest = z.object({
 });
 export type AdminDeletePlayerRequest = z.infer<typeof AdminDeletePlayerRequest>;
 
+export const AdminDeletedGuildMembership = z.object({
+  id: Uuid,
+  tag: z.string(),
+  /** The player was the last member, so the guild was disbanded. */
+  disbanded: z.boolean(),
+  /** Set when the player was the founder and the role passed on (P-102). */
+  newFounderId: Uuid.nullable(),
+});
+export type AdminDeletedGuildMembership = z.infer<
+  typeof AdminDeletedGuildMembership
+>;
+
 /** 200 of DELETE /admin/players/:id. */
 export const AdminDeletePlayerResponse = z.object({
   /** Id of the deleted account (no longer exists). */
   id: Uuid,
   /** Name at deletion time. */
   name: z.string(),
-  /** Guild the player was in, null if none. */
-  guild: z
-    .object({
-      id: Uuid,
-      tag: z.string(),
-      /** The player was the last member, so the guild was disbanded. */
-      disbanded: z.boolean(),
-      /** Set when the player was the founder and the role passed on (P-102). */
-      newFounderId: Uuid.nullable(),
-    })
-    .nullable(),
+  /** Oldest guild the player was in (same as `guilds[0]`), null if none. */
+  guild: AdminDeletedGuildMembership.nullable(),
+  /** Every guild the player was in (D-147). Optional for older API builds. */
+  guilds: z.array(AdminDeletedGuildMembership).optional(),
   /** The account had an active ban (P-026). */
   wasBanned: z.boolean(),
 });

@@ -68,7 +68,8 @@ model Player {
 
   identities      PlayerIdentity[]
   bans            Ban[]
-  guildMembership GuildMember?
+  /// Up to MAX_GUILDS_PER_PLAYER active guilds (D-147); the limit is enforced by the API.
+  guildMemberships GuildMember[]
   foundedGuilds   Guild[]          @relation("GuildFounder")
   reportedRuns    Run[]            @relation("RunReporter")
   runs            RunPlayer[]
@@ -337,8 +338,8 @@ model Guild {
 
 model GuildMember {
   guildId  String    @map("guild_id") @db.Uuid
-  /// Unique: a player is in at most one guild (D-080).
-  playerId String    @unique(map: "guild_members_player_id_unique") @map("player_id") @db.Uuid
+  /// Several guilds per player since D-147 (the former unique index went with migration multi_guilds).
+  playerId String    @map("player_id") @db.Uuid
   role     GuildRole @default(member)
   joinedAt DateTime  @default(now()) @map("joined_at") @db.Timestamptz(6)
 
@@ -347,6 +348,7 @@ model GuildMember {
 
   @@id([guildId, playerId])
   @@index([guildId], map: "guild_members_guild_id_idx")
+  @@index([playerId], map: "guild_members_player_id_idx")
   @@map("guild_members")
 }
 
@@ -355,7 +357,7 @@ model GuildProgress {
   treasury    Int    @default(0)
   /// Forge upgrade id -> level (D-087).
   forgeLevels Json   @default("{}") @map("forge_levels")
-  /// Optimistic concurrency token for PATCH /guilds/me/progress.
+  /// Optimistic concurrency token for PATCH /guilds/:id/progress (guild run payouts bump it too).
   version     Int    @default(0)
 
   guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
@@ -380,6 +382,10 @@ model Run {
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   flagged         Boolean  @default(false)
   flagReason      String?  @map("flag_reason")
+  /// Idempotency key of the host's report (P-032); a retry with the same key returns this run.
+  reportId        String?  @unique(map: "runs_report_id_unique") @map("report_id") @db.Uuid
+  /// Gold this run paid into the guild treasury (guild runs with remaining gold), for replays.
+  guildPayout     Int?     @map("guild_payout")
 
   guild        Guild?      @relation(fields: [guildId], references: [id], onDelete: SetNull)
   reporter     Player?     @relation("RunReporter", fields: [reportedBy], references: [id], onDelete: SetNull)

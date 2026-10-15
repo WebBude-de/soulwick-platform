@@ -117,6 +117,7 @@ describe("automatic account deletion (P-026)", () => {
     expect(body.account).toEqual({
       playerName: "Pruefling",
       guild: null,
+      guilds: [],
       runCount: 0,
     });
     const ttl = Date.parse(body.expiresAt) - Date.now();
@@ -163,6 +164,16 @@ describe("automatic account deletion (P-026)", () => {
       body: { inviteCode: guild.json.inviteCode },
     });
     expect(join.status).toBe(200);
+    // A second guild where the player is a plain member (D-147): the preview lists the role.
+    const other = await ctx.req("POST", "/guilds", {
+      token: officer.token,
+      body: { name: "Andere Gilde", tag: "WEB2" },
+    });
+    const joinOther = await ctx.req("POST", "/guilds/join", {
+      token: founder.token,
+      body: { inviteCode: other.json.inviteCode },
+    });
+    expect(joinOther.status).toBe(200);
     const run = await ctx.reportRun(founder.token, {
       mode: "quick",
       participants: [founder.id, officer.id],
@@ -175,6 +186,10 @@ describe("automatic account deletion (P-026)", () => {
     expect(verified.json.account).toEqual({
       playerName: "Loeschgruender",
       guild: { name: "Webloeschgilde", tag: "WEB1" },
+      guilds: [
+        { name: "Webloeschgilde", tag: "WEB1", role: "founder" },
+        { name: "Andere Gilde", tag: "WEB2", role: "member" },
+      ],
       runCount: 1,
     });
 

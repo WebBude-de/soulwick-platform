@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { randomUUID } from "node:crypto";
+import { API_VERSION } from "@soulwick/contracts";
 import { createTestContext, DEV_KEY, type TestContext } from "./helpers.ts";
 
 describe("auth, /me and bans", () => {
@@ -15,7 +16,7 @@ describe("auth, /me and bans", () => {
     expect(res.json).toMatchObject({
       status: "ok",
       db: "ok",
-      apiVersion: "1.0.0",
+      apiVersion: API_VERSION,
     });
   });
 
@@ -105,8 +106,8 @@ describe("auth, /me and bans", () => {
 
     for (const [method, path] of [
       ["GET", "/me"],
-      ["GET", "/guilds/me"],
-      ["POST", "/guilds/leave"],
+      ["GET", "/me/guilds"],
+      ["POST", "/guilds/00000000-0000-4000-8000-000000000000/leave"],
       ["DELETE", "/me"],
     ] as const) {
       const res = await ctx.req(method, path, { token: player.token });

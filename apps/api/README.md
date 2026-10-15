@@ -69,8 +69,8 @@ Admin-Bereich lokal zum Anzeigen brauchen:
 | --- | --- |
 | Admin-Zugänge | `admin@soulwick.local` (Rolle `admin`), `moderator@soulwick.local` (`moderator`); neue Zugänge bekommen das Passwort aus `DEFAULT_ADMIN_PASSWORD` (mind. 12 Zeichen), Standard `soulwick-admin-local`; vorhandene behalten ihres |
 | Spieler | 10 Testspieler mit Geräte-IDs `dev-device-00000001` … `dev-device-00000010` (9 und 10 erst vor wenigen Tagen angelegt, für „neue Spieler“) (je eine Identität `device`; „Lumen“ zusätzlich eine erfundene Steam-ID `76561190000000001`); damit funktioniert `POST /auth/dev` (z. B. `{ "name": "Lumen", "deviceId": "dev-device-00000001" }`) als dieser Spieler |
-| Gilde | „Dochtwächter“ `[DOCHT]`, Einladungscode `DOCHT2345`, 4 Mitglieder (Gründer, Offizier, 2 Mitglieder), Gildenkasse und Schmiede-Stufen |
-| Runs | 20 Runs (`solo`, `quick`, `guild`) über die aktuelle und die vorige Saison, Seeds `dev-seed-01` … `dev-seed-20`; einer ist markiert (`too_fast`), zwei Spieler teilen sich einen Rang; dazu 14 Runs über die letzten zwei Wochen (`dev-seed-21` … `dev-seed-34`) für die Admin-Statistik |
+| Gilden | „Dochtwächter“ `[DOCHT]`, Einladungscode `DOCHT2345`, 4 Mitglieder (Gründer Lumen, Offizier, 2 Mitglieder), Gildenkasse 1250 und Schmiede-Stufen; „Aschenrunde“ `[ASCHE]`, Code `ASCHE2345`, 4 Mitglieder (Gründer Glutfunke, **Lumen als Offizier**, 2 Mitglieder), Kasse 420. Lumen ist damit in zwei Gilden (D-147) |
+| Runs | 20 Runs (`solo`, `quick`, `guild`) über die aktuelle und die vorige Saison, Seeds `dev-seed-01` … `dev-seed-20`; einer ist markiert (`too_fast`), zwei Spieler teilen sich einen Rang; dazu 15 Runs über die letzten zwei Wochen (`dev-seed-21` … `dev-seed-35`, davon ein Gilden-Run der „Aschenrunde“) für die Admin-Statistik |
 | Notiz | eine Moderations-Notiz des Moderators zu „Sternasche“ (P-023) |
 | Löschprotokoll | 4 Einträge (Website, im Spiel, Admin; zwei davon „war gesperrt“) über die letzten zwei Wochen, ohne Namen (P-026) |
 | Sperre | Spieler „Sternasche“ für 7 Tage gesperrt (durch den Moderator); seine Runs fehlen in den Ranglisten, seine Anmeldung liefert `403 banned` |
@@ -163,10 +163,19 @@ Spieler (Header `Authorization: Bearer <token>`):
 - `GET /me`, `DELETE /me`, `GET /me/identities`, `DELETE /me/identities/:provider`, `POST /me/link-code`,
   `POST /me/link` (Konten verknüpfen nach D-121/D-122), `POST /me/deletion-code` (Einmal-Löschcode)
 - `POST /account-deletion/verify`, `POST /account-deletion/confirm` (öffentlich, Lösch-Seite der Website, P-026)
-- `POST /guilds`, `POST /guilds/join`, `POST /guilds/leave`, `GET /guilds/me`,
-  `DELETE /guilds/me/members/:playerId`, `POST /guilds/me/invite-code`,
-  `GET /guilds/me/progress`, `PATCH /guilds/me/progress` (Versionsprüfung, 409 bei Konflikt)
-- `POST /runs`
+- Gilden (D-147, P-031; bis 5 Gilden je Spieler, TESTWERT): `GET /me/guilds`, `POST /guilds`,
+  `POST /guilds/join`, `GET /guilds/:id`, `POST /guilds/:id/leave`,
+  `DELETE /guilds/:id/members/:playerId`, `PATCH /guilds/:id/members/:playerId` (`{role}`, nur Gründer),
+  `POST /guilds/:id/invite-code` (Gründer, Offizier), `GET /guilds/:id/progress`,
+  `PATCH /guilds/:id/progress` (Versionsprüfung, 409 bei Konflikt). Fehler: `403 not_member`,
+  `403 forbidden_role`, `409 guild_limit_reached`, `409 guild_full`, `409 already_member`,
+  `404 invalid_invite_code`, `404 member_not_found`, `400 cannot_target_self`, `409 guild_name_taken`,
+  `409 guild_tag_taken`. Die alten Routen `/guilds/me*` und `POST /guilds/leave` gibt es seit
+  `API_VERSION` 1.1.0 nicht mehr (404).
+- `POST /runs` (Gilden-Run mit `endReason` und `remainingGold` zahlt in die Gildenkasse, P-032:
+  Portal 100 %, sonst 50 % aufgerundet; Antwort zusätzlich `guildPayout`, `guildProgress`). Optionale
+  `reportId` (UUID je Run): dieselbe ID erneut → `200` mit dem gespeicherten Ergebnis, keine zweite
+  Auszahlung; fremde ID → `409 report_id_conflict`
 - `GET /leaderboards/:kind?period=all|season&season=YYYY-MM&limit=50` (`solo`, `group`, `guild`; öffentlich, mit Token zusätzlich `own`)
 - `GET /public/guilds/:tag` (öffentlich, für die Webseite)
 
@@ -201,11 +210,11 @@ Admin-API v2 (P18, P-023/P-024; Schemas in `packages/contracts/src/admin.ts`):
 | --- | --- | --- |
 | `GET /admin/stats` | Moderator | `AdminStats`, zusätzlich `newPlayers7d`, `activePlayers7d`, `runs24h`, `runs7d`, `runsTotal`, `runsByMode {solo, quick, guild}`, `activeGuilds7d` |
 | `GET /admin/stats/daily?days=30` | Moderator | `AdminDailyStats`: `series[] {date, newPlayers, runs, activePlayers}`, `totals`, `roomReached[] {min, max, runs}`, `averageRoomReached`, `averageDurationSeconds`, `medianDurationSeconds`; `days` 1–90 |
-| `GET /admin/relay/rooms` | Moderator | `AdminRelayRoomList` (`rooms[]` mit `code`, `mode`, `guildId`, `started`, `playerCount`, `maxPlayers`, `players[] {peerId, playerId, name, platform, host, inRoomSeconds}`, `ageSeconds`, `expiresAt`, `runsStarted`, `bytesInPerSecond`, `bytesOutPerSecond`); `501 relay_not_configured`, `502 relay_unavailable` |
+| `GET /admin/relay/rooms` | Moderator | `AdminRelayRoomList` (`rooms[]` mit `code`, `mode`, `guildId`, `guildTag`, `guildName` (D-147, null bei Schnellen Spielen), `started`, `playerCount`, `maxPlayers`, `players[] {peerId, playerId, name, platform, host, inRoomSeconds}`, `ageSeconds`, `expiresAt`, `runsStarted`, `bytesInPerSecond`, `bytesOutPerSecond`); `501 relay_not_configured`, `502 relay_unavailable` |
 | `POST /admin/relay/rooms/:code/close` `{ reason }` | Moderator | `{ code, playerIds, started }`; die Spieler bekommen `room_closed` (`closed_by_admin`); Protokoll `relay.room_close`; `404 room_not_found` |
 | `POST /admin/relay/rooms/:code/kick` `{ playerId, reason }` | Moderator | `{ code, playerId, peerId, roomClosed }`; Protokoll `relay.kick` (Ziel Spieler); `404 player_not_in_room` |
 | `POST /admin/players/:id/bans` | Moderator | wie bisher plus `relay`: `disconnected` \| `not_connected` \| `unavailable` \| `not_configured` |
-| `GET /admin/players/:id` | Moderator | wie bisher (Sperr-Historie, letzte 20 Runs) plus `runsTotal`, `noteCount` |
+| `GET /admin/players/:id` | Moderator | wie bisher (Sperr-Historie, letzte 20 Runs) plus `runsTotal`, `noteCount`; seit D-147 zusätzlich `guilds[] {id, name, tag, role}` und `guildTags[]` (`guild`/`guildTag` = älteste Gilde; `GET /admin/players` liefert `guildTags` ebenso) |
 | `GET` / `POST /admin/players/:id/notes` `{ text }` | Moderator | `{ items: AdminPlayerNote[] }` bzw. 201 `AdminPlayerNote`; Protokoll `player.note_add` |
 | `DELETE /admin/players/:id/notes/:noteId` | Admin oder Verfasser | 204; `403 forbidden`, `404 note_not_found`; Protokoll `player.note_delete` |
 | `POST /admin/guilds/:id/transfer` `{ playerId, reason }` | Moderator | `{ id, founderId, previousFounderId }`; `404 not_a_member`, `409 already_founder`, `409 guild_disbanded`; Protokoll `guild.transfer` |
@@ -233,8 +242,9 @@ Admin-API v2 (P18, P-023/P-024; Schemas in `packages/contracts/src/admin.ts`):
   HMAC gespeichert, ein Code je Konto). Gerät B (mit eigenem Konto angemeldet) `POST /me/link { code }`.
   Leeres Konto (keine Gilde, keine Runs) geht still im anderen auf; haben beide Fortschritt, kommt
   `409 account_has_progress` mit `remaining`/`removed`, bis das Spiel mit `confirmMerge: true`
-  wiederholt. Dann bleibt das ältere Konto (Name, Gilde; gildenlos übernimmt es die Mitgliedschaft
-  samt Rolle des anderen, sonst verlässt das andere seine Gilde mit Gründer-Übergabe nach P-102),
+  wiederholt. Dann bleibt das ältere Konto (Name, Gilden; die Mitgliedschaften des anderen wandern
+  samt Rolle mit, solange es bei höchstens 5 Gilden bleibt, in einer gemeinsamen Gilde gilt die höhere
+  Rolle, den Rest verlässt das andere Konto mit Gründer-Übergabe nach P-102; P-031),
   Identitäten, Runs, Sperr-Historie wandern mit, das andere Konto wird gelöscht. Gesperrt →
   `409 merge_blocked_banned`. Antwort: neuer Token für das bleibende Konto; Tokens des gelöschten
   Kontos sind ungültig, dessen Geräte landen bei der nächsten Anmeldung beim bleibenden Konto.

@@ -32,6 +32,7 @@ describe("internal relay endpoint", () => {
       banned: false,
       guildId: null,
       guildMember: null,
+      guildIds: [],
     });
   });
 
@@ -53,6 +54,19 @@ describe("internal relay endpoint", () => {
 
     const wrongGuild = await status(founder.id, `?guildId=${randomUUID()}`);
     expect(wrongGuild.json).toMatchObject({ guildId, guildMember: false });
+
+    // D-147: every active guild is listed; `guildId` stays the oldest one.
+    const second = await ctx.req("POST", "/guilds", {
+      token: founder.token,
+      body: { name: "Relay Guild Two", tag: "RLY2" },
+    });
+    expect(second.status).toBe(201);
+    const both = await status(founder.id, `?guildId=${second.json.id}`);
+    expect(both.json).toMatchObject({
+      guildId,
+      guildMember: true,
+      guildIds: [guildId, second.json.id],
+    });
 
     const badQuery = await status(founder.id, "?guildId=not-a-uuid");
     expect(badQuery.status).toBe(400);

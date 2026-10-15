@@ -14,3 +14,6 @@ next-env.d.ts
 .DS_Store
 # UI screenshots taken by agents during verification
 .screenshots/
+
+# Agent rules that `next dev` writes into each Next app (the repo-wide AGENTS.md is the real one)
+apps/*/AGENTS.md

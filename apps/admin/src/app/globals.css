@@ -42,15 +42,24 @@
 }
 
 /*
- * Numbers and identifiers (ids, tags, times) in Pixelify 400 (TOKENS §6). Pixelify's glyphs are
- * small for their em size and 2/5/8 blur below ~16 px, so it runs 1.15× the surrounding text.
+ * Numbers and identifiers (ids, tags, codes, dates, times, tile figures): DM Sans with tabular
+ * figures, so columns line up. Pixelify digits are hard to tell apart (a 5 looks like an 8, even
+ * at 32 px), so Pixelify stays for headings, eyebrows and chips. Weight comes from the context.
  */
 @utility font-data {
-  font-family: var(--font-pixel);
-  font-size: 1.15em;
-  font-weight: 400;
-  letter-spacing: 0.02em;
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
   text-shadow: none;
+}
+
+/* One line with ellipsis; pair it with a max width and a title holding the full text. */
+@utility cell-truncate {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @layer base {
@@ -239,6 +248,15 @@
     padding: 0 10px;
     font-size: 14px;
   }
+  /* Square icon-only button in table rows; label via aria-label and title (tooltip). */
+  .btn-icon {
+    width: 32px;
+    min-width: 32px;
+    padding: 0;
+  }
+  .btn-sm > svg {
+    flex: none;
+  }
   /* Selected segment in a filter row (links styled as buttons). */
   .btn[aria-current="page"] {
     color: var(--color-ink);
@@ -354,28 +372,57 @@
     text-align: left;
     border-collapse: collapse;
   }
+  /*
+   * Rows stay one line high: headers never wrap, cells are vertically centred. Long free text
+   * (reasons, notes) may wrap; names and e-mails are cut with an ellipsis (`cell-truncate`).
+   */
   .table th {
-    padding: 10px 12px 8px;
+    padding: 10px 10px 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
     font-family: var(--font-pixel);
     font-size: 14px;
     font-weight: 400;
     vertical-align: bottom;
     color: var(--color-violet-link);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
     text-shadow: 1px 1px 0 var(--color-ink);
     border-bottom: 2px solid var(--color-line);
   }
   .table td {
-    padding: 8px 12px;
-    vertical-align: top;
+    padding: 7px 10px;
+    vertical-align: middle;
     border-bottom: 1px solid var(--color-line);
+  }
+  .table th:first-child,
+  .table td:first-child {
+    padding-left: 16px;
+  }
+  .table th:last-child,
+  .table td:last-child {
+    padding-right: 16px;
   }
   .table tbody tr:nth-child(even) td {
     background: var(--color-bg-deep);
   }
   .table tbody tr:last-child td {
     border-bottom: 0;
+  }
+  /* Action cell: compact buttons side by side, right-aligned (the last column). */
+  .row-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  .row-actions > form {
+    display: contents;
+  }
+  .table .row-actions .btn {
+    margin-bottom: 2px;
   }
 
   /* Sidebar navigation; the current page gets a gold bar and text. */
@@ -456,6 +503,39 @@
   }
   .confirm-box-neutral {
     border-color: var(--color-line-light);
+  }
+
+  /*
+   * Confirmation for row actions as a native popover (no client JS: `popovertarget` on the
+   * button). It opens centred in the top layer, so the table row keeps its height; Esc or a
+   * click outside closes it. It must not inherit table cell styles (nowrap, right alignment).
+   */
+  .confirm-popover {
+    width: min(28rem, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+    padding: 0;
+    margin: auto;
+    overflow: auto;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--color-text);
+    text-align: left;
+    white-space: normal;
+    background: var(--color-panel);
+    border: 2px solid var(--color-danger);
+    border-radius: 4px;
+    box-shadow: var(--shadow-card);
+  }
+  .confirm-popover-neutral {
+    border-color: var(--color-line-light);
+  }
+  .confirm-popover::backdrop {
+    background: rgb(15 13 24 / 0.65);
+  }
+  .confirm-popover .confirm-box {
+    margin: 0;
+    background: transparent;
+    border: 0;
   }
 
   @media (prefers-reduced-motion: reduce) {

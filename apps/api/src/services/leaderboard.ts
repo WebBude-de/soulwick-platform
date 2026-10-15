@@ -75,16 +75,26 @@ export async function getLeaderboard(
   const order = Prisma.sql`b.room_reached desc, b.duration_seconds asc`;
 
   let query: Prisma.Sql;
-  let ownEntityId: string | null = opts.ownPlayerId;
+  // Guild board: every own guild (D-147); `own` becomes the best placed of them.
+  let ownEntityIds: string[] = opts.ownPlayerId ? [opts.ownPlayerId] : [];
 
   if (kind === "guild") {
-    if (opts.ownPlayerId) {
-      const own = await db.guildMember.findUnique({
-        where: { playerId: opts.ownPlayerId },
-        select: { guildId: true },
-      });
-      ownEntityId = own?.guildId ?? null;
-    }
+    ownEntityIds = opts.ownPlayerId
+      ? (
+          await db.guildMember.findMany({
+            where: { playerId: opts.ownPlayerId, guild: { disbandedAt: null } },
+            select: { guildId: true },
+          })
+        ).map((m) => m.guildId)
+      : [];
+  }
+  const ownIds = Prisma.join(
+    (ownEntityIds.length > 0 ? ownEntityIds : [NIL_UUID]).map(
+      (id) => Prisma.sql`${id}::uuid`
+    )
+  );
+
+  if (kind === "guild") {
     query = Prisma.sql`
       with eligible as (
         select r.id as run_id, r.guild_id as entity_id, r.room_reached, r.duration_seconds, r.created_at
@@ -104,7 +114,7 @@ export async function getLeaderboard(
         from best b join guilds g on g.id = b.entity_id
       )
       select * from ranked
-      where pos <= ${limit} or entity_id = ${ownEntityId ?? NIL_UUID}::uuid
+      where pos <= ${limit} or entity_id in (${ownIds})
       order by pos`;
   } else {
     const modes =
@@ -123,16 +133,20 @@ export async function getLeaderboard(
         order by entity_id, room_reached desc, duration_seconds asc, created_at asc
       ),
       ranked as (
-        select b.*, p.name, g.tag, null::int as member_count,
+        select b.*, p.name,
+          -- Oldest active guild of the player (D-147: a player can be in several).
+          (select g.tag from guild_members gm
+            join guilds g on g.id = gm.guild_id and g.disbanded_at is null
+            where gm.player_id = b.entity_id
+            order by gm.joined_at asc, gm.guild_id asc limit 1) as tag,
+          null::int as member_count,
           rank() over (order by ${order})::int as rank,
           row_number() over (order by ${order}, b.created_at asc)::int as pos
         from best b
         join players p on p.id = b.entity_id
-        left join guild_members gm on gm.player_id = b.entity_id
-        left join guilds g on g.id = gm.guild_id and g.disbanded_at is null
       )
       select * from ranked
-      where pos <= ${limit} or entity_id = ${ownEntityId ?? NIL_UUID}::uuid
+      where pos <= ${limit} or entity_id in (${ownIds})
       order by pos`;
   }
 
@@ -150,9 +164,8 @@ export async function getLeaderboard(
   });
 
   const entries = rows.filter((r) => Number(r.pos) <= limit).map(toEntry);
-  const ownRow = ownEntityId
-    ? rows.find((r) => r.entity_id === ownEntityId)
-    : undefined;
+  // Rows come sorted by position, so the first own row is the best placed one.
+  const ownRow = rows.find((r) => ownEntityIds.includes(r.entity_id));
 
   return {
     kind,

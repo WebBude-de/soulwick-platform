@@ -108,7 +108,9 @@ export type LinkCodeResponse = z.infer<typeof LinkCodeResponse>;
  * - One account empty (no guild, no runs): it is absorbed silently into the other one.
  * - Both have progress: 409 `account_has_progress` (body `AccountHasProgressResponse`) until the
  *   game asks the player and repeats the call with `confirmMerge: true`; then the OLDER account
- *   remains and receives the identities, runs and (if it has none) the guild of the other.
+ *   remains and receives the identities, runs and the guild memberships of the other (D-147:
+ *   memberships move while the remaining account stays within MAX_GUILDS_PER_PLAYER; in a guild
+ *   both are in, the higher role stays; the rest are left with the founder hand-over of P-102).
  * - Either account banned: 409 `merge_blocked_banned`. Own code: 409 `already_linked`.
  * - Unknown code 404 `link_code_not_found`, expired 410 `link_code_expired`.
  */
@@ -123,9 +125,14 @@ export const AccountSummary = z.object({
   id: Uuid,
   name: z.string(),
   createdAt: IsoDateTime,
+  /** Oldest guild membership (same as `guilds[0]`), kept for older game builds. */
   guild: z
     .object({ name: z.string(), tag: z.string(), role: GuildRole })
     .nullable(),
+  /** All active guilds (D-147). Optional for older API builds. */
+  guilds: z
+    .array(z.object({ name: z.string(), tag: z.string(), role: GuildRole }))
+    .optional(),
   /** Run participations. */
   runCount: z.number().int().min(0),
   providers: z.array(IdentityProvider),
@@ -136,9 +143,9 @@ export type AccountSummary = z.infer<typeof AccountSummary>;
 export const AccountHasProgressResponse = z.object({
   error: z.literal("account_has_progress"),
   message: z.string().optional(),
-  /** Stays (older `createdAt`); name and guild of this account win. */
+  /** Stays (older `createdAt`); name and guild memberships of this account win. */
   remaining: AccountSummary,
-  /** Gets deleted after its identities, runs and (if `remaining` has none) guild moved over. */
+  /** Gets deleted after its identities, runs and (within the guild limit) memberships moved over. */
   removed: AccountSummary,
 });
 export type AccountHasProgressResponse = z.infer<
@@ -219,8 +226,21 @@ export type AccountDeletionVerifyRequest = z.input<
 /** What the website shows before the final confirmation; nothing sensitive. */
 export const AccountDeletionPreview = z.object({
   playerName: z.string(),
-  /** Current guild, null if none. */
+  /** Oldest current guild (same as `guilds[0]`), null if none. */
   guild: z.object({ name: z.string(), tag: z.string() }).nullable(),
+  /**
+   * All current guilds (D-147), oldest first. `role` shows where the founder role passes on (P-102)
+   * or the guild is disbanded; optional for older API builds, like the list itself.
+   */
+  guilds: z
+    .array(
+      z.object({
+        name: z.string(),
+        tag: z.string(),
+        role: GuildRole.optional(),
+      })
+    )
+    .optional(),
   /** Runs the player took part in (they stay anonymised in the guild boards). */
   runCount: z.number().int().min(0),
 });

@@ -1,16 +1,17 @@
-import type { AdminRelayRoomList, RelayRoomSummary } from "@soulwick/contracts";
+import type { AdminRelayRoom, AdminRelayRoomList } from "@soulwick/contracts";
 import type { Metadata } from "next";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { closeRelayRoom, kickRelayPlayer } from "@/app/actions";
-import { DangerAction } from "@/components/danger-action";
+import { RowDangerAction } from "@/components/danger-action";
 import {
   Chip,
-  EmptyRow,
   ErrorBox,
   Flash,
   Notice,
   PageTitle,
-  TableCard,
+  RowActions,
+  Truncate,
 } from "@/components/ui";
 import { api } from "@/lib/api";
 import {
@@ -25,164 +26,215 @@ export const metadata: Metadata = { title: "Live-Räume" };
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-/** One room as a table row; players with their kick action are listed inside the row. */
-function RoomRow({ room }: { room: RelayRoomSummary }) {
+/** Small "label value" pair in the room's fact line. */
+function Fact({
+  label,
+  children,
+  title,
+}: {
+  label: string;
+  children: ReactNode;
+  title?: string;
+}) {
   return (
-    <tr>
-      <td className="whitespace-nowrap">
-        <span className="font-data text-soft" title={room.createdAt}>
-          {room.code}
-        </span>
-      </td>
-      <td className="whitespace-nowrap">
-        {ROOM_MODE_LABEL[room.mode] ?? room.mode}
-        {room.guildId ? (
-          <div>
-            <Link className="link text-xs" href={`/gilden/${room.guildId}`}>
-              Zur Gilde
-            </Link>
-          </div>
-        ) : null}
-      </td>
-      <td>
-        <div className="space-y-1">
-          {room.started ? (
-            <Chip tone="active">Run läuft</Chip>
-          ) : (
-            <Chip tone="muted">Lobby</Chip>
-          )}
-          <div className="whitespace-nowrap text-muted text-xs">
-            <span className="font-data">{room.runsStarted}</span>{" "}
-            {room.runsStarted === 1 ? "Run" : "Runs"} gestartet
-          </div>
-          {room.expiresAt ? (
-            <div className="whitespace-nowrap text-muted text-xs">
-              Lobby bis{" "}
-              <span className="font-data">
-                {formatDateTime(room.expiresAt)}
-              </span>
-            </div>
-          ) : null}
-        </div>
-      </td>
-      <td className="min-w-72">
-        <div className="mb-1 font-data">
-          {room.playerCount} / {room.maxPlayers}
-        </div>
-        <ul className="space-y-2">
-          {room.players.map((p) => {
-            const name = p.name ?? "(Name unbekannt)";
-            return (
-              <li key={p.peerId}>
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <Link
-                    className="link font-semibold"
-                    href={`/spieler/${p.playerId}`}
-                  >
-                    {name}
-                  </Link>
-                  {p.host ? <Chip tone="flagged">Host</Chip> : null}
-                  <span className="text-muted text-xs">
-                    {PLATFORM_LABEL[p.platform] ?? p.platform} ·{" "}
-                    <span className="font-data">
-                      {formatAge(p.inRoomSeconds)}
-                    </span>
-                  </span>
-                </div>
-                <div className="mt-1">
-                  <DangerAction
-                    action={kickRelayPlayer.bind(
-                      null,
-                      room.code,
-                      p.playerId,
-                      name
-                    )}
-                    description={
-                      <p>
-                        {p.host
-                          ? "Der Host wird entfernt – damit schließt der Raum für alle."
-                          : `„${name}“ verlässt den Raum und kann ihm nicht wieder beitreten.`}
-                      </p>
-                    }
-                    reason={{
-                      label: "Grund",
-                      placeholder: "z. B. Belästigung im Chat",
-                    }}
-                    small
-                    submitLabel="Aus Raum entfernen"
-                    trigger="Entfernen…"
-                  />
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      </td>
-      <td className="whitespace-nowrap">
-        <span className="font-data">{formatAge(room.ageSeconds)}</span>
-        <div className="font-data text-muted text-xs">
-          {formatDateTime(room.createdAt)}
-        </div>
-      </td>
-      <td className="font-data text-muted">{room.gameVersion}</td>
-      <td className="whitespace-nowrap font-data text-muted text-xs">
-        <div title="Spielpakete zum Relay">
-          ↓ {formatRate(room.bytesInPerSecond)}
-        </div>
-        <div title="Spielpakete vom Relay">
-          ↑ {formatRate(room.bytesOutPerSecond)}
-        </div>
-      </td>
-      <td>
-        <DangerAction
-          action={closeRelayRoom.bind(null, room.code)}
-          description={
-            <p>
-              Alle {room.playerCount} Spieler verlassen den Raum
-              {room.started ? ", der laufende Run endet" : ""}. Sie sehen, dass
-              die Moderation den Raum geschlossen hat.
-            </p>
-          }
-          reason={{
-            label: "Grund",
-            placeholder: "z. B. Missbrauch, Belästigung",
-          }}
-          small
-          submitLabel={`Raum ${room.code} schließen`}
-          trigger="Schließen…"
-        />
-      </td>
-    </tr>
+    <span className="whitespace-nowrap" title={title}>
+      <span className="text-muted">{label} </span>
+      <span className="font-data text-soft">{children}</span>
+    </span>
   );
 }
 
-function RoomTable({ rooms }: { rooms: RelayRoomSummary[] }) {
+/** Mode with the owning guild: "Schnelles Spiel" or "Gilde [TAG] Name" (linked). */
+function RoomMode({ room }: { room: AdminRelayRoom }) {
+  const mode = ROOM_MODE_LABEL[room.mode] ?? room.mode;
+  if (!room.guildId) {
+    return <span className="whitespace-nowrap text-soft">{mode}</span>;
+  }
+  // `guildTag`/`guildName` come from the API (D-147); null when the guild no longer exists.
   return (
-    <TableCard>
-      <table className="table">
-        <caption className="sr-only">Offene Räume, ältester zuerst</caption>
+    <span className="flex min-w-0 items-center gap-2">
+      <span className="whitespace-nowrap text-soft">{mode}</span>
+      {room.guildTag ? (
+        <Link
+          className="link flex min-w-0 items-center gap-1.5"
+          href={`/gilden/${room.guildId}`}
+          title={`[${room.guildTag}] ${room.guildName ?? ""}`.trim()}
+        >
+          <span className="font-data">[{room.guildTag}]</span>
+          {room.guildName ? (
+            <span className="cell-truncate max-w-48">{room.guildName}</span>
+          ) : null}
+        </Link>
+      ) : (
+        <Link
+          className="link whitespace-nowrap"
+          href={`/gilden/${room.guildId}`}
+        >
+          Zur Gilde
+        </Link>
+      )}
+    </span>
+  );
+}
+
+/** One open room: header (code, mode, status, close), facts, then one row per player. */
+function RoomCard({ room, now }: { room: AdminRelayRoom; now: number }) {
+  const lobbyLeft = room.expiresAt
+    ? Math.max(0, Math.round((new Date(room.expiresAt).getTime() - now) / 1000))
+    : null;
+  return (
+    <article aria-labelledby={`raum-${room.code}`} className="card">
+      <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-line border-b-2 px-4 py-3">
+        <h2
+          className="font-data text-[18px] text-text tracking-[0.12em]"
+          id={`raum-${room.code}`}
+          title={`Raumcode ${room.code}`}
+        >
+          {room.code}
+        </h2>
+        <RoomMode room={room} />
+        {room.started ? (
+          <Chip tone="active">Run läuft</Chip>
+        ) : (
+          <Chip tone="muted">Lobby</Chip>
+        )}
+        <div className="ml-auto">
+          <RowActions>
+            <RowDangerAction
+              action={closeRelayRoom.bind(null, room.code)}
+              description={
+                <p>
+                  Alle {room.playerCount} Spieler verlassen den Raum
+                  {room.started ? ", der laufende Run endet" : ""}. Sie sehen,
+                  dass die Moderation den Raum geschlossen hat.
+                </p>
+              }
+              icon="close"
+              id={`room-close-${room.code}`}
+              label="Schließen…"
+              reason={{
+                label: "Grund",
+                placeholder: "z. B. Missbrauch, Belästigung",
+              }}
+              submitLabel={`Raum ${room.code} schließen`}
+            />
+          </RowActions>
+        </div>
+      </header>
+
+      <p className="flex flex-wrap gap-x-5 gap-y-1 px-4 pt-3 pb-2 text-sm">
+        <Fact
+          label="Offen seit"
+          title={`erstellt ${formatDateTime(room.createdAt)}`}
+        >
+          {formatAge(room.ageSeconds)}
+        </Fact>
+        <Fact label="Spieler">
+          {room.playerCount} / {room.maxPlayers}
+        </Fact>
+        {room.started ? (
+          <Fact label="Run">{room.runsStarted}</Fact>
+        ) : (
+          <Fact
+            label="Lobby schließt in"
+            title={
+              room.expiresAt
+                ? `um ${formatDateTime(room.expiresAt)}, wenn kein Run startet`
+                : undefined
+            }
+          >
+            {lobbyLeft === null ? "–" : formatAge(lobbyLeft)}
+          </Fact>
+        )}
+        <Fact label="Version">{room.gameVersion}</Fact>
+        <Fact
+          label="Verkehr"
+          title="Spielpakete zum Relay (↓) und vom Relay (↑), Mittel der letzten Sekunden"
+        >
+          ↓ {formatRate(room.bytesInPerSecond)} · ↑{" "}
+          {formatRate(room.bytesOutPerSecond)}
+        </Fact>
+      </p>
+
+      <table className="table table-fixed">
+        <caption className="sr-only">Spieler in Raum {room.code}</caption>
+        <colgroup>
+          <col />
+          <col className="w-28" />
+          <col className="w-26" />
+          <col className="w-18" />
+        </colgroup>
         <thead>
           <tr>
-            <th>Raum</th>
-            <th>Modus</th>
-            <th>Status</th>
             <th>Spieler</th>
-            <th>Offen seit</th>
-            <th>Version</th>
-            <th>Verkehr</th>
-            <th>Aktionen</th>
+            <th>Plattform</th>
+            <th className="text-right">Im Raum</th>
+            <th className="text-right">
+              <span className="sr-only">Aktionen</span>
+            </th>
           </tr>
         </thead>
         <tbody>
-          {rooms.map((room) => (
-            <RoomRow key={room.code} room={room} />
-          ))}
-          {rooms.length === 0 ? (
-            <EmptyRow colSpan={8}>Gerade ist kein Raum offen.</EmptyRow>
+          {room.players.map((p) => {
+            const name = p.name ?? "(Name unbekannt)";
+            return (
+              <tr key={p.peerId}>
+                <td>
+                  <span className="flex min-w-0 items-center gap-2">
+                    <Truncate href={`/spieler/${p.playerId}`} max="max-w-full">
+                      {name}
+                    </Truncate>
+                    {p.host ? <Chip tone="flagged">Host</Chip> : null}
+                  </span>
+                </td>
+                <td className="whitespace-nowrap text-muted">
+                  {PLATFORM_LABEL[p.platform] ?? p.platform}
+                </td>
+                <td className="whitespace-nowrap text-right font-data">
+                  {formatAge(p.inRoomSeconds)}
+                </td>
+                <td>
+                  <RowActions>
+                    <RowDangerAction
+                      action={kickRelayPlayer.bind(
+                        null,
+                        room.code,
+                        p.playerId,
+                        name
+                      )}
+                      description={
+                        <p>
+                          {p.host
+                            ? "Der Host wird entfernt – damit schließt der Raum für alle."
+                            : `„${name}“ verlässt den Raum und kann ihm nicht wieder beitreten.`}
+                        </p>
+                      }
+                      icon="exit"
+                      iconOnly
+                      id={`room-kick-${room.code}-${p.playerId}`}
+                      label={`„${name}“ aus Raum entfernen`}
+                      reason={{
+                        label: "Grund",
+                        placeholder: "z. B. Belästigung im Chat",
+                      }}
+                      submitLabel="Aus Raum entfernen"
+                      title={`„${name}“ aus Raum ${room.code} entfernen`}
+                    />
+                  </RowActions>
+                </td>
+              </tr>
+            );
+          })}
+          {room.players.length === 0 ? (
+            <tr>
+              <td className="text-muted" colSpan={4}>
+                Niemand im Raum.
+              </td>
+            </tr>
           ) : null}
         </tbody>
       </table>
-    </TableCard>
+    </article>
   );
 }
 
@@ -193,6 +245,10 @@ export default async function LiveRoomsPage({
 }) {
   const params = await searchParams;
   const result = await api<AdminRelayRoomList>("/admin/relay/rooms");
+  const rooms = result.ok ? result.data.rooms : [];
+  const now = result.ok ? new Date(result.data.time).getTime() : Date.now();
+  const players = rooms.reduce((sum, r) => sum + r.playerCount, 0);
+  const running = rooms.filter((r) => r.started).length;
 
   return (
     <>
@@ -211,15 +267,23 @@ export default async function LiveRoomsPage({
 
       {result.ok ? (
         <>
-          <p className="mb-6 text-muted text-sm">
-            Stand{" "}
-            <span className="font-data text-soft">
-              {formatDateTime(result.data.time)}
-            </span>{" "}
-            · <span className="font-data">{result.data.rooms.length}</span>{" "}
-            {result.data.rooms.length === 1 ? "Raum" : "Räume"} offen
+          <p className="mb-5 flex flex-wrap gap-x-5 gap-y-1 text-sm">
+            <Fact label="Räume">{rooms.length}</Fact>
+            <Fact label="Spieler">{players}</Fact>
+            <Fact label="Runs laufen">{running}</Fact>
+            <Fact label="Stand">{formatDateTime(result.data.time)}</Fact>
           </p>
-          <RoomTable rooms={result.data.rooms} />
+          {rooms.length === 0 ? (
+            <p className="card px-4 py-3 text-muted">
+              Gerade ist kein Raum offen.
+            </p>
+          ) : (
+            <div className="grid items-start gap-5 min-[112.5rem]:grid-cols-2">
+              {rooms.map((room) => (
+                <RoomCard key={room.code} now={now} room={room} />
+              ))}
+            </div>
+          )}
         </>
       ) : result.error === "relay_not_configured" ? (
         <Notice title="Kein Relay eingerichtet">

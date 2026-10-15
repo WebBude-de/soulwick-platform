@@ -2,7 +2,7 @@
 
 > **Stand:** 15.10.2026 · **Status:** Architektur **entschieden** (Spiel-Repo D-119, Projektmitglied 14.10.2026), alles Weitere ist **Vorschlag** von Claude oder **OFFEN**. Die Plattform-Seite ist gebaut (Relay P13, Anmeldung P14, Konten P15, Versionen P16, Gast P20); der Betrieb auf dem Server steht noch aus (P2, P17, [../infra/DOKPLOY.md](../infra/DOKPLOY.md)).
 > **Für wen:** Entwickler und Agenten, die Relay, Anmeldung, Deployment und Store-Anbindung bauen. Umsetzung als Pakete: [ROADMAP.md](ROADMAP.md) P13–P17 (Plattform), `soulwick/docs/ROADMAP_CROSSPLAY.md` CP1, CP3, CP7 und `soulwick/docs/ROADMAP_MULTIPLAYER.md` MP2–MP6 (Spiel).
-> **Entscheidungen:** Spiel-Repo D-083, D-084, D-085, D-108, **D-119**; hier [DECISIONS.md](DECISIONS.md) P-008, P-014, **P-016 bis P-018**, **P-027** (Better Auth, Relay-JWT über JWKS, 15.10.2026). Bei Widerspruch gilt das Spiel-Repo.
+> **Entscheidungen:** Spiel-Repo D-083, D-084, D-085, D-108, **D-119**; hier [DECISIONS.md](DECISIONS.md) P-008, P-014, **P-016 bis P-018**, **P-027** (Better Auth, Relay-JWT über JWKS, 15.10.2026), **P-031**/**P-032** (mehrere Gilden je Spieler, Gilden-Raum nur für Mitglieder, Gildenkasse nach Gilden-Run; D-147). Bei Widerspruch gilt das Spiel-Repo.
 > **Kennzeichnung:** **ENTSCHIEDEN** = Projektmitglied hat entschieden · **VORSCHLAG** = von Claude ausgearbeitet, vom Team zu bestätigen · **OFFEN** = noch nicht entschieden, nicht still festlegen · **TESTWERT** = Zahl zum Nachjustieren.
 
 ## 0. Entscheidungsstand
@@ -102,7 +102,7 @@ immer:   Host geht / trennt ─────────────────�
 
 - **Code:** 6 Zeichen aus `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (ohne `0`/`O`, `1`/`I`/`L`), zufällig, eindeutig unter den offenen Räumen (VORSCHLAG).
 - **Größe:** höchstens 4 Spieler einschließlich Host (D-084); `room_full` darüber.
-- **Modus `guild`:** Beim `create` und jedem `join` fragt der Relay die API, ob der Spieler Mitglied der Gilde ist und nicht gesperrt (§2.7). Modus `quick`: nur Sperrprüfung.
+- **Modus `guild`:** Beim `create` und jedem `join` fragt der Relay die API, ob der Spieler Mitglied der Gilde ist und nicht gesperrt (§2.7). Ein Spieler kann in mehreren Gilden sein (D-147, P-031): Er darf in den Raum, wenn die `guildId` des Raums in seiner Gildenliste steht, sonst `not_guild_member`. Modus `quick`: nur Sperrprüfung.
 - **Ablauf:** offen ohne Start nach 10 Minuten (TESTWERT) → `expired`. Laufende Runs leben, bis der Host geht oder `end_run` sendet.
 - **Mehrere Runs je Raum (MP3):** Nach einem Run kehrt die Gruppe ins gemeinsame Dorf zurück; der Host sendet `end_run`, der Raum ist wieder Lobby (Beitritte erlaubt, Frist neu), `start` beginnt den nächsten Run. Gekickte bleiben gesperrt. Reine Erweiterung, `PROTOCOL_VERSION` bleibt 1. Wiederbeitreten nach Verbindungsabbruch (`rejoin`) ist OFFEN (§8).
 - **Host geht:** Raum schließt für alle; der Run endet wie in D-085 (Auszahlung wie Tod). Kein Host-Wechsel, kein Wiederbeitreten im laufenden Run.
@@ -120,7 +120,23 @@ immer:   Host geht / trennt ─────────────────�
 
 ### 2.7 Interner API-Endpunkt für den Relay (VORSCHLAG)
 
-`GET /internal/relay/players/:playerId/status?guildId=…` mit Header `x-relay-key: <RELAY_INTERNAL_KEY>` → `{ banned, guildMember }`. Nur im Docker-Netz der Umgebung gedacht; zusätzlich durch den Schlüssel geschützt, falls der Pfad doch öffentlich erreichbar ist. Das JWT prüft der Relay selbst (nur mit den öffentlichen Schlüsseln, P-027), die API wird nur für Gilden- und Sperrstatus gefragt (kurzer Cache im Relay, z. B. 30 s, TESTWERT).
+`GET /internal/relay/players/:playerId/status?guildId=…` mit Header `x-relay-key: <RELAY_INTERNAL_KEY>` → `{ playerId, name, banned, guildId, guildMember, guildIds }`. `guildIds` listet alle aktiven Gilden des Spielers (D-147, P-031), `guildId` bleibt die älteste (für ältere Relays). Nur im Docker-Netz der Umgebung gedacht; zusätzlich durch den Schlüssel geschützt, falls der Pfad doch öffentlich erreichbar ist. Das JWT prüft der Relay selbst (nur mit den öffentlichen Schlüsseln, P-027), die API wird nur für Gilden- und Sperrstatus gefragt (kurzer Cache im Relay, 30 s, TESTWERT). Die Mitgliedschaft steht bewusst **nicht** im JWT: Sie ändert sich während der 15 Minuten eines Tokens (Beitritt, Austritt, Rauswurf). Sagt der Cache „kein Mitglied“, fragt der Relay vor der Ablehnung einmal frisch nach (gerade beigetreten).
+
+### 2.8 Gilden im Spiel (D-147, P-031, P-032)
+
+Das Online-Menü (D-147) nutzt nur die Spieler-API (Bearer-Token der Anmeldung):
+
+| Route | Zweck |
+| --- | --- |
+| `GET /me/guilds` | eigene Gilden (bis 5, TESTWERT) mit Rolle, Mitgliederzahl, Gildenkasse; `maxGuilds` |
+| `POST /guilds` `{name, tag}` / `POST /guilds/join` `{inviteCode}` | Gilde gründen bzw. beitreten → `GuildDetail` |
+| `GET /guilds/:id` | Mitglieder, Rollen, Fortschritt, `myRole`; Einladungscode nur für Gründer und Offiziere |
+| `POST /guilds/:id/leave` | verlassen; Gründer → Übergabe nach P-102, letzte Person löst auf |
+| `DELETE /guilds/:id/members/:playerId`, `PATCH …/members/:playerId {role}` | entfernen (Gründer alle, Offizier nur Mitglieder) bzw. Offizier ernennen/entlassen (nur Gründer) |
+| `POST /guilds/:id/invite-code` | neuen Code erzeugen (Gründer, Offizier) |
+| `GET/PATCH /guilds/:id/progress` | Gildenkasse und Schmiede mit Versionsprüfung (P-104) |
+
+Ein **Gilden-Raum** ist ein Relay-Raum mit `create {mode: "guild", guildId}`. Am Run-Ende meldet der Host `POST /runs` mit `mode: "guild"`, `guildId`, `endReason`, `remainingGold` und einer einmal je Run erzeugten `reportId` (UUID; bei Wiederholung nach Netzfehler dieselbe, Antwort dann 200 ohne zweite Auszahlung); die API zahlt nach D-081 in die Gildenkasse (Portal 100 %, sonst 50 % aufgerundet; markierte Runs nichts, P-032) und antwortet mit `guildPayout` und dem neuen `guildProgress`. Der Run zählt für die Gilden-Rangliste.
 
 ## 3. Anmeldung, Konto und Versionen
 
@@ -179,7 +195,7 @@ Ablauf: B hat beim ersten Start automatisch ein eigenes (meist leeres) Konto bek
 
 ### 3.6 Zwei Konten zusammenführen (ENTSCHIEDEN, D-122)
 
-Regel (D-122): Das **ältere** Konto (früheres `created_at`) bleibt und bekommt die Identitäten des anderen. Gilde: Die Mitgliedschaft des bleibenden Kontos gilt; ist es gildenlos, übernimmt es die des anderen. Run-Teilnahmen beider Konten werden umgehängt, der Name des bleibenden Kontos gilt, das andere Konto wird gelöscht. Ist eines der Konten gesperrt, wird nicht zusammengeführt (manuelle Prüfung im Admin-Panel). Gründerrolle, wenn das gelöschte Konto eine Gilde gegründet hat: geregelt in P-020 (Übergabe nach P-102, wenn das bleibende Konto schon eine Gilde hat).
+Regel (D-122): Das **ältere** Konto (früheres `created_at`) bleibt und bekommt die Identitäten des anderen. Gilden (seit D-147 mehrere je Konto, P-031): Die Mitgliedschaften des bleibenden Kontos gelten; die des anderen wandern samt Rolle mit, solange die Grenze von 5 Gilden nicht überschritten wird (älteste zuerst), in einer gemeinsamen Gilde bleibt die höhere Rolle, der Rest wird mit Übergabe nach P-102 verlassen. Run-Teilnahmen beider Konten werden umgehängt, der Name des bleibenden Kontos gilt, das andere Konto wird gelöscht. Ist eines der Konten gesperrt, wird nicht zusammengeführt (manuelle Prüfung im Admin-Panel). Gründerrolle, wenn das gelöschte Konto eine Gilde gegründet hat: geregelt in P-020 (Übergabe nach P-102, wenn das bleibende Konto schon eine Gilde hat).
 
 ### 3.7 Konto löschen (ENTSCHIEDEN, P-026: vollautomatisch)
 
@@ -229,7 +245,7 @@ Domains sind ein **VORSCHLAG** (P-018) im Muster von P-008; Einrichtung Schritt 
 | --- | --- |
 | Dienste | `bun run services:up`, `bun dev` (API 8787, Relay 8790, Web 3000, Admin 3001; Postgres 5432) |
 | Vier Spieler auf einem PC | Godot-Editor *Debug → Ausführungsinstanzen anpassen* mit Argument `--player=1..4`; jede Instanz meldet sich per `/auth/dev` mit eigener Geräte-ID an und tritt per Raumcode bei |
-| Gilden | Testdaten aus `bun run db:seed:dev` (Gilde „Dochtwächter“), Dev-Anmeldung als Seed-Spieler |
+| Gilden | Testdaten aus `bun run db:seed:dev`: „Dochtwächter“ `[DOCHT]` (Code `DOCHT2345`) und „Aschenrunde“ `[ASCHE]` (Code `ASCHE2345`); Seed-Spieler „Lumen“ (`dev-device-00000001`) ist in beiden, Gilden-Raum für ASCHE z. B. mit „Glutfunke“ (`dev-device-00000005`) testen |
 | Handy (Android) | Ein-Klick-Export per USB, `adb reverse tcp:8787 tcp:8787` und `adb reverse tcp:8790 tcp:8790`; das Handy erreicht `localhost` des PCs ohne HTTPS-Umweg (unverschlüsseltes HTTP/WS im Debug-Export erlauben, prüfen) |
 | Steam | Test-AppID 480 mit `steam_appid.txt`, Steam-Client offen; zwei Steam-Konten brauchen zwei Rechner |
 | Schlechtes Netz | Relay-Optionen `--sim-latency` und `--sim-loss`, unter Windows zusätzlich „clumsy“ |

@@ -29,7 +29,7 @@ import { adminDeletePlayer } from "../../services/account-deletion.ts";
 import { listAdminRuns } from "../../services/admin-runs.ts";
 import { writeAudit } from "../../services/audit.ts";
 import { activeBanWhere, isBanActive } from "../../services/bans.ts";
-import { findMembership } from "../../services/guilds.ts";
+import { findMemberships } from "../../services/guilds.ts";
 import { hasDeviceIdentity, steamIdOf } from "../../services/identities.ts";
 import type { AppEnv, Deps } from "../../types.ts";
 import { registerPlayerNoteRoutes } from "./player-notes.ts";
@@ -37,13 +37,15 @@ import { registerPlayerNoteRoutes } from "./player-notes.ts";
 /** SteamID64 values are 17 digits today; keep a little slack for the admin search. */
 const STEAM_ID_PATTERN = /^\d{5,20}$/;
 
-/** Everything the list item needs in one query: identities, active bans, current guild. */
+/** Everything the list item needs in one query: identities, active bans, active guilds. */
 const listInclude = (at: Date) =>
   ({
     identities: { select: { provider: true, providerUserId: true } },
     bans: { where: activeBanWhere(at), select: { id: true } },
-    guildMembership: {
-      include: { guild: { select: { tag: true, disbandedAt: true } } },
+    guildMemberships: {
+      where: { guild: { disbandedAt: null } },
+      orderBy: [{ joinedAt: "asc" }, { guildId: "asc" }],
+      include: { guild: { select: { tag: true } } },
     },
   }) satisfies Prisma.PlayerInclude;
 
@@ -59,10 +61,8 @@ const toListItem = (r: ListRow): AdminPlayerListItem => ({
   createdAt: iso(r.createdAt),
   lastSeenAt: iso(r.lastSeenAt),
   banned: r.bans.length > 0,
-  guildTag:
-    r.guildMembership && r.guildMembership.guild.disbandedAt === null
-      ? r.guildMembership.guild.tag
-      : null,
+  guildTag: r.guildMemberships[0]?.guild.tag ?? null,
+  guildTags: r.guildMemberships.map((m) => m.guild.tag),
 });
 
 export function adminPlayerRoutes(deps: Deps) {
@@ -150,7 +150,12 @@ export function adminPlayerRoutes(deps: Deps) {
       },
       orderBy: { createdAt: "desc" },
     });
-    const membership = await findMembership(deps.db, id);
+    const guilds = (await findMemberships(deps.db, id)).map((m) => ({
+      id: m.guildId,
+      name: m.name,
+      tag: m.tag,
+      role: m.role,
+    }));
     const recent = await listAdminRuns(
       deps.db,
       { participants: { some: { playerId: id } } },
@@ -163,14 +168,8 @@ export function adminPlayerRoutes(deps: Deps) {
 
     const detail: AdminPlayerDetail = {
       ...toListItem(row),
-      guild: membership
-        ? {
-            id: membership.guildId,
-            name: membership.name,
-            tag: membership.tag,
-            role: membership.role,
-          }
-        : null,
+      guild: guilds[0] ?? null,
+      guilds,
       bans: banRows.map((b) => ({
         id: b.id,
         reason: b.reason,
@@ -298,7 +297,7 @@ export function adminPlayerRoutes(deps: Deps) {
     logger.info("account_deleted", {
       channel: "admin",
       wasBanned: result.wasBanned,
-      guildDisbanded: result.guild?.disbanded ?? false,
+      guildDisbanded: result.guilds?.some((g) => g.disbanded) ?? false,
     });
     return c.json(result);
   });

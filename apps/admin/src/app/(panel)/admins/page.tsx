@@ -1,8 +1,17 @@
 import type { AdminUserList } from "@soulwick/contracts";
 import type { Metadata } from "next";
 import { createAdminUser, setAdminDisabled } from "@/app/actions";
-import { DangerAction } from "@/components/danger-action";
-import { Chip, ErrorBox, Flash, PageTitle, Section } from "@/components/ui";
+import { RowAction, RowDangerAction } from "@/components/danger-action";
+import {
+  Chip,
+  ErrorBox,
+  Flash,
+  PageTitle,
+  RowActions,
+  Section,
+  Truncate,
+  When,
+} from "@/components/ui";
 import { api, getMe, isAdmin } from "@/lib/api";
 import { ADMIN_ROLE_LABEL, formatDateTime } from "@/lib/format";
 
@@ -41,19 +50,23 @@ export default async function AdminsPage({
                   <th>Status</th>
                   <th>Rolle</th>
                   <th>Angelegt</th>
-                  <th>Aktionen</th>
+                  <th className="text-right">Aktionen</th>
                 </tr>
               </thead>
               <tbody>
                 {result.data.items.map((a) => (
                   <tr key={a.id}>
-                    <td className="break-all font-semibold">
-                      {a.email}
-                      {a.id === me.id ? (
-                        <span className="ml-2 font-normal text-muted">
-                          (du)
-                        </span>
-                      ) : null}
+                    <td>
+                      <span className="flex min-w-0 items-center gap-2">
+                        <Truncate className="font-semibold" max="max-w-80">
+                          {a.email}
+                        </Truncate>
+                        {a.id === me.id ? (
+                          <span className="whitespace-nowrap text-muted">
+                            (du)
+                          </span>
+                        ) : null}
+                      </span>
                     </td>
                     <td>
                       {a.disabledAt ? (
@@ -67,45 +80,47 @@ export default async function AdminsPage({
                         <Chip tone="active">aktiv</Chip>
                       )}
                     </td>
-                    <td>{ADMIN_ROLE_LABEL[a.role]}</td>
-                    <td className="whitespace-nowrap font-data text-muted">
-                      {formatDateTime(a.createdAt)}
+                    <td className="whitespace-nowrap">
+                      {ADMIN_ROLE_LABEL[a.role]}
                     </td>
                     <td>
-                      {a.id === me.id ? (
-                        <span className="text-muted">–</span>
-                      ) : a.disabledAt ? (
-                        <form
-                          action={setAdminDisabled.bind(
-                            null,
-                            a.id,
-                            a.email,
-                            false
-                          )}
-                        >
-                          <button className="btn btn-sm" type="submit">
-                            Aktivieren
-                          </button>
-                        </form>
-                      ) : (
-                        <DangerAction
-                          action={setAdminDisabled.bind(
-                            null,
-                            a.id,
-                            a.email,
-                            true
-                          )}
-                          description={
-                            <p>
-                              {a.email} kann sich danach nicht mehr anmelden.
-                              Aktivieren geht jederzeit wieder.
-                            </p>
-                          }
-                          small
-                          submitLabel="Zugang deaktivieren"
-                          trigger="Deaktivieren…"
-                        />
-                      )}
+                      <When className="text-muted" iso={a.createdAt} />
+                    </td>
+                    <td>
+                      <RowActions>
+                        {a.id === me.id ? (
+                          <span className="text-muted">–</span>
+                        ) : a.disabledAt ? (
+                          <RowAction
+                            action={setAdminDisabled.bind(
+                              null,
+                              a.id,
+                              a.email,
+                              false
+                            )}
+                            hint={`${a.email} wieder anmelden lassen`}
+                            label="Aktivieren"
+                          />
+                        ) : (
+                          <RowDangerAction
+                            action={setAdminDisabled.bind(
+                              null,
+                              a.id,
+                              a.email,
+                              true
+                            )}
+                            description={
+                              <p className="wrap-anywhere">
+                                {a.email} kann sich danach nicht mehr anmelden.
+                                Aktivieren geht jederzeit wieder.
+                              </p>
+                            }
+                            id={`admin-disable-${a.id}`}
+                            label="Deaktivieren…"
+                            submitLabel="Zugang deaktivieren"
+                          />
+                        )}
+                      </RowActions>
                     </td>
                   </tr>
                 ))}

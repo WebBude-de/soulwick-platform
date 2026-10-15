@@ -166,6 +166,7 @@ export function startRelayServer(
           framesDropped: metrics.framesDropped,
           errors: metrics.errors,
           slowConsumersClosed: metrics.slowConsumersClosed,
+          maxFrameIn: metrics.maxFrameIn,
         });
       }
       if (path.startsWith("/internal/")) {
@@ -198,8 +199,11 @@ export function startRelayServer(
       // Hard cap; frames between MAX_FRAME_BYTES and this get an error and are dropped, larger
       // ones close the connection (1009) inside Bun.
       maxPayloadLength: config.MAX_FRAME_BYTES * 2,
-      // Our own heartbeat (relay.sweep) pings and times out; Bun's idle timer is the backstop.
+      // Our own heartbeat (relay.sweep) pings every HEARTBEAT_INTERVAL_SECONDS and times out;
+      // Bun's idle timer (with its own pings) is only the backstop. Cloudflare drops WebSockets
+      // after 100 s without traffic, the 15 s pings keep both directions busy.
       idleTimeout: Math.min(960, config.HEARTBEAT_TIMEOUT_SECONDS * 4),
+      sendPings: true,
       backpressureLimit: config.MAX_BUFFERED_BYTES * 4,
       closeOnBackpressureLimit: true,
       open(ws) {

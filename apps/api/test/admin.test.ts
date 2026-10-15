@@ -141,8 +141,8 @@ describe("admin", () => {
       ).status
     ).toBe(204);
     expect(
-      (await ctx.req("GET", "/guilds/me", { token: p.token })).status
-    ).toBe(404);
+      (await ctx.req("GET", `/guilds/${guild.id}`, { token: p.token })).status
+    ).toBe(403);
 
     const created = await ctx.req("POST", "/admin/admins", {
       token: admin.token,

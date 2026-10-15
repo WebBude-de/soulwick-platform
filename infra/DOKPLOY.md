@@ -105,6 +105,9 @@ Reihenfolge einhalten; jeder Schritt verweist auf den Abschnitt mit den Details.
 ### E. Mit einem Freund spielen
 
 - [ ] Test-Build exportieren und weitergeben (§12).
+- [ ] **Während des Testabends nichts deployen**, was den Relay neu startet (§6 „Relay nicht während
+  einer Spielrunde neu starten“): Relay-Auto-Deploy aus bzw. Watch Paths gesetzt, keine Pushes auf den
+  Deploy-Branch, die `apps/relay/**` oder `packages/contracts/src/lobby.ts` ändern.
 - [ ] Beide starten den Build: Hauptmenü unten rechts „v0.9.0 dev“ und „Online bereit“.
 - [ ] Raum im Gildengebäude erstellen, Raumcode schicken, beitreten, Run starten.
 - [ ] Danach: Admin-Panel → „Live-Räume“ bzw. Relay-`/metrics` ansehen (Bytes/s, §11).
@@ -186,9 +189,11 @@ und `*.playsoulwick.com`, nicht für `*.dev.playsoulwick.com`. Deshalb `api-dev`
   `X-Forwarded-For` (`TRUST_PROXY=true`). Ohne das teilten sich alle Spieler das Limit eines
   Cloudflare-Knotens.
 - **WebSocket:** Cloudflare leitet WebSockets weiter (*Netzwerk → WebSockets* an, Standard). Eine
-  Verbindung ohne Daten trennt Cloudflare nach 100 s; der Relay sendet alle 15 s einen Herzschlag,
-  das hält sie offen. Cloudflare kann Verbindungen bei eigenen Wartungen trennen; das Spiel verbindet
-  dann neu.
+  Verbindung ohne Daten trennt Cloudflare nach 100 s; der Relay sendet alle 15 s einen Ping und das
+  Spiel alle 20 s einen eigenen `ping` (der Relay antwortet `pong`), das hält sie in beide Richtungen
+  offen (geprüft: 130 s ohne Spielpakete). Cloudflare kann Verbindungen bei eigenen Wartungen trennen;
+  das Spiel beendet die Sitzung dann mit „Verbindung verloren“ (ein automatisches Wiederverbinden gibt
+  es noch nicht).
 - **Direkter Zugriff:** Wer die VPS-IP kennt, kann Cloudflare umgehen und `CF-Connecting-IP` selbst
   setzen. Für die Testphase in Ordnung; später die Ports 80/443 per Firewall nur für die
   Cloudflare-Adressbereiche öffnen.
@@ -485,19 +490,39 @@ unterscheiden sich.
 | Docker Context Path | **`.`** (Repo-Wurzel). Ohne Angabe nimmt Dokploy den Ordner des Dockerfiles, dann fehlen `bun.lock`, die Workspace-Dateien und `packages/*`. Jede App hat eine eigene `apps/<app>/Dockerfile.dockerignore`. |
 | Container Port (Domain) | API `8787`, Relay `8790`, Web `3000`, Admin `3001`; HTTPS an, Certificate Provider None (Cloudflare-Ursprungszertifikat, §2) |
 | Replicas | **genau 1** (API und Relay zwingend, Gründe unten) |
-| Auto Deploy | an, mit Watch Paths (unten) |
+| Auto Deploy | API, Web, Admin: an, mit Watch Paths (unten). **Relay: aus** (manuell deployen, siehe unten) |
 
-**Watch Paths**, damit nur betroffene Apps neu bauen:
+**Watch Paths**, damit nur betroffene Apps neu bauen (*Application → General → Watch Paths*; ohne
+Einträge baut Dokploy bei **jedem** Push auf den Branch jede Application neu, auch den Relay):
 
 | Service | Watch Paths |
 | --- | --- |
 | api | `apps/api/**`, `packages/contracts/**`, `packages/db/**`, `packages/config/**`, Root-Dateien |
-| relay | `apps/relay/**`, `packages/contracts/**`, Root-Dateien |
+| relay | nur falls Auto Deploy doch an ist: `apps/relay/**`, `packages/contracts/src/lobby.ts` (keine Root-Dateien) |
 | web | `apps/web/**`, `packages/contracts/**`, Root-Dateien |
 | admin | `apps/admin/**`, `packages/contracts/**`, Root-Dateien |
 
 Root-Dateien (in jedem Dockerfile kopiert, für `bun install --frozen-lockfile`): `package.json`,
 `bun.lock`, `bunfig.toml`, `apps/*/package.json`, `packages/*/package.json`.
+
+**Relay nicht während einer Spielrunde neu starten.** Jedes Deploy des Relays beendet alle Räume
+(sie liegen nur im Speicher). Beim ersten Online-Test (15.10.2026) flogen Host und Freund mitten im
+Run raus: Der Push um 21:41:23 (nur Website) baute den Relay mit, 30 s später meldete das Spiel
+`Relay connection closed (-1 )`. Deshalb:
+
+- **Relay-Auto-Deploy aus** (beide Umgebungen). Deployt wird von Hand (*Deploy*-Knopf), wenn sich
+  `apps/relay/**` oder das Relay-Protokoll (`packages/contracts/src/lobby.ts`, `PROTOCOL_VERSION`)
+  geändert hat, und nur, wenn gerade niemand spielt (Admin-Panel → „Live-Räume“ leer bzw.
+  `/health` meldet `"rooms":0`). Änderungen an anderen Apps, am Lockfile oder an anderen Verträgen
+  brauchen keinen neuen Relay: Das Image enthält seinen eigenen Stand von `packages/contracts`.
+- Soll Auto Deploy doch an sein, dann nur mit den engen Watch Paths oben. Root-Dateien gehören dort
+  bewusst **nicht** hinein: Ein neues Paket für Website oder Admin ändert `bun.lock` und würde sonst
+  den Relay neu starten.
+- Gilt auch für Pushes auf `main`, solange `development` aus `main` baut.
+- **Prüfen, ob ein Deploy schuld war:** *soulwick-relay → Deployments* (Zeitpunkt) mit der Uhrzeit
+  des Abbruchs vergleichen; im Relay-Log stehen beim Stoppen `signal` und `shutdown` (mit Räumen und
+  Spielern), beim Start `listening`; `GET /metrics` zeigt `uptimeSeconds`. Im `godot.log` der Spieler
+  steht `RelayPeer: connection to room … lost at <Uhrzeit>: close <code> …`.
 
 In `production` zusätzlich die Domain `www.playsoulwick.com` mit Weiterleitung auf `playsoulwick.com`.
 Alle Container laufen ohne root (`bun` bzw. `node`). Image-Größen zuletzt lokal: API ca. 390 MB,
@@ -523,8 +548,18 @@ Admin ca. 412 MB, Relay ca. 326 MB.
   `GET /metrics` (nur mit Header `x-relay-key`).
 - **Genau 1 Replica:** Räume liegen nur im Speicher. Ein Neustart (auch jedes Deploy) schließt alle
   Räume; für die Spieler wirkt das wie ein Host-Abbruch, der Einzelspieler bleibt spielbar. Deploys des
-  Relays deshalb nicht während einer Spielrunde.
-- Beim Stoppen schließt der Relay offene Räume mit `shutdown` (SIGTERM), `/health` antwortet dabei 503.
+  Relays deshalb nicht während einer Spielrunde (§6 oben: Auto Deploy aus).
+- Beim Stoppen (SIGTERM) schreibt der Relay `signal` und `shutdown` ins Log, schließt offene Räume mit
+  `shutdown` (das Spiel zeigt „Der Raum-Server startet neu“) und die Verbindungen mit 1001; `/health`
+  antwortet dabei 503. Kommt beim Spiel trotzdem nur ein Abbruch ohne Close-Frame an (`close -1`,
+  „Verbindung verloren“), hat der Weg Docker/Traefik/Cloudflare die Verbindung schon vorher gekappt;
+  so war es beim ersten Test. Ob Dokploy den alten Container erst nach dem Stopp vom Netz nimmt, ist
+  noch nicht geprüft.
+- **Verbindungsabbrüche lesen:** Jede geschlossene Verbindung steht als `connection_close` im Log mit
+  `code` (1000 normal, 1001 Relay stoppt, 1006 abgerissen, 4000 Herzschlag-Timeout nach 30 s Stille,
+  4008 Rate-Limit, 4010 zu langsamer Empfänger), `room`, `peerId` (1 = Host), `silentMs` (Stille vor dem
+  Ende: ≈ 30000 = toter Link, ≈ 0 = aktive Verbindung gekappt) und `maxFrameIn` (größtes Paket; im
+  Testlauf bis zum ersten Boss höchstens 462 Byte bei rund 5 KB/s je Host).
 - **WebSocket über Traefik:** Traefik reicht den Upgrade ohne Zusatz-Labels durch; die normale Domain mit
   HTTPS genügt. Der Relay schickt alle 15 s einen Ping, die Verbindung ist also nie lange still. Bricht
   eine Verbindung trotzdem nach festen Zeiten ab (z. B. genau 60 s oder 180 s), die `respondingTimeouts`
@@ -657,7 +692,8 @@ geändert hat), Zugänge ausgeschiedener Personen deaktivieren.
 1. **Lokal prüfen:** `bun run check`, `bun run typecheck`, `bun test`, `bun run build` müssen grün sein,
    bei Schemaänderungen zusätzlich `bun run db:verify`; bei Dockerfile-Änderungen das Image einzeln
    bauen (`docker build -f apps/<app>/Dockerfile .`).
-2. **development:** Jeder Push auf den Dev-Branch deployt automatisch die betroffenen Apps (Watch Paths).
+2. **development:** Jeder Push auf den Dev-Branch deployt automatisch die betroffenen Apps (Watch Paths;
+   den Relay von Hand und nur, wenn niemand spielt, §6).
    Danach `https://api-dev.playsoulwick.com/health`, Relay-`/health`, Admin-Login und Ranglisten prüfen;
    bei Vertragsänderungen den Test-Build des Spiels dagegen laufen lassen.
 3. **production:** den Branch `production` nur vorspulen, nie direkt darauf committen:
@@ -725,7 +761,9 @@ Gebaut wird im **Spiel-Repo** (derzeit im Worktree `soulwick-mp`, Branch `featur
 6. Im Dorf ins **Gildengebäude**: Der Host wählt **Raum erstellen** und schickt den 6-stelligen
    **Raumcode**, der Freund gibt ihn ein und wählt **Raum beitreten**; der Host drückt **Starten**.
    Keine Portfreigabe, kein VPN.
-7. Rückmeldung: Lag, Abbrüche mit Uhrzeit, `godot.log` aus `%APPDATA%\Godot\app_userdata\Soulwick\logs\`.
+7. Rückmeldung: Lag, Abbrüche mit Uhrzeit, `godot.log` aus `%APPDATA%\Godot\app_userdata\Soulwick\logs\`
+   (Godot behält nur die letzten 5 Logs: direkt nach dem Abend sichern). Ein Abbruch steht dort als
+   `RelayPeer: connection to room … lost at …` mit Close-Code und Grund.
 
 ## 13. Produktion später einrichten
 

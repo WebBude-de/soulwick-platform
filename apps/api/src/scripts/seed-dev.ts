@@ -1,8 +1,8 @@
 /**
  * Dev seed: an admin and a moderator, ten test players (each with one `device` identity,
- * P-014; player 1 additionally with a fake `steam` identity), one guild with progress, twenty
- * runs across the current and the previous season (one flagged) plus fourteen runs spread over
- * the last two weeks (admin statistics, P-023), one temporary ban, one moderation note, four
+ * P-014; player 1 additionally with a fake `steam` identity), two guilds with progress (player 1
+ * is in both, D-147), twenty runs across the current and the previous season (one flagged) plus
+ * fifteen runs spread over the last two weeks (admin statistics, P-023), one temporary ban, one moderation note, four
  * entries in the deletion log (P-026, no personal data) and the matching audit entries, so the
  * website leaderboards and every admin page show data locally.
  *
@@ -110,7 +110,7 @@ interface PlayerSpec {
   seenDaysAgo: number;
 }
 
-/** Players 1-4 form the guild, 7 is banned for a week. */
+/** Players 1-4 form the first guild, 5, 1, 6 and 9 the second (D-147); 7 is banned for a week. */
 const PLAYERS: PlayerSpec[] = [
   { n: 1, name: "Lumen", createdDaysAgo: 58, seenDaysAgo: 0 },
   { n: 2, name: "Aschkralle", createdDaysAgo: 55, seenDaysAgo: 1 },
@@ -125,24 +125,59 @@ const PLAYERS: PlayerSpec[] = [
   { n: 10, name: "Rauchquarz", createdDaysAgo: 5, seenDaysAgo: 2 },
 ];
 
-const GUILD = {
-  name: "Dochtwächter",
-  tag: "DOCHT",
-  inviteCode: "DOCHT2345",
-  createdDaysAgo: 50,
-  members: [
-    { n: 1, role: "founder" },
-    { n: 2, role: "officer" },
-    { n: 3, role: "member" },
-    { n: 4, role: "member" },
-  ] as const,
+interface GuildSpec {
+  createdDaysAgo: number;
+  inviteCode: string;
+  /** In join order; the first one is the founder. */
+  members: readonly { n: number; role: "founder" | "officer" | "member" }[];
+  name: string;
   progress: {
-    treasury: 1250,
-    // Forge upgrade ids are defined by the game (D-087); these are placeholders for the admin view.
-    forgeLevels: { forge_damage: 2, forge_health: 1 },
-    version: 3,
+    forgeLevels: Record<string, number>;
+    treasury: number;
+    version: number;
+  };
+  tag: string;
+}
+
+/** Player 1 (Lumen, the usual dev login) is founder of the first and officer of the second guild. */
+const GUILDS: GuildSpec[] = [
+  {
+    name: "Dochtwächter",
+    tag: "DOCHT",
+    inviteCode: "DOCHT2345",
+    createdDaysAgo: 50,
+    members: [
+      { n: 1, role: "founder" },
+      { n: 2, role: "officer" },
+      { n: 3, role: "member" },
+      { n: 4, role: "member" },
+    ],
+    progress: {
+      treasury: 1250,
+      // Forge upgrade ids are defined by the game (D-087); placeholders for the admin view.
+      forgeLevels: { forge_damage: 2, forge_health: 1 },
+      version: 3,
+    },
   },
-};
+  {
+    name: "Aschenrunde",
+    tag: "ASCHE",
+    inviteCode: "ASCHE2345",
+    createdDaysAgo: 20,
+    members: [
+      { n: 5, role: "founder" },
+      { n: 1, role: "officer" },
+      { n: 6, role: "member" },
+      { n: 9, role: "member" },
+    ],
+    progress: {
+      treasury: 420,
+      forgeLevels: { forge_damage: 1 },
+      version: 1,
+    },
+  },
+];
+const DEFAULT_GUILD_TAG = "DOCHT";
 
 const BANNED_PLAYER = 7;
 const BAN_REASON = "Testsperre aus dem Dev-Seed: unsportliches Verhalten";
@@ -156,6 +191,8 @@ interface RunSpec {
   /** Position inside the season, 0 = start of month, 1 = now (current) or end of month (previous). */
   at: number;
   flagReason?: string;
+  /** Guild runs: tag of the guild (default DOCHT). */
+  guild?: string;
   key: string;
   mode: RunMode;
   /** 0 = current season (UTC month), 1 = previous season. */
@@ -358,6 +395,8 @@ const RUNS: RunSpec[] = [
 interface RecentRunSpec {
   /** Days (fractions allowed) before the seed run. */
   daysAgo: number;
+  /** Guild runs: tag of the guild (default DOCHT). */
+  guild?: string;
   key: string;
   mode: RunMode;
   /** Player numbers; the first one is the reporting host. */
@@ -367,8 +406,8 @@ interface RecentRunSpec {
 }
 
 /**
- * Fourteen runs over the last two weeks, so GET /admin/stats/daily shows a series locally.
- * Guild runs only use guild members (players 1-4); the banned player 7 is not involved.
+ * Fifteen runs over the last two weeks, so GET /admin/stats/daily shows a series locally.
+ * Guild runs only use members of their guild; the banned player 7 is not involved.
  */
 const RECENT_RUNS: RecentRunSpec[] = [
   {
@@ -483,6 +522,15 @@ const RECENT_RUNS: RecentRunSpec[] = [
     seconds: 150,
     daysAgo: 13.9,
   },
+  {
+    key: "35",
+    mode: "guild",
+    guild: "ASCHE",
+    players: [5, 1, 6],
+    room: 29,
+    seconds: 2000,
+    daysAgo: 2.6,
+  },
 ];
 const RUN_SEED_PREFIX = "dev-seed-";
 
@@ -500,7 +548,7 @@ const seasonId = (d: Date) =>
 
 interface Summary {
   banCreated: boolean;
-  guildCreated: boolean;
+  guildsCreated: number;
   newAdmins: number;
   newDeletions: number;
   newPlayers: number;
@@ -567,7 +615,7 @@ async function ensurePlayer(
 async function seed(tx: Tx): Promise<Summary> {
   const summary: Summary = {
     newPlayers: 0,
-    guildCreated: false,
+    guildsCreated: 0,
     newRuns: 0,
     banCreated: false,
     noteCreated: false,
@@ -624,37 +672,49 @@ async function seed(tx: Tx): Promise<Summary> {
     skipDuplicates: true,
   });
 
-  // --- guild ---------------------------------------------------------------------------------
-  let guild = await tx.guild.findFirst({
-    where: { tag: GUILD.tag, disbandedAt: null },
-  });
-  if (!guild) {
-    guild = await tx.guild.create({
-      data: {
-        name: GUILD.name,
-        tag: GUILD.tag,
-        inviteCode: GUILD.inviteCode,
-        founderId: player(1).id,
-        createdAt: daysAgo(GUILD.createdDaysAgo),
-      },
+  // --- guilds (player 1 is in both, D-147) ---------------------------------------------------
+  const guildIds = new Map<string, string>();
+  for (const spec of GUILDS) {
+    let guild = await tx.guild.findFirst({
+      where: { tag: spec.tag, disbandedAt: null },
     });
-    summary.guildCreated = true;
+    if (!guild) {
+      const founder = spec.members.find((m) => m.role === "founder");
+      guild = await tx.guild.create({
+        data: {
+          name: spec.name,
+          tag: spec.tag,
+          inviteCode: spec.inviteCode,
+          founderId: founder ? player(founder.n).id : null,
+          createdAt: daysAgo(spec.createdDaysAgo),
+        },
+      });
+      summary.guildsCreated += 1;
+    }
+    const guildId = guild.id;
+    guildIds.set(spec.tag, guildId);
+    // Memberships changed while testing (left, kicked) are only re-added, never overwritten.
+    await tx.guildMember.createMany({
+      data: spec.members.map((m, i) => ({
+        guildId,
+        playerId: player(m.n).id,
+        role: m.role,
+        joinedAt: daysAgo(spec.createdDaysAgo - (i + 1)),
+      })),
+      skipDuplicates: true,
+    });
+    await tx.guildProgress.createMany({
+      data: [{ guildId, ...spec.progress }],
+      skipDuplicates: true,
+    });
   }
-  const guildId = guild.id;
-  // A seeded player may have joined another guild while testing; keep that (skipDuplicates).
-  await tx.guildMember.createMany({
-    data: GUILD.members.map((m) => ({
-      guildId,
-      playerId: player(m.n).id,
-      role: m.role,
-      joinedAt: daysAgo(GUILD.createdDaysAgo - m.n),
-    })),
-    skipDuplicates: true,
-  });
-  await tx.guildProgress.createMany({
-    data: [{ guildId, ...GUILD.progress }],
-    skipDuplicates: true,
-  });
+  const guildIdOf = (tag = DEFAULT_GUILD_TAG): string => {
+    const id = guildIds.get(tag);
+    if (!id) {
+      throw new Error(`unknown guild tag ${tag}`);
+    }
+    return id;
+  };
 
   // --- runs ----------------------------------------------------------------------------------
   const existingRuns = await tx.run.findMany({
@@ -688,7 +748,7 @@ async function seed(tx: Tx): Promise<Summary> {
     await tx.run.create({
       data: {
         mode: spec.mode,
-        guildId: spec.mode === "guild" ? guildId : null,
+        guildId: spec.mode === "guild" ? guildIdOf(spec.guild) : null,
         reportedBy: reporter,
         roomReached: spec.room,
         durationSeconds: spec.seconds,
@@ -786,7 +846,11 @@ try {
       "Dev seed applied.",
       `  Admins:   ${ADMIN_EMAIL} (admin), ${MODERATOR_EMAIL} (moderator), ${summary.newAdmins} new; new accounts get the password ${passwordInfo}, existing ones keep theirs`,
       `  Players:  ${PLAYERS.length} (${summary.newPlayers} new); device ids ${deviceIdOf(1)} ... ${deviceIdOf(PLAYERS.length)}; player ${STEAM_PLAYER} also has the fake Steam id ${FAKE_STEAM_ID}`,
-      `  Guild:    ${GUILD.name} [${GUILD.tag}], invite code ${GUILD.inviteCode}, ${GUILD.members.length} members${summary.guildCreated ? "" : " (existed)"}`,
+      ...GUILDS.map(
+        (g) =>
+          `  Guild:    ${g.name} [${g.tag}], invite code ${g.inviteCode}, ${g.members.length} members`
+      ),
+      `            ${summary.guildsCreated} of ${GUILDS.length} guilds new; ${PLAYERS[0]?.name} is in both`,
       `  Runs:     ${RUNS.length + RECENT_RUNS.length} (${summary.newRuns} new), 1 flagged, seasons ${seasonId(seasonTime(1, 0))} and ${seasonId(now)}, ${RECENT_RUNS.length} in the last two weeks`,
       `  Ban:      ${bannedName} until ${banExpires.toISOString()}${summary.banCreated ? "" : " (existed)"}`,
       `  Note:     moderation note on ${bannedName}${summary.noteCreated ? "" : " (existed)"}`,

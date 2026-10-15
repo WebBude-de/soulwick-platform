@@ -228,6 +228,51 @@ describe("guild rooms", () => {
     expect(member.t.of("joined")[0]?.peerId).toBe(2);
   });
 
+  it("admit members of several guilds through guildIds (D-147)", async () => {
+    const h = createHarness();
+    const [g1, g2, g3] = [randomUUID(), randomUUID(), randomUUID()];
+    const founder = await h.player("Founder", {
+      status: { guildId: g1, guildIds: [g1, g2] },
+    });
+    const member = await h.player("Member", {
+      status: { guildId: g3, guildIds: [g3, g2] },
+    });
+    const outsider = await h.player("Outsider", {
+      status: { guildId: g1, guildIds: [g1] },
+    });
+
+    await founder.send({ type: "create", mode: "guild", guildId: g2 });
+    const created = founder.t.of("created")[0];
+    expect(created?.room).toMatchObject({ mode: "guild", guildId: g2 });
+
+    await outsider.send({ type: "join", code: created?.code });
+    expect(outsider.t.errors()).toEqual(["not_guild_member"]);
+    await member.send({ type: "join", code: created?.code });
+    expect(member.t.of("joined")[0]?.peerId).toBe(2);
+  });
+
+  it("ask the API again when a cached answer says not a member", async () => {
+    const h = createHarness();
+    const guildId = randomUUID();
+    const founder = await h.player("Founder", {
+      status: { guildId, guildIds: [guildId] },
+    });
+    // Cached before the player joined the guild.
+    h.status.cached.set(founder.status.playerId, {
+      ...founder.status,
+      guildId: null,
+      guildIds: [],
+    });
+    await founder.send({ type: "create", mode: "guild", guildId });
+    expect(founder.t.of("created")[0]?.room.guildId).toBe(guildId);
+    expect(h.status.forgotten).toEqual([founder.status.playerId]);
+
+    // Members are not asked twice.
+    await founder.send({ type: "leave" });
+    await founder.send({ type: "create", mode: "guild", guildId });
+    expect(h.status.forgotten).toHaveLength(1);
+  });
+
   it("reject joins with api_unavailable while the API is down", async () => {
     const h = createHarness();
     const guildId = randomUUID();

@@ -120,6 +120,50 @@ describe("admin: live rooms on the relay", () => {
     });
     expect(lastCall()?.url.toString()).toBe(`${RELAY_URL}/internal/rooms`);
     expect(lastCall()?.headers[RELAY_KEY_HEADER]).toBe(RELAY_KEY);
+    expect(res.json.rooms[0]).toMatchObject({
+      guildTag: null,
+      guildName: null,
+    });
+
+    // Guild rooms get tag and name of their guild (D-147).
+    const founder = await ctx.login();
+    const guild = await ctx.req("POST", "/guilds", {
+      token: founder.token,
+      body: { name: "Raumgilde", tag: "RAUM" },
+    });
+    const base = roomList(founder.id);
+    const quick = base.rooms[0];
+    if (!quick) {
+      throw new Error("room list fixture is empty");
+    }
+    relay.state.handler = () =>
+      json({
+        ...base,
+        rooms: [
+          quick,
+          { ...quick, code: "DEF567", mode: "guild", guildId: guild.json.id },
+          {
+            ...quick,
+            code: "GHJ892",
+            mode: "guild",
+            guildId: randomUUID(),
+          },
+        ],
+      });
+    const withGuild = await ctx.req("GET", "/admin/relay/rooms", {
+      token: mod.token,
+    });
+    expect(
+      AdminRelayRoomList.parse(withGuild.json).rooms.map((r) => [
+        r.code,
+        r.guildTag,
+        r.guildName,
+      ])
+    ).toEqual([
+      [CODE, null, null],
+      ["DEF567", "RAUM", "Raumgilde"],
+      ["GHJ892", null, null],
+    ]);
 
     const p = await ctx.login();
     expect(

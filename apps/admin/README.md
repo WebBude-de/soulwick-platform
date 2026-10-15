@@ -11,7 +11,8 @@ Verwaltungsoberfläche für Admins und Moderatoren:
   „zuletzt“-Listen (gemeldete Runs, letzte Löschungen, Protokoll)
 - **Statistik:** Tageswerte für 7, 30 oder 90 Tage (Runs, aktive und neue Spieler), erreichter Raum,
   Durchschnitte; Diagramme als schlichtes HTML/CSS, Werte zusätzlich als Tabelle
-- **Spieler:** Suche (Name, ID, Steam-ID), Details, Sperren mit Grund und Dauer (1 Tag, 7 Tage,
+- **Spieler:** Suche (Name, ID, Steam-ID), Liste mit allen Gildenkürzeln je Spieler (D-147), Details
+  mit allen Gilden und der Rolle je Gilde, Sperren mit Grund und Dauer (1 Tag, 7 Tage,
   30 Tage, dauerhaft), Entsperren, Umbenennen, Moderations-Notizen, Konto löschen (nur Rolle Admin,
   Bestätigung durch Eingabe des Namens, optionale Notiz fürs Protokoll; für Spieler ohne Zugang zum
   Spiel)
@@ -20,10 +21,12 @@ Verwaltungsoberfläche für Admins und Moderatoren:
   (Bestätigung durch Eingabe des Kürzels); Notizen-Zahl je Mitglied und die letzten Notizen der
   Mitglieder (nur lesen, Notizen hängen an Spielern)
 - **Runs:** gemeldete Runs prüfen, markieren (mit Grund)/freigeben, löschen
-- **Live-Räume:** offene Koop-Räume auf dem Relay als Tabelle (Code, Modus, Status, Spieler mit
-  Host und Plattform, Alter, Version, Datenverkehr), Raum schließen und Spieler entfernen (Grund und
-  Häkchen); ohne Relay in der API ruhiger Hinweis „Kein Relay eingerichtet“ (501), bei
-  Relay-Ausfall „Relay gerade nicht erreichbar“ (502)
+- **Live-Räume:** offene Koop-Räume auf dem Relay, je Raum eine Karte: Kopf mit Code, Modus (bei
+  Gildenräumen Kürzel und Name der Gilde, verlinkt), Status und „Schließen…“; darunter eine Zeile mit
+  Dauer, Belegung, laufendem Run bzw. Lobby-Restzeit, Version und Datenverkehr; dann eine Zeile je
+  Spieler (Name, Host, Plattform, Zeit im Raum, Entfernen). Oben Summen (Räume, Spieler, laufende
+  Runs). Schließen und Entfernen brauchen Grund und Häkchen; Kürzel und Name der Gilde liefert die API mit (`guildTag`/`guildName`); ohne Relay in der API ruhiger Hinweis
+  „Kein Relay eingerichtet“ (501), bei Relay-Ausfall „Relay gerade nicht erreichbar“ (502)
 - **Löschprotokoll** (`/loeschungen`, P-026): Kontolöschungen laufen automatisch (im Spiel, auf der
   Website mit Einmal-Code, oder ein Admin löscht auf der Spielerseite); die Seite zeigt nur lesend,
   wann und auf welchem Weg gelöscht wurde, ohne Namen. Filter Zeitraum und Kanal, Zähler je Kanal,
@@ -42,10 +45,21 @@ Verwaltungsoberfläche für Admins und Moderatoren:
   die aktuelle bleibt (gleiches Cookie). Fehler wie „Das aktuelle Passwort ist falsch.“, „Diese
   E-Mail-Adresse ist bereits vergeben.“ oder zu viele Versuche erscheinen als Meldung oben.
 
-Destruktive Aktionen laufen einheitlich über `components/danger-action.tsx`: Aufklappen, Grund
-(Pflicht, wo die API einen Grund speichert), Bestätigung per Häkchen oder eingetipptem Kürzel/Namen;
-die Server Action prüft die Bestätigung noch einmal. Ergebnisse erscheinen als Meldung oben auf der
-Seite (`?ok=`, `?hinweis=`, `?fehler=`).
+Destruktive Aktionen laufen einheitlich über `components/danger-action.tsx`: auf Detailseiten
+`DangerAction` (Aufklappen per `<details>`), in Tabellenzeilen `RowDangerAction` (kompakter Knopf,
+oft nur Icon mit `aria-label` und Tooltip, das Formular öffnet als natives Popover über
+`popovertarget`, ohne Client-JavaScript). Beide fragen den Grund ab (Pflicht, wo die API einen Grund
+speichert) und bestätigen per Häkchen oder eingetipptem Kürzel/Namen; die Server Action prüft die
+Bestätigung noch einmal. Aktionen ohne Bestätigung (Freigeben, Aktivieren) sind `RowAction`.
+Ergebnisse erscheinen als Meldung oben auf der Seite (`?ok=`, `?hinweis=`, `?fehler=`).
+
+Tabellen bleiben einzeilig: Kopfzeilen brechen nicht um, Aktionen stehen rechts nebeneinander
+(`RowActions`), Namen und E-Mails werden mit Ellipse gekürzt und stehen voll im Tooltip
+(`Truncate`), Zeitpunkte kurz als „13.10.26, 23:46“ mit langer Form im Tooltip (`When`). Die
+Run-Tabelle hat feste Spaltenbreiten; in der Liste „Gemeldet“ zeigt sie statt des Status den
+Meldegrund. Zahlen, Daten, Codes und Kennzahlen stehen in DM Sans mit `tabular-nums`
+(`font-data`): In Pixelify sehen 5 und 8 auch groß fast gleich aus. Waagerecht scrollt eine
+Tabelle nur, wenn der Platz unter ihre Mindestbreite fällt.
 
 Gestaltung nach [docs/design/TOKENS.md](../../docs/design/TOKENS.md) §6 (Tokens in
 `src/app/globals.css`); Logo, Favicon, Schrift (Pixelify Sans, OFL) und Pixel-Icons liegen als eigene

@@ -19,16 +19,18 @@ logger.info("listening", {
 
 // Graceful shutdown: rooms get `room_closed` (shutdown), sockets close with 1001.
 let stopping = false;
-const shutdown = () => {
+const shutdown = (signal: NodeJS.Signals) => {
   if (stopping) {
     return;
   }
   stopping = true;
+  // A deploy restarts the relay: this line in the container log dates the end of every room.
+  logger.info("signal", { signal, ...relay.relay.stats() });
   setTimeout(() => process.exit(1), 10_000).unref();
   relay.stop().then(
     () => process.exit(0),
     () => process.exit(1)
   );
 };
-process.on("SIGTERM", shutdown);
-process.on("SIGINT", shutdown);
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));

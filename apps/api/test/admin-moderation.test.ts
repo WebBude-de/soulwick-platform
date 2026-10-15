@@ -204,7 +204,9 @@ describe("admin moderation (notes, guild transfer, filters)", () => {
         founderId: g.member.id,
         previousFounderId: g.founder.id,
       });
-      const own = await ctx.req("GET", "/guilds/me", { token: g.member.token });
+      const own = await ctx.req("GET", `/guilds/${g.id}`, {
+        token: g.member.token,
+      });
       expect(own.json.founderId).toBe(g.member.id);
       const roles = Object.fromEntries(
         own.json.members.map((m: { playerId: string; role: string }) => [

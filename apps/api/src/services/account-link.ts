@@ -4,13 +4,15 @@ import {
   LINK_CODE_ALPHABET,
   LINK_CODE_LENGTH,
   LINK_CODE_TTL_SECONDS,
+  MAX_GUILDS_PER_PLAYER,
 } from "@soulwick/contracts";
 import type { Db, Player } from "@soulwick/db";
 import { ApiError, isUniqueViolation, withCause } from "../lib/errors.ts";
+import { forEachSequential } from "../lib/sequential.ts";
 import { iso } from "../lib/validate.ts";
 import { findActiveBan } from "./bans.ts";
 import type { Tx } from "./db-types.ts";
-import { findMembership, removeMember } from "./guilds.ts";
+import { findMemberships, higherRole, removeMember } from "./guilds.ts";
 import { findIdentities } from "./identities.ts";
 
 const CODE_ATTEMPTS = 5;
@@ -78,19 +80,86 @@ export async function createLinkCode(
 }
 
 async function summarize(tx: Tx, player: Player): Promise<AccountSummary> {
-  const membership = await findMembership(tx, player.id);
+  const guilds = (await findMemberships(tx, player.id)).map((m) => ({
+    name: m.name,
+    tag: m.tag,
+    role: m.role,
+  }));
   const runCount = await tx.runPlayer.count({ where: { playerId: player.id } });
   const identities = await findIdentities(tx, player.id);
   return {
     id: player.id,
     name: player.name,
     createdAt: iso(player.createdAt),
-    guild: membership
-      ? { name: membership.name, tag: membership.tag, role: membership.role }
-      : null,
+    guild: guilds[0] ?? null,
+    guilds,
     runCount,
     providers: [...new Set(identities.map((i) => i.provider))],
   };
+}
+
+/** What happened to the guild memberships of a merge (logged only). */
+export interface GuildMergeCounts {
+  /** Memberships of the remaining account (including guilds both were in). */
+  kept: number;
+  /** Memberships of the removed account that were given up (guild limit). */
+  left: number;
+  /** Memberships of the removed account that moved over. */
+  takenOver: number;
+}
+
+/** See `absorbAccount`; both player rows are locked by the caller. */
+async function mergeGuildMemberships(
+  tx: Tx,
+  keepId: string,
+  dropId: string,
+  now: Date
+): Promise<GuildMergeCounts> {
+  const keepMemberships = await findMemberships(tx, keepId);
+  const keepByGuild = new Map(keepMemberships.map((m) => [m.guildId, m]));
+  const counts: GuildMergeCounts = {
+    kept: keepMemberships.length,
+    takenOver: 0,
+    left: 0,
+  };
+  let total = keepMemberships.length;
+  await forEachSequential(await findMemberships(tx, dropId), async (m) => {
+    const dropKey = {
+      guildId_playerId: { guildId: m.guildId, playerId: dropId },
+    };
+    const shared = keepByGuild.get(m.guildId);
+    if (shared) {
+      // Same person twice in one guild: one row with the higher role remains.
+      await tx.guildMember.delete({ where: dropKey });
+      const role = higherRole(shared.role, m.role);
+      if (role !== shared.role) {
+        await tx.guildMember.update({
+          where: {
+            guildId_playerId: { guildId: m.guildId, playerId: keepId },
+          },
+          data: { role },
+        });
+      }
+    } else if (total < MAX_GUILDS_PER_PLAYER) {
+      await tx.guildMember.update({
+        where: dropKey,
+        data: { playerId: keepId },
+      });
+      total += 1;
+      counts.takenOver += 1;
+    } else {
+      await removeMember(tx, m.guildId, dropId, now);
+      counts.left += 1;
+      return;
+    }
+    if (m.role === "founder") {
+      await tx.guild.update({
+        where: { id: m.guildId },
+        data: { founderId: keepId },
+      });
+    }
+  });
+  return counts;
 }
 
 /** D-122: an account is empty when it has no guild and no runs. */
@@ -101,9 +170,10 @@ const hasProgress = (s: AccountSummary) => s.guild !== null || s.runCount > 0;
  * caller's transaction with both player rows locked.
  * - identities and ban history move over (an open deletion code of the dropped account goes with
  *   it; P-026);
- * - guild: keep's membership wins; the dropped account leaves its guild (founder hand-off per
- *   P-102). Without a guild of its own, keep takes over the dropped membership including the role
- *   (a founder stays founder, it is the same person);
+ * - guilds (D-147): keep's memberships stay. Each membership of the dropped account moves to keep
+ *   including the role (a founder stays founder, it is the same person) while keep stays within
+ *   MAX_GUILDS_PER_PLAYER (oldest membership first); in a guild both are in, one row with the
+ *   higher role remains; the rest are left with the founder hand-off of P-102;
  * - run participations move; a run both accounts took part in keeps one row; reporter moves;
  * - name and `created_at` of keep stay, `last_seen_at` becomes the later of both.
  */
@@ -112,33 +182,13 @@ async function absorbAccount(
   keep: Player,
   drop: Player,
   now: Date
-): Promise<{ guild: "kept" | "taken_over" | "left" | "none" }> {
+): Promise<{ guilds: GuildMergeCounts }> {
   await tx.playerIdentity.updateMany({
     where: { playerId: drop.id },
     data: { playerId: keep.id },
   });
 
-  let guild: "kept" | "taken_over" | "left" | "none" = "none";
-  const keepMembership = await findMembership(tx, keep.id);
-  const dropMembership = await findMembership(tx, drop.id);
-  if (dropMembership && keepMembership) {
-    await removeMember(tx, dropMembership.guildId, drop.id, now);
-    guild = "left";
-  } else if (dropMembership) {
-    await tx.guildMember.updateMany({
-      where: { playerId: drop.id },
-      data: { playerId: keep.id },
-    });
-    if (dropMembership.role === "founder") {
-      await tx.guild.update({
-        where: { id: dropMembership.guildId },
-        data: { founderId: keep.id },
-      });
-    }
-    guild = "taken_over";
-  } else if (keepMembership) {
-    guild = "kept";
-  }
+  const guilds = await mergeGuildMemberships(tx, keep.id, drop.id, now);
 
   await tx.$executeRaw`
     delete from run_players d
@@ -166,11 +216,11 @@ async function absorbAccount(
     });
   }
   await tx.player.delete({ where: { id: drop.id } });
-  return { guild };
+  return { guilds };
 }
 
 export interface LinkResult {
-  guild: "kept" | "taken_over" | "left" | "none";
+  guilds: GuildMergeCounts;
   merged: boolean;
   remaining: Player;
   /** true when the caller's own account was removed (its device continues on `remaining`). */
@@ -266,7 +316,7 @@ export async function redeemLinkCode(
         drop = owner;
       }
 
-      const { guild } = await absorbAccount(tx, keep, drop, now);
+      const { guilds } = await absorbAccount(tx, keep, drop, now);
       // The owner's code is used up (gone with the owner if the owner was absorbed).
       await tx.linkCode.deleteMany({ where: { id: row.id } });
       const remaining = await tx.player.findUniqueOrThrow({
@@ -277,7 +327,7 @@ export async function redeemLinkCode(
         removedPlayerId: drop.id,
         removedCaller: drop.id === caller.id,
         merged,
-        guild,
+        guilds,
       };
     },
     { timeout: MERGE_TIMEOUT_MS }

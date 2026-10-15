@@ -15,7 +15,7 @@ import {
   resetInviteCode,
   transferGuild,
 } from "@/app/actions";
-import { DangerAction } from "@/components/danger-action";
+import { DangerAction, RowDangerAction } from "@/components/danger-action";
 import { PixelIcon } from "@/components/pixel-icon";
 import { RunTable } from "@/components/run-table";
 import {
@@ -25,7 +25,10 @@ import {
   ErrorBox,
   Flash,
   PageTitle,
+  RowActions,
   Section,
+  Truncate,
+  When,
 } from "@/components/ui";
 import { type ApiResult, api, getMe, isAdmin } from "@/lib/api";
 import { formatDateTime, GUILD_ROLE_LABEL } from "@/lib/format";
@@ -208,23 +211,22 @@ export default async function GuildDetailPage({ params, searchParams }: Props) {
                 <th>Rolle</th>
                 <th>Beigetreten</th>
                 {showNotes ? <th className="text-right">Notizen</th> : null}
-                {active ? <th>Aktionen</th> : null}
+                {active ? <th className="text-right">Aktionen</th> : null}
               </tr>
             </thead>
             <tbody>
               {g.members.map((m) => (
                 <tr key={m.playerId}>
                   <td>
-                    <Link
-                      className="link font-semibold"
-                      href={`/spieler/${m.playerId}`}
-                    >
+                    <Truncate href={`/spieler/${m.playerId}`} max="max-w-72">
                       {m.name}
-                    </Link>
+                    </Truncate>
                   </td>
-                  <td>{GUILD_ROLE_LABEL[m.role]}</td>
-                  <td className="whitespace-nowrap font-data text-muted">
-                    {formatDateTime(m.joinedAt)}
+                  <td className="whitespace-nowrap">
+                    {GUILD_ROLE_LABEL[m.role]}
+                  </td>
+                  <td>
+                    <When className="text-muted" iso={m.joinedAt} />
                   </td>
                   {showNotes ? (
                     <td className="text-right">
@@ -236,9 +238,9 @@ export default async function GuildDetailPage({ params, searchParams }: Props) {
                   ) : null}
                   {active ? (
                     <td>
-                      <div className="flex flex-col items-start gap-2">
+                      <RowActions>
                         {m.role === "founder" ? null : (
-                          <DangerAction
+                          <RowDangerAction
                             action={transferGuild.bind(
                               null,
                               g.id,
@@ -251,17 +253,20 @@ export default async function GuildDetailPage({ params, searchParams }: Props) {
                                 die bisherige Leitung wird Offizier.
                               </p>
                             }
+                            hint={`Gildenleitung an „${m.name}“ übertragen…`}
+                            icon="crown"
+                            id={`guild-transfer-${m.playerId}`}
+                            label="Leitung…"
                             reason={{
                               label: "Grund",
                               placeholder:
                                 "z. B. Gründer inaktiv, Bitte der Gilde",
                             }}
-                            small
                             submitLabel="Gildenleitung übertragen"
-                            trigger="Leitung übertragen…"
+                            title={`Leitung an „${m.name}“ übertragen`}
                           />
                         )}
-                        <DangerAction
+                        <RowDangerAction
                           action={removeGuildMember.bind(
                             null,
                             g.id,
@@ -270,7 +275,8 @@ export default async function GuildDetailPage({ params, searchParams }: Props) {
                           )}
                           description={
                             <p>
-                              „{m.name}“ verlässt die Gilde.
+                              „{m.name}“ verlässt [{g.tag}]; Mitgliedschaften in
+                              anderen Gilden bleiben.
                               {m.role === "founder"
                                 ? " Die Gründerrolle geht an ein anderes Mitglied."
                                 : ""}
@@ -279,11 +285,14 @@ export default async function GuildDetailPage({ params, searchParams }: Props) {
                                 : ""}
                             </p>
                           }
-                          small
+                          icon="exit"
+                          iconOnly
+                          id={`guild-remove-${m.playerId}`}
+                          label={`„${m.name}“ aus der Gilde entfernen`}
                           submitLabel="Mitglied entfernen"
-                          trigger="Entfernen…"
+                          title={`„${m.name}“ aus [${g.tag}] entfernen`}
                         />
-                      </div>
+                      </RowActions>
                     </td>
                   ) : null}
                 </tr>
@@ -401,22 +410,24 @@ function MemberNotes({
           <tbody>
             {rows.slice(0, LATEST).map(({ member, note }) => (
               <tr key={note.id}>
-                <td className="whitespace-nowrap">
-                  <Link
-                    className="link font-semibold"
+                <td>
+                  <Truncate
                     href={`/spieler/${member.playerId}#notizen`}
+                    max="max-w-48"
                   >
                     {member.name}
-                  </Link>
+                  </Truncate>
                 </td>
-                <td className="wrap-break-word max-w-xl whitespace-pre-wrap">
+                <td className="wrap-break-word whitespace-pre-wrap">
                   {note.text}
                 </td>
-                <td className="whitespace-nowrap font-data text-muted">
-                  {formatDateTime(note.createdAt)}
+                <td>
+                  <When className="text-muted" iso={note.createdAt} />
                 </td>
-                <td className="break-all text-muted">
-                  {note.authorEmail ?? "(gelöschter Zugang)"}
+                <td className="text-muted">
+                  <Truncate max="max-w-56">
+                    {note.authorEmail ?? "(gelöschter Zugang)"}
+                  </Truncate>
                 </td>
               </tr>
             ))}

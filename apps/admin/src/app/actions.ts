@@ -384,13 +384,25 @@ export async function setAdminDisabled(
 
 function deletedText(data: AdminDeletePlayerResponse): string {
   const parts = [`Konto „${data.name}“ gelöscht.`];
-  const guild = data.guild;
-  if (guild?.disbanded) {
-    parts.push(`Gilde [${guild.tag}] aufgelöst (letztes Mitglied).`);
-  } else if (guild?.newFounderId) {
-    parts.push(`Gründerrolle in [${guild.tag}] weitergegeben.`);
-  } else if (guild) {
-    parts.push(`Aus Gilde [${guild.tag}] entfernt.`);
+  // Several guilds per player (D-147); older API builds only send `guild`.
+  const guilds = data.guilds ?? (data.guild ? [data.guild] : []);
+  const tags = (list: typeof guilds) =>
+    list.map((g) => `[${g.tag}]`).join(", ");
+  const disbanded = guilds.filter((g) => g.disbanded);
+  const handedOver = guilds.filter((g) => !g.disbanded && g.newFounderId);
+  const left = guilds.filter((g) => !(g.disbanded || g.newFounderId));
+  if (left.length > 0) {
+    parts.push(
+      `Aus ${left.length === 1 ? "Gilde" : "Gilden"} ${tags(left)} entfernt.`
+    );
+  }
+  if (handedOver.length > 0) {
+    parts.push(`Gründerrolle in ${tags(handedOver)} weitergegeben.`);
+  }
+  if (disbanded.length > 0) {
+    parts.push(
+      `${disbanded.length === 1 ? "Gilde" : "Gilden"} ${tags(disbanded)} aufgelöst (letztes Mitglied).`
+    );
   }
   if (data.wasBanned) {
     parts.push("Das Konto war gesperrt.");

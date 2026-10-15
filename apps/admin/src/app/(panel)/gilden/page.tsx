@@ -9,9 +9,11 @@ import {
   Pager,
   PageTitle,
   TableCard,
+  Truncate,
+  When,
 } from "@/components/ui";
 import { api } from "@/lib/api";
-import { formatDateTime, param } from "@/lib/format";
+import { param } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Gilden" };
 const LIMIT = 50;
@@ -116,14 +118,13 @@ export default async function GuildsPage({
             <tbody>
               {result.data.items.map((g) => (
                 <tr key={g.id}>
-                  <td className="font-data text-soft">[{g.tag}]</td>
+                  <td className="whitespace-nowrap font-data text-soft">
+                    [{g.tag}]
+                  </td>
                   <td>
-                    <Link
-                      className="link font-semibold"
-                      href={`/gilden/${g.id}`}
-                    >
+                    <Truncate href={`/gilden/${g.id}`} max="max-w-72">
                       {g.name}
-                    </Link>
+                    </Truncate>
                   </td>
                   <td>
                     {g.disbandedAt ? (
@@ -133,9 +134,15 @@ export default async function GuildsPage({
                     )}
                   </td>
                   <td className="text-right font-data">{g.memberCount}</td>
-                  <td className="text-muted">{g.founderName ?? "–"}</td>
-                  <td className="whitespace-nowrap font-data text-muted">
-                    {formatDateTime(g.createdAt)}
+                  <td className="text-muted">
+                    {g.founderName ? (
+                      <Truncate max="max-w-56">{g.founderName}</Truncate>
+                    ) : (
+                      "–"
+                    )}
+                  </td>
+                  <td>
+                    <When className="text-muted" iso={g.createdAt} />
                   </td>
                 </tr>
               ))}

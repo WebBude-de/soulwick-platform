@@ -129,6 +129,19 @@ export type PlayerStatusResult =
   | { kind: "not_found" }
   | { kind: "unavailable" };
 
+/**
+ * Membership in a guild (D-147, P-031): the API lists every active guild in `guildIds`; older
+ * APIs only send the single `guildId`.
+ */
+export function isGuildMember(
+  status: RelayPlayerStatus,
+  guildId: string
+): boolean {
+  return status.guildIds
+    ? status.guildIds.includes(guildId)
+    : status.guildId === guildId;
+}
+
 /** Ban and guild status of a player; the relay never talks to the database itself. */
 export interface PlayerStatusSource {
   /** Drops a cached answer, e.g. after the API reported a ban (POST /internal/players/:id/ban). */

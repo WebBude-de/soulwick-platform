@@ -1,6 +1,7 @@
 import {
   AdminRelayCloseRoomRequest,
   AdminRelayKickRequest,
+  type AdminRelayRoomList,
   RoomCode,
 } from "@soulwick/contracts";
 import { type Context, Hono } from "hono";
@@ -9,6 +10,7 @@ import { createRelayClient } from "../../lib/relay-client.ts";
 import { parseBody } from "../../lib/validate.ts";
 import { requireRole } from "../../middleware/auth.ts";
 import { writeAudit } from "../../services/audit.ts";
+import { guildLabels } from "../../services/guilds.ts";
 import type { AppEnv, Deps } from "../../types.ts";
 
 function roomCodeParam(c: Context<AppEnv>): string {
@@ -28,7 +30,26 @@ export function adminRelayRoutes(deps: Deps) {
   const app = new Hono<AppEnv>();
   const relay = createRelayClient(deps.config, deps.fetch);
 
-  app.get("/rooms", async (c) => c.json(await relay.listRooms()));
+  /** Guild rooms get tag and name of their guild (D-147). */
+  app.get("/rooms", async (c) => {
+    const list = await relay.listRooms();
+    const labels = await guildLabels(
+      deps.db,
+      list.rooms.flatMap((r) => (r.guildId ? [r.guildId] : []))
+    );
+    const body: AdminRelayRoomList = {
+      ...list,
+      rooms: list.rooms.map((r) => {
+        const label = r.guildId ? labels.get(r.guildId) : undefined;
+        return {
+          ...r,
+          guildTag: label?.tag ?? null,
+          guildName: label?.name ?? null,
+        };
+      }),
+    };
+    return c.json(body);
+  });
 
   app.post("/rooms/:code/close", requireRole("moderator"), async (c) => {
     const code = roomCodeParam(c);
