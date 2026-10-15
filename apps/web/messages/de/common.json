@@ -25,7 +25,13 @@
     "on": "Musik an",
     "off": "Musik aus",
     "track": "Dorfthema",
-    "unsupported": "Dein Browser spielt die Musik nicht ab."
+    "unsupported": "Dein Browser spielt die Musik nicht ab.",
+    "heading": "Musik",
+    "volume": "Lautstärke",
+    "volumeValue": "{value} %"
+  },
+  "menu": {
+    "label": "Menü"
   },
   "status": {
     "planned": "in Planung",
@@ -36,6 +42,7 @@
     "copyright": "© {year} Soulwick",
     "credit": "Mit ♥ gemacht von WebBude",
     "legal": "Rechtliches",
+    "newTab": "(öffnet in neuem Tab)",
     "project": "Soulwick ist ein Teamprojekt. Alle Angaben ohne Gewähr, Inhalte können sich bis zur Veröffentlichung ändern."
   },
   "notFound": {

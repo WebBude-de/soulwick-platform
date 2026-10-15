@@ -116,7 +116,8 @@ export function Weapons() {
                     className="absolute top-2 right-3 font-pixel text-[12px] text-disabled"
                     style={{ fontWeight: 400 }}
                   >
-                    {t("hoverHint")}
+                    <span className="hint-pointer">{t("hoverHint")}</span>
+                    <span className="hint-touch">{t("tapHint")}</span>
                   </span>
                   <span className="weapon-stage">
                     <Sprite id="player_idle_4f" scale={2} />

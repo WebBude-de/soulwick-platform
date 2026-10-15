@@ -11,6 +11,7 @@
   "navCtaTeaser": "Discover the game",
   "planned": "planned",
   "hoverHint": "Hover: attack",
+  "tapHint": "Tap: attack",
   "heroEyebrow": "2D top-down dungeon roguelite · pixel art",
   "heroTitle": "The last light in the endless dark",
   "heroText": "From the village you descend into an endless dungeon. With sword, bow, mage staff, daggers or war hammer you fight through four biomes and their bosses, collect gold and upgrades, and decide for yourself when to return with the loot.",
@@ -176,5 +177,5 @@
   "lbEmpty": "No entries on this board yet.",
   "lbUnavailable": "Leaderboards are not reachable right now.",
   "lbLive": "Live from the test phase.",
-  "footerCredit": "Made with <heart></heart> by WebBude"
+  "footerCredit": "Made with <heart></heart> by <studio>WebBude</studio>"
 }

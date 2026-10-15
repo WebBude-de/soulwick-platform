@@ -25,7 +25,13 @@
     "on": "Music on",
     "off": "Music off",
     "track": "Village theme",
-    "unsupported": "Your browser can't play the music."
+    "unsupported": "Your browser can't play the music.",
+    "heading": "Music",
+    "volume": "Volume",
+    "volumeValue": "{value}%"
+  },
+  "menu": {
+    "label": "Menu"
   },
   "status": {
     "planned": "planned",
@@ -36,6 +42,7 @@
     "copyright": "© {year} Soulwick",
     "credit": "Made with ♥ by WebBude",
     "legal": "Legal",
+    "newTab": "(opens in a new tab)",
     "project": "Soulwick is a team project. Everything shown is work in progress and may change before release."
   },
   "notFound": {

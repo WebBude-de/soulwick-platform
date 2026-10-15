@@ -252,10 +252,16 @@
       transform 140ms ease-out,
       border-color 140ms ease-out;
   }
-  .card-hover:hover,
+  /* Hover only where a pointer can hover: on touch a tapped card would stay lifted. */
   .card-hover:focus-within {
     border-color: var(--color-line-lighter);
     transform: translateY(-3px);
+  }
+  @media (hover: hover) {
+    .card-hover:hover {
+      border-color: var(--color-line-lighter);
+      transform: translateY(-3px);
+    }
   }
 
   /* Buttons (body font, bold). Primary gold with ink rings, secondary panel. */
@@ -285,16 +291,29 @@
       box-shadow 90ms ease-out,
       background-color 90ms ease-out;
   }
-  .btn:hover,
-  .pixel-button:hover,
+  /* Pressed look on hover (pointer devices only, so it never sticks after a tap), keyboard
+     focus and while a finger is down. */
   .btn:focus-visible,
-  .pixel-button:focus-visible {
+  .pixel-button:focus-visible,
+  .btn:active,
+  .pixel-button:active {
     background: var(--color-line);
     box-shadow:
       0 0 0 2px var(--color-ink),
       0 2px 0 2px var(--color-ink),
       inset 0 0 0 2px var(--color-line-light);
     transform: translateY(2px);
+  }
+  @media (hover: hover) {
+    .btn:hover,
+    .pixel-button:hover {
+      background: var(--color-line);
+      box-shadow:
+        0 0 0 2px var(--color-ink),
+        0 2px 0 2px var(--color-ink),
+        inset 0 0 0 2px var(--color-line-light);
+      transform: translateY(2px);
+    }
   }
   .btn-primary,
   .pixel-button-primary {
@@ -303,15 +322,25 @@
     background: var(--color-gold);
     box-shadow: var(--shadow-btn);
   }
-  .btn-primary:hover,
-  .pixel-button-primary:hover,
   .btn-primary:focus-visible,
-  .pixel-button-primary:focus-visible {
+  .pixel-button-primary:focus-visible,
+  .btn-primary:active,
+  .pixel-button-primary:active {
     background: var(--color-gold-light);
     box-shadow:
       0 0 0 2px var(--color-ink),
       0 2px 0 2px var(--color-ink),
       inset 0 -4px 0 var(--color-gold-dark);
+  }
+  @media (hover: hover) {
+    .btn-primary:hover,
+    .pixel-button-primary:hover {
+      background: var(--color-gold-light);
+      box-shadow:
+        0 0 0 2px var(--color-ink),
+        0 2px 0 2px var(--color-ink),
+        inset 0 -4px 0 var(--color-gold-dark);
+    }
   }
   .btn-sm {
     min-height: 36px;
@@ -550,4 +579,284 @@
   color: var(--color-ink);
   text-shadow: none;
   background: var(--color-gold);
+}
+
+/* ---------- Header: CTA icon, burger menu (below xl), volume ---------- */
+
+/* On the smallest phones the CTA drops its icon so logo, CTA and burger fit one row. */
+.header-cta-icon {
+  display: none;
+  line-height: 0;
+}
+@media (min-width: 25rem) {
+  .header-cta-icon {
+    display: inline-flex;
+  }
+}
+
+.menu-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 4px;
+  color: var(--color-soft);
+  background: var(--color-bg-deep);
+  border: 2px solid var(--color-line);
+  border-radius: 3px;
+  box-shadow: 0 4px 0 var(--color-ink);
+}
+.menu-btn[aria-expanded="true"] {
+  color: var(--color-ink);
+  background: var(--color-gold);
+  border-color: var(--color-gold-dark);
+}
+/* Unlayered rules beat Tailwind's `xl:hidden`, so the desktop switch-off lives here. */
+@media (min-width: 80rem) {
+  .menu-btn,
+  .menu-panel {
+    display: none;
+  }
+}
+@media (hover: hover) {
+  .menu-btn:hover {
+    color: var(--color-gold);
+    border-color: var(--color-line-lighter);
+  }
+  .menu-btn[aria-expanded="true"]:hover {
+    color: var(--color-ink);
+  }
+}
+
+/* The panel hangs under the sticky header like a game menu: deep surface, pixel rim. */
+.menu-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  max-height: calc(100dvh - 4.5rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--color-bg-deep);
+  border-bottom: 2px solid var(--color-line);
+  box-shadow:
+    inset 0 2px 0 var(--color-ink),
+    0 6px 0 rgb(15 13 24 / 0.6);
+}
+.menu-panel > * {
+  width: 100%;
+  max-width: 70rem;
+  padding-inline: 1.25rem;
+  margin-inline: auto;
+}
+@media (min-width: 40rem) {
+  .menu-panel > * {
+    padding-inline: 2rem;
+  }
+}
+.menu-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 16px;
+  padding-block: 12px;
+}
+.menu-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding-left: 20px;
+  font-family: var(--font-pixel);
+  font-size: 18px;
+  color: var(--color-text);
+  text-decoration: none;
+  text-shadow: 2px 2px 0 var(--color-ink);
+}
+/* The game menu's gold cursor marks the link under the finger, the mouse or the focus. */
+.menu-link::before {
+  position: absolute;
+  left: 2px;
+  color: var(--color-gold);
+  content: ">";
+  opacity: 0.35;
+}
+.menu-link:active,
+.menu-link:focus-visible {
+  color: var(--color-gold);
+}
+.menu-link:active::before,
+.menu-link:focus-visible::before {
+  opacity: 1;
+}
+@media (hover: hover) {
+  .menu-link:hover {
+    color: var(--color-gold);
+  }
+  .menu-link:hover::before {
+    opacity: 1;
+  }
+}
+.menu-tools {
+  display: grid;
+  gap: 14px;
+  padding-block: 14px 18px;
+  border-top: 2px dashed var(--color-line);
+}
+@media (min-width: 36rem) {
+  .menu-tools {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 32px;
+    align-items: start;
+  }
+}
+.menu-tool {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+.menu-tool-label {
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  color: var(--color-disabled);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Desktop speaker with its volume popover. */
+.music-ctl {
+  position: relative;
+}
+.music-pop {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  z-index: 10;
+  padding-top: 6px;
+  transform: translateX(-50%);
+}
+/*
+ * Volume: a native range input drawn as a pixel bar. Gold up to --vol with a tick every 10 %;
+ * the thumb is a small gold block with an ink rim. The input is 44 px tall for fingers.
+ */
+.vol {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  white-space: nowrap;
+}
+.vol-label {
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  color: var(--color-muted);
+}
+.vol-value {
+  min-width: 2.2em;
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  color: var(--color-soft);
+  text-align: right;
+}
+.vol-range {
+  --track: 14px;
+  width: 132px;
+  height: 44px;
+  margin: 0;
+  appearance: none;
+  cursor: pointer;
+  background: transparent;
+}
+.vol-range:focus-visible {
+  outline-offset: 0;
+}
+.vol-range::-webkit-slider-runnable-track {
+  height: var(--track);
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 calc(10% - 2px),
+      var(--color-ink) calc(10% - 2px) 10%
+    ),
+    linear-gradient(
+      90deg,
+      var(--color-gold) 0 var(--vol),
+      var(--color-panel) var(--vol) 100%
+    );
+  border: 2px solid var(--color-ink);
+  box-shadow: 0 0 0 2px var(--color-line);
+}
+.vol-range::-moz-range-track {
+  height: var(--track);
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 calc(10% - 2px),
+      var(--color-ink) calc(10% - 2px) 10%
+    ),
+    linear-gradient(
+      90deg,
+      var(--color-gold) 0 var(--vol),
+      var(--color-panel) var(--vol) 100%
+    );
+  border: 2px solid var(--color-ink);
+  box-shadow: 0 0 0 2px var(--color-line);
+}
+.vol-range::-webkit-slider-thumb {
+  width: 12px;
+  height: 24px;
+  margin-top: calc((var(--track) - 4px - 24px) / 2);
+  appearance: none;
+  background: var(--color-gold-light);
+  border: 2px solid var(--color-ink);
+  border-radius: 0;
+  box-shadow: inset 0 -4px 0 var(--color-gold-dark);
+}
+.vol-range::-moz-range-thumb {
+  width: 8px;
+  height: 20px;
+  background: var(--color-gold-light);
+  border: 2px solid var(--color-ink);
+  border-radius: 0;
+  box-shadow: inset 0 -4px 0 var(--color-gold-dark);
+}
+
+/* The popover frames the slider like a small game panel. */
+.music-pop > .vol {
+  padding: 2px 12px;
+  background: var(--color-bg-deep);
+  border: 2px solid var(--color-line);
+  border-radius: 3px;
+  box-shadow: var(--shadow-card);
+}
+
+/* Footer studio credit: quiet dashed pixel underline that turns gold on hover and focus. */
+.credit-link {
+  color: var(--color-soft);
+  text-decoration: underline dashed var(--color-line-light);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  transition: color 120ms steps(2);
+}
+.credit-link:focus-visible {
+  color: var(--color-gold);
+  text-decoration-color: var(--color-gold);
+}
+@media (hover: hover) {
+  .credit-link:hover {
+    color: var(--color-gold);
+    text-decoration-style: solid;
+    text-decoration-color: var(--color-gold-dark);
+  }
+}
+
+/* Weapon hint: "Hover" for mice, "Tap" for touch screens. */
+.hint-touch {
+  display: none;
+}
+@media (hover: none) {
+  .hint-pointer {
+    display: none;
+  }
+  .hint-touch {
+    display: inline;
+  }
 }

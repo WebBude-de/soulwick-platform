@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { useTranslations } from "next-intl";
 import type { CSSProperties } from "react";
 import { Chip } from "@/components/ui/chip";
@@ -9,6 +8,12 @@ import { sprites } from "@/lib/sprite-manifest";
 
 /** Co-op player colours (HANDOUT: P1 blue is the original sprite, P2–P4 tinted via mask). */
 const TINTS = [null, "#e0463a", "#5fcd62", "#a66ef0"];
+
+/** The eight guild emblems are the frames of one sheet. */
+const EMBLEM_FRAMES = Array.from(
+  { length: sprites.guild_emblems.frames },
+  (_, i) => i
+);
 
 const GUILD_CHIP_ICONS: SpriteId[] = [
   "icon_treasury",
@@ -94,17 +99,19 @@ export function Coop() {
           <article className="card flex flex-col gap-4 p-5">
             <div
               aria-label={t("guildVitrineAlt")}
-              className="vitrine vitrine-dark coop-vitrine flex items-center justify-between px-5"
+              className="vitrine vitrine-dark coop-vitrine guild-vitrine"
               role="img"
             >
-              <Image
-                alt=""
-                className="h-12 w-auto"
-                height={48}
-                src={sprites.guild_emblems.src}
-                unoptimized
-                width={384}
-              />
+              <span className="guild-emblems">
+                {EMBLEM_FRAMES.map((frame) => (
+                  <Sprite
+                    frame={frame}
+                    id="guild_emblems"
+                    key={frame}
+                    scale="var(--emblem-s)"
+                  />
+                ))}
+              </span>
               <Sprite className="-mb-3" id="guild_hall" scale={1} />
             </div>
             <h3 className="text-[20px] text-gold">{t("guildCardTitle")}</h3>

@@ -67,7 +67,8 @@ Präfix um und setzt das Cookie auf die Präfix-Sprache.
 | `src/app/layout.tsx` | `<html lang>` nach aufgelöster Sprache, Schriften (Pixelify Sans lokal, DM Sans), Navbar, Footer, Metadaten |
 | `src/app/page.tsx` | Landingpage (Abschnitte in `src/components/landing/`) |
 | `src/components/ui/sprite.tsx` | `<Sprite id scale hoverId flip frame still alt />` – CSS-`steps()`-Animation aus dem Manifest |
-| `src/components/ui/*` | `PixelButton`, `PixelPanel`, `Chip`, `SectionIntro`, `SectionHeading`, `Divider`, `LanguageSwitch`, `MusicToggle`, `ScrollReveal` |
+| `src/components/ui/*` | `PixelButton`, `PixelPanel`, `Chip`, `SectionIntro`, `SectionHeading`, `Divider`, `LanguageSwitch`, `MusicToggle`, `MusicControl` (Lautsprecher mit Lautstärke-Popover), `VolumeSlider`, `ScrollReveal`; Musikzustand und Lautstärke in `music-store.ts` (localStorage `soulwick.music`, `soulwick.music.volume`) |
+| `src/components/site/*` | Kopf- und Fußzeile; unter `xl` (1280 px) klappen Links, Sprache und Musik in das Menü `MobileMenu` |
 | `src/lib/brand.ts` | Prüft, welche Website-Grafiken in `public/brand/` liegen (Fallback auf Spiel-Sprites) |
 | `src/lib/sprite-manifest.ts` | generiert, nicht von Hand ändern |
 

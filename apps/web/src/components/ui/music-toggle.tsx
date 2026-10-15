@@ -55,11 +55,17 @@ function SpeakerIcon({ on }: { on: boolean }) {
 
 interface MusicToggleProps {
   className?: string;
+  /** Called on click with the direction of the switch (true = the music is being turned on). */
+  onToggle?: (turningOn: boolean) => void;
   /** Show the state as text next to the icon (footer); the header shows only the icon. */
   withLabel?: boolean;
 }
 
-export function MusicToggle({ withLabel, className }: MusicToggleProps) {
+export function MusicToggle({
+  withLabel,
+  className,
+  onToggle,
+}: MusicToggleProps) {
   const t = useTranslations("common.music");
   const state = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const on = state === "on" || state === "loading";
@@ -87,7 +93,10 @@ export function MusicToggle({ withLabel, className }: MusicToggleProps) {
         .filter(Boolean)
         .join(" ")}
       disabled={disabled}
-      onClick={toggleMusic}
+      onClick={() => {
+        onToggle?.(!on);
+        toggleMusic();
+      }}
       title={disabled ? t("unsupported") : `${t("track")}: ${text}`}
       type="button"
     >

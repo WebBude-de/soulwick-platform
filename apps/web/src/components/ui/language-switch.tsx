@@ -14,6 +14,8 @@ import {
 
 interface LanguageSwitchProps {
   className?: string;
+  /** Larger segment buttons (44 px) for the phone menu. */
+  touch?: boolean;
   /** `segment` = pixel segment control (navbar), `text` = „Deutsch · English“ (footer). */
   variant?: "segment" | "text";
 }
@@ -46,6 +48,7 @@ function store(locale: Locale) {
 export function LanguageSwitch({
   variant = "segment",
   className,
+  touch,
 }: LanguageSwitchProps) {
   const t = useTranslations("common.language");
   const locale = useLocale();
@@ -82,9 +85,12 @@ export function LanguageSwitch({
               {index > 0 ? <span aria-hidden="true">·</span> : null}
               <button
                 aria-pressed={target === locale}
-                className={
-                  target === locale ? "text-text" : "text-muted hover:text-gold"
-                }
+                className={[
+                  "inline-flex min-h-11 items-center px-1 md:min-h-8",
+                  target === locale
+                    ? "text-text"
+                    : "text-muted hover:text-gold",
+                ].join(" ")}
                 disabled={pending}
                 lang={target}
                 onClick={() => choose(target)}
@@ -112,7 +118,8 @@ export function LanguageSwitch({
               <button
                 aria-pressed={active}
                 className={[
-                  "inline-flex min-h-9 items-center px-2.5 font-pixel text-[14px] leading-none sm:px-3",
+                  "inline-flex items-center font-pixel text-[14px] leading-none",
+                  touch ? "min-h-11" : "min-h-9",
                   active
                     ? "bg-gold text-ink text-shadow-none"
                     : "text-soft hover:text-gold",

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import type { CSSProperties } from "react";
+import { Fragment } from "react";
 import { Chicken } from "@/components/fun/chicken";
 import { Chip } from "@/components/ui/chip";
 import { PixelButton } from "@/components/ui/pixel-button";
@@ -16,14 +16,27 @@ interface HeroProps {
 
 const PLATFORM_ICONS: SpriteId[] = ["chip_pc", "chip_mobile", "chip_crossplay"];
 
-/** Walkers on the ground strip with their start offsets (handoff §5.1). */
-const WALKERS: { id: SpriteId; delay: string; konami?: boolean }[] = [
-  { id: "player_walk_6f", delay: "-6s" },
-  { id: "slime_walk_6f", delay: "-4.6s" },
-  { id: "skeleton_walk_6f", delay: "-3.4s" },
-  { id: "golem_walk_6f", delay: "-1.4s" },
-  { id: "shadow_walk_6f", delay: "-9s", konami: true },
+/**
+ * Walkers on the ground strip (handoff §5.1), back to front: they cross as one procession with
+ * fixed pixel gaps, so they never overlap at any width. The shadow only joins in the Konami
+ * easter egg.
+ */
+const WALKERS: { id: SpriteId; className?: string }[] = [
+  { id: "shadow_walk_6f", className: "walker-shadow" },
+  { id: "golem_walk_6f" },
+  { id: "skeleton_walk_6f" },
+  { id: "slime_walk_6f" },
+  { id: "player_walk_6f" },
 ];
+
+/**
+ * Splits the eyebrow at " · ": the first phrase may wrap at its hyphens on tiny screens, the
+ * later ones stay whole, so "Pixel-Art" never breaks at its hyphen.
+ */
+function eyebrowParts(text: string): string[] {
+  const parts = text.split(" · ");
+  return parts.map((part, i) => (i < parts.length - 1 ? `${part} ·` : part));
+}
 
 export function Hero({ keyartSrc, live }: HeroProps) {
   const t = useTranslations("landing");
@@ -37,7 +50,18 @@ export function Hero({ keyartSrc, live }: HeroProps) {
             <span aria-hidden="true" className="hero-flame">
               <Sprite id="soul_flame_6f" scale={1} />
             </span>
-            <span className="eyebrow">{t("heroEyebrow")}</span>
+            <span className="eyebrow min-w-0">
+              {eyebrowParts(t("heroEyebrow")).map((part, i) =>
+                i === 0 ? (
+                  part
+                ) : (
+                  <Fragment key={part}>
+                    {" "}
+                    <span className="whitespace-nowrap">{part}</span>
+                  </Fragment>
+                )
+              )}
+            </span>
           </p>
           <h1 className="max-w-xl" id="hero-title">
             {t("heroTitle")}
@@ -115,15 +139,16 @@ export function Hero({ keyartSrc, live }: HeroProps) {
       </div>
 
       <div aria-label={t("walkersLabel")} className="walkers" role="img">
-        {WALKERS.map((walker) => (
-          <span
-            className={walker.konami ? "walker walker-shadow" : "walker"}
-            key={walker.id}
-            style={{ "--d": walker.delay } as CSSProperties}
-          >
-            <Sprite id={walker.id} scale={2} />
-          </span>
-        ))}
+        <div className="walker-train">
+          {WALKERS.map((walker) => (
+            <span
+              className={["walker", walker.className].filter(Boolean).join(" ")}
+              key={walker.id}
+            >
+              <Sprite id={walker.id} scale={2} />
+            </span>
+          ))}
+        </div>
       </div>
     </section>
   );

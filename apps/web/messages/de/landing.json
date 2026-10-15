@@ -11,6 +11,7 @@
   "navCtaTeaser": "Spiel entdecken",
   "planned": "geplant",
   "hoverHint": "Hover: Angriff",
+  "tapHint": "Tippen: Angriff",
   "heroEyebrow": "2D-Top-down-Dungeon-Roguelite · Pixel-Art",
   "heroTitle": "Das letzte Licht im endlosen Dunkel",
   "heroText": "Vom Dorf aus steigst du in einen endlosen Dungeon hinab. Mit Schwert, Bogen, Magierstab, Dolchen oder Kriegshammer kämpfst du dich durch vier Biome und ihre Bosse, sammelst Gold und Upgrades und entscheidest selbst, wann du mit der Beute zurückkehrst.",
@@ -179,5 +180,5 @@
   "lbEmpty": "Noch keine Einträge in dieser Tafel.",
   "lbUnavailable": "Ranglisten sind gerade nicht erreichbar.",
   "lbLive": "Live aus der Testphase.",
-  "footerCredit": "Mit <heart></heart> gemacht von WebBude"
+  "footerCredit": "Mit <heart></heart> gemacht von <studio>WebBude</studio>"
 }

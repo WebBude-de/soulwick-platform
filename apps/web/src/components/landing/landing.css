@@ -68,12 +68,35 @@
   border-top: 2px solid var(--color-line-lighter);
   border-bottom: 2px solid var(--color-ink);
 }
-.walker {
+/*
+ * The walkers cross as one procession: fixed pixel gaps between them (wider on large screens),
+ * so they never overlap. The train starts fully off the left edge and leaves fully on the right.
+ */
+.walker-train {
   position: absolute;
   bottom: 0;
-  left: -12%;
-  animation: cross 26s linear infinite;
-  animation-delay: var(--d, 0s);
+  left: 0;
+  display: flex;
+  gap: 40px;
+  align-items: flex-end;
+  line-height: 0;
+  animation: train-cross 20s linear infinite;
+}
+@media (min-width: 48rem) {
+  .walker-train {
+    gap: 72px;
+    animation-duration: 30s;
+  }
+}
+@keyframes train-cross {
+  from {
+    left: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    left: 100%;
+    transform: translateX(0);
+  }
 }
 @keyframes cross {
   from {
@@ -86,6 +109,8 @@
 
 /* ---------- Descent ---------- */
 .descent {
+  /* The stops slide in from the sides: clip them so tablets never scroll sideways. */
+  overflow-x: clip;
   /* The page gets a little darker the deeper the path goes. */
   background: linear-gradient(
     180deg,
@@ -207,14 +232,6 @@
   .descent-stop[data-side="right"] .descent-marker {
     left: -56px;
   }
-  .descent-card {
-    grid-template-columns: 200px minmax(0, 1fr);
-    align-items: center;
-  }
-  .descent-scene {
-    height: 132px;
-    border-width: 0 2px 0 0;
-  }
   /* Each stop slides in from its side as it scrolls into view (browsers that support it). */
   @supports (animation-timeline: view()) {
     .descent-stop {
@@ -225,6 +242,17 @@
     .descent-stop[data-side="right"] {
       --from: 48px;
     }
+  }
+}
+/* Scene beside the text only from lg: on tablets the half-width card is too narrow for both. */
+@media (min-width: 64rem) {
+  .descent-card {
+    grid-template-columns: 200px minmax(0, 1fr);
+    align-items: center;
+  }
+  .descent-scene {
+    height: 132px;
+    border-width: 0 2px 0 0;
   }
 }
 @keyframes descent-in {
@@ -510,6 +538,28 @@
     -webkit-mask-position: calc(var(--fw) * var(--frames) * -2px) 0;
   }
 }
+/* Guild emblems (4 × 2 grid) and the guild hall: emblems at 1× in narrow cards, 2× when the
+   vitrine is wide enough, so nothing is pushed out of the frame. */
+.guild-vitrine {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: 12px;
+  container-type: inline-size;
+}
+.guild-emblems {
+  --emblem-s: 1;
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  gap: 6px;
+  line-height: 0;
+}
+@container (min-width: 340px) {
+  .guild-emblems {
+    --emblem-s: 2;
+  }
+}
 .coop-badge {
   position: absolute;
   top: 8px;
@@ -603,7 +653,6 @@
 
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
-  .walker,
   .descent-jumper,
   .minigame-stack > :first-child,
   .minigame-wisp,
@@ -619,6 +668,12 @@
     animation-play-state: paused;
   }
   .descent-stop {
+    animation: none;
+  }
+  /* Without motion the procession stands in the middle of the strip. */
+  .walker-train {
+    left: 50%;
+    transform: translateX(-50%);
     animation: none;
   }
   .weapon-fx {

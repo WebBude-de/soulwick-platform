@@ -1,15 +1,20 @@
 import { useTranslations } from "next-intl";
 import { LanguageSwitch } from "@/components/ui/language-switch";
+import { MusicControl } from "@/components/ui/music-control";
 import { MusicToggle } from "@/components/ui/music-toggle";
 import { PixelButton } from "@/components/ui/pixel-button";
 import { Sprite } from "@/components/ui/sprite";
+import { VolumeSlider } from "@/components/ui/volume-slider";
 import { liveFeaturesEnabled } from "@/lib/features";
 import { HomeLink } from "./home-link";
+import { MobileMenu } from "./mobile-menu";
 import { type NavLink, visibleNavLinks } from "./nav-links";
 
 /**
- * Sticky navbar (handoff §3, row 0): logo, anchor links, language segment, CTA. In teaser mode
- * (`LIVE_FEATURES=false`) the leaderboards link is dropped and the CTA leads into the game section.
+ * Sticky navbar (handoff §3, row 0): logo, anchor links, music with volume, language segment,
+ * CTA. Below `xl` the links, language and music move into a burger menu so the bar stays one
+ * short row on phones and tablets. In teaser mode (`LIVE_FEATURES=false`) the leaderboards link
+ * is dropped and the CTA leads into the game section.
  */
 export function SiteHeader() {
   const t = useTranslations("landing");
@@ -25,10 +30,10 @@ export function SiteHeader() {
       >
         {tc("skipToContent")}
       </a>
-      <div className="container-site grid min-h-16 grid-cols-[auto_1fr] items-center gap-x-3 gap-y-1 py-2 md:grid-cols-[auto_1fr_auto] md:gap-x-6">
+      <div className="container-site flex min-h-16 items-center gap-3 py-2 xl:grid xl:grid-cols-[auto_1fr_auto] xl:gap-x-6">
         <HomeLink
           aria-label={tc("siteName")}
-          className="col-start-1 row-start-1 flex items-center py-1"
+          className="flex items-center py-1"
         >
           {/* biome-ignore lint/performance/noImgElement: crisp-edges SVG wordmark, no optimisation needed. */}
           <img
@@ -40,46 +45,74 @@ export function SiteHeader() {
           />
         </HomeLink>
 
-        <div className="col-span-2 row-start-2 flex items-center gap-2 md:col-span-1 md:col-start-2 md:row-start-1 md:justify-center">
-          <nav
-            aria-label={t("navLabel")}
-            className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none]"
-          >
-            <ul className="flex gap-1 whitespace-nowrap">
-              {links.map(([label, hash]) => (
-                <li key={hash}>
-                  <a
-                    className="nav-link inline-flex min-h-10 items-center px-2.5 font-medium text-[15px] text-soft transition-colors hover:text-gold"
-                    href={`/${hash}`}
-                  >
-                    {label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-          {/* On phones the music toggle sits at the end of the link row to keep the first row short. */}
-          <span className="sm:hidden">
-            <MusicToggle className="px-1" />
-          </span>
-        </div>
+        <nav
+          aria-label={t("navLabel")}
+          className="hidden min-w-0 xl:flex xl:justify-start"
+        >
+          <ul className="flex gap-1 whitespace-nowrap">
+            {links.map(([label, hash]) => (
+              <li key={hash}>
+                <a
+                  className="nav-link inline-flex min-h-10 items-center px-2.5 font-medium text-[15px] text-soft transition-colors hover:text-gold"
+                  href={`/${hash}`}
+                >
+                  {label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-        <div className="col-start-2 row-start-1 flex items-center justify-end gap-2 sm:gap-3 md:col-start-3">
-          <span className="hidden sm:block">
-            <MusicToggle className="px-1" />
+        <div className="ml-auto flex items-center justify-end gap-2 sm:gap-3">
+          <span className="hidden xl:block">
+            <MusicControl />
           </span>
-          <LanguageSwitch />
+          <LanguageSwitch className="hidden xl:block" />
           {live ? (
             <PixelButton href="/leaderboards" size="sm" variant="primary">
-              <Sprite id="trophy_icon" scale={1} />
+              <span className="header-cta-icon">
+                <Sprite id="trophy_icon" scale={1} />
+              </span>
               {t("navCta")}
             </PixelButton>
           ) : (
             <a className="btn btn-primary btn-sm" href="/#spiel">
-              <Sprite id="icon_sword" scale={1} />
+              <span className="header-cta-icon">
+                <Sprite id="icon_sword" scale={1} />
+              </span>
               {t("navCtaTeaser")}
             </a>
           )}
+          <MobileMenu label={tc("menu.label")}>
+            <nav aria-label={t("navLabel")}>
+              <ul className="menu-links">
+                {links.map(([label, hash]) => (
+                  <li key={hash}>
+                    <a className="menu-link" href={`/${hash}`}>
+                      {label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+            <div className="menu-tools">
+              <div className="menu-tool">
+                <span aria-hidden="true" className="menu-tool-label">
+                  {tc("language.label")}
+                </span>
+                <LanguageSwitch touch />
+              </div>
+              <div className="menu-tool">
+                <span aria-hidden="true" className="menu-tool-label">
+                  {tc("music.heading")}
+                </span>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                  <MusicToggle className="-ml-2" withLabel />
+                  <VolumeSlider />
+                </div>
+              </div>
+            </div>
+          </MobileMenu>
         </div>
       </div>
     </header>
