@@ -33,6 +33,14 @@
   "menu": {
     "label": "Menu"
   },
+  "play": {
+    "heading": "Play",
+    "cta": "Play in your browser",
+    "install": "Install the web app",
+    "hint": "Runs right in your browser, and installs as an app on your phone.",
+    "platform": "Browser",
+    "status": "playable"
+  },
   "status": {
     "planned": "planned",
     "inDevelopment": "in development",

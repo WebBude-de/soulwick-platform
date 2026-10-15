@@ -8,7 +8,7 @@ import { type NavLink, visibleNavLinks } from "./nav-links";
 
 /** Studio credit link; the UTM tags tell WebBude the visit came from this site. */
 const STUDIO_URL =
-  "https://webbude.de/?utm_source=playsoulwick.com&utm_medium=referral&utm_campaign=made_with_love";
+  "https://web-bude.de/?utm_source=playsoulwick.com&utm_medium=referral&utm_campaign=made_with_love";
 
 const linkClass =
   "inline-flex min-h-9 items-center text-[15px] text-text transition-colors hover:text-gold";

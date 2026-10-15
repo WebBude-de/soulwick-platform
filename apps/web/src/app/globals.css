@@ -722,6 +722,39 @@
   letter-spacing: 0.08em;
 }
 
+/* Browser version (GAME_URL): play and install buttons in the hero and the burger menu. */
+.play-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: center;
+}
+/* Phones: the two buttons stack at one shared width instead of two ragged ones. */
+@media (max-width: 29.99rem) {
+  .play-buttons {
+    display: grid;
+    grid-template-columns: minmax(0, 20rem);
+  }
+}
+.pixel-icon {
+  display: block;
+  flex-shrink: 0;
+}
+.menu-play {
+  display: grid;
+  gap: 8px;
+  padding-block: 16px 14px;
+  border-bottom: 2px dashed var(--color-line);
+}
+/* The one platform that is already open: green rim and status, like the done badge. */
+.chip-live {
+  border-color: #2f944c;
+}
+.chip-live .chip-status {
+  color: var(--color-mech);
+  border-left-color: #2f944c;
+}
+
 /* Desktop speaker with its volume popover. */
 .music-ctl {
   position: relative;

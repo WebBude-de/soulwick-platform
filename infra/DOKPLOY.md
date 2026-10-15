@@ -782,3 +782,18 @@ für Produktion mit `-Env production`.
 - Ein Relay je Umgebung für alle Regionen; Relays je Region sind später vorgesehen (ROADMAP „Später“).
 - Diese Anleitung ist noch nicht auf dem Server erprobt; Abweichungen beim ersten Einrichten hier
   nachtragen.
+
+## Web-Spiel (soulwick-game)
+
+Das Spiel läuft zusätzlich als Browser-Version auf eigener Subdomain: `https://game-dev.playsoulwick.com`
+(development) bzw. `https://game.playsoulwick.com` (production). Aufbau, Deploy und Installierbarkeit
+beschreibt `soulwick/docs/WEB_BUILD.md` im Spiel-Repo. Die Plattform braucht dafür nur zwei Variablen:
+
+- **`soulwick-web` → Environment:** `GAME_URL=https://game-dev.playsoulwick.com` (development) bzw.
+  `GAME_URL=https://game.playsoulwick.com` (production, erst bei Freischaltung; leer = Knöpfe
+  ausgeblendet). Laufzeit-Variable: Die Website zeigt dann „Im Browser spielen“ und „Web-App
+  installieren“ (`GAME_URL?install`) in Hero und Handy-Menü; nach dem Ändern neu deployen.
+- **`soulwick-api` → Environment:** `CORS_ORIGINS` um die Spiel-Adresse ergänzen, weil das Spiel im
+  Browser die API direkt aufruft, z. B. development
+  `CORS_ORIGINS=${{environment.WEB_URL}},${{environment.ADMIN_URL}},https://game-dev.playsoulwick.com`,
+  production entsprechend mit `https://game.playsoulwick.com`.

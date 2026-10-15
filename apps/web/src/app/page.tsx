@@ -11,6 +11,7 @@ import { Divider } from "@/components/ui/divider";
 import type { Locale } from "@/i18n/locale";
 import { brand, brandAsset } from "@/lib/brand";
 import { liveFeaturesEnabled } from "@/lib/features";
+import { gameLinks } from "@/lib/game";
 import "@/components/landing/landing.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -31,7 +32,7 @@ export default async function LandingPage() {
 
   return (
     <>
-      <Hero keyartSrc={brand.keyart()} live={live} />
+      <Hero game={gameLinks()} keyartSrc={brand.keyart()} live={live} />
       <Descent />
       <Divider />
       <Weapons />

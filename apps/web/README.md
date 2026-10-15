@@ -29,6 +29,7 @@ Für echte Daten muss die API laufen (`bun run services:up`, `bun run db:deploy`
 | `API_URL` | `http://localhost:8787` | Adresse der API (nur serverseitig genutzt) |
 | `SITE_URL` | `https://playsoulwick.com` | Öffentliche Basis-URL für Canonical, Sitemap und Open Graph |
 | `LIVE_FEATURES` | `true` | Online-Teile an/aus (`src/lib/features.ts`). `false` = reiner Teaser: `/leaderboards` und `/guilds/[tag]` liefern 404, Ranglisten-Teaser, Header-Knopf, Nav-/Footer-Link und Sitemap-Eintrag fallen weg, keine Ranglisten-Aufrufe an die API. Wird pro Anfrage auf dem Server gelesen (kein `NEXT_PUBLIC_`), Umschalten ohne Neubau. Dokploy: development `true`, production `false` |
+| `GAME_URL` | leer | Adresse der Browser-Version des Spiels (`src/lib/game.ts`), z. B. `https://game-dev.playsoulwick.com`. Gesetzt: Hero zeigt „Im Browser spielen“ und „Web-App installieren“ (`GAME_URL?install`, öffnet dort den Install-Hinweis) statt der zwei Scroll-Knöpfe, dazu den Chip „Browser · spielbar“; das Handy-Menü beginnt mit denselben Knöpfen. Leer oder keine http(s)-Adresse: alles ausgeblendet. Links im selben Tab, kein Einbetten. Pro Anfrage auf dem Server gelesen wie `LIVE_FEATURES`. Dokploy: development gesetzt, production vorerst leer |
 
 ## Befehle
 
@@ -38,7 +39,7 @@ Für echte Daten muss die API laufen (`bun run services:up`, `bun run db:deploy`
 | `bun run --cwd apps/web build` | Produktions-Build (`output: "standalone"`) |
 | `bun run --cwd apps/web start` | Produktions-Build starten |
 | `bun run --cwd apps/web typecheck` | Routen-Typen erzeugen und TypeScript prüfen |
-| `bun test apps/web` | Unit-Tests der Website (Schalter `LIVE_FEATURES`, Sitemap, Seiten, Rechtstext-Rückfall; ohne API und Datenbank) |
+| `bun test apps/web` | Unit-Tests der Website (Schalter `LIVE_FEATURES` und `GAME_URL`, Sitemap, Seiten, Rechtstext-Rückfall; ohne API und Datenbank) |
 | `bunx biome check apps/web` | Lint und Formatierung nur für die Website (ganzes Repo: `bun run check`, Fixes: `bun run fix`) |
 | `bun apps/web/scripts/sync-sprites.ts` | Spiel-Grafiken aus `../soulwick/art` als verlustfreies WebP nach `public/sprites/` kopieren und `src/lib/sprite-manifest.ts` schreiben (`--force` kodiert alles neu) |
 | `bun apps/web/scripts/sync-brand.ts` | PNGs in `public/brand/**` nach WebP konvertieren (Originale werden gelöscht, `--keep-png` behält sie) |
@@ -70,6 +71,7 @@ Präfix um und setzt das Cookie auf die Präfix-Sprache.
 | `src/components/ui/*` | `PixelButton`, `PixelPanel`, `Chip`, `SectionIntro`, `SectionHeading`, `Divider`, `LanguageSwitch`, `MusicToggle`, `MusicControl` (Lautsprecher mit Lautstärke-Popover), `VolumeSlider`, `ScrollReveal`; Musikzustand und Lautstärke in `music-store.ts` (localStorage `soulwick.music`, `soulwick.music.volume`) |
 | `src/components/site/*` | Kopf- und Fußzeile; unter `xl` (1280 px) klappen Links, Sprache und Musik in das Menü `MobileMenu` |
 | `src/lib/brand.ts` | Prüft, welche Website-Grafiken in `public/brand/` liegen (Fallback auf Spiel-Sprites) |
+| `src/lib/game.ts`, `src/components/site/play-buttons.tsx` | `GAME_URL` lesen und prüfen; Knöpfe „Im Browser spielen“ / „Web-App installieren“ (Hero und Handy-Menü) |
 | `src/lib/sprite-manifest.ts` | generiert, nicht von Hand ändern |
 
 Die erzeugten Dateien (`public/sprites/**`, `public/audio/**`, `public/brand/**`,

@@ -2,12 +2,21 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Fragment } from "react";
 import { Chicken } from "@/components/fun/chicken";
+import { PlayButtons } from "@/components/site/play-buttons";
 import { Chip } from "@/components/ui/chip";
 import { PixelButton } from "@/components/ui/pixel-button";
+import { PixelIcon } from "@/components/ui/pixel-icon";
 import { Sprite } from "@/components/ui/sprite";
+import type { GameLinks } from "@/lib/game";
 import type { SpriteId } from "@/lib/sprite-manifest";
 
 interface HeroProps {
+  /**
+   * Browser version (`GAME_URL`), `null` while it is not available. When set, "play" and
+   * "install" replace the two scroll/leaderboard CTAs and a playable browser chip leads the
+   * platform row; when not, the hero stays as it was.
+   */
+  game: GameLinks | null;
   /** `/brand/keyart.webp` when present. */
   keyartSrc: string | null;
   /** False in teaser mode (`LIVE_FEATURES=false`): the second CTA jumps to the biomes instead. */
@@ -38,8 +47,9 @@ function eyebrowParts(text: string): string[] {
   return parts.map((part, i) => (i < parts.length - 1 ? `${part} ·` : part));
 }
 
-export function Hero({ keyartSrc, live }: HeroProps) {
+export function Hero({ game, keyartSrc, live }: HeroProps) {
   const t = useTranslations("landing");
+  const tp = useTranslations("common.play");
   const platforms = t.raw("platforms") as string[];
 
   return (
@@ -67,20 +77,40 @@ export function Hero({ keyartSrc, live }: HeroProps) {
             {t("heroTitle")}
           </h1>
           <p className="lead max-w-xl">{t("heroText")}</p>
-          <div className="flex flex-wrap gap-4 pt-1">
-            <a className="btn btn-primary" href="#spiel">
-              <Sprite id="icon_sword" scale={1} />
-              {t("heroCta1")}
-            </a>
-            {live ? (
-              <PixelButton href="/leaderboards">{t("heroCta2")}</PixelButton>
-            ) : (
-              <a className="btn" href="#biome">
-                {t("heroCta2Teaser")}
+          {game ? (
+            <div className="flex flex-col gap-3 pt-1">
+              <PlayButtons links={game} />
+              <p className="max-w-lg text-[15px] text-soft leading-relaxed">
+                {tp("hint")}
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-4 pt-1">
+              <a className="btn btn-primary" href="#spiel">
+                <Sprite id="icon_sword" scale={1} />
+                {t("heroCta1")}
               </a>
-            )}
-          </div>
+              {live ? (
+                <PixelButton href="/leaderboards">{t("heroCta2")}</PixelButton>
+              ) : (
+                <a className="btn" href="#biome">
+                  {t("heroCta2Teaser")}
+                </a>
+              )}
+            </div>
+          )}
           <ul className="flex flex-wrap gap-3 pt-2">
+            {game ? (
+              <li>
+                <Chip
+                  className="chip-live"
+                  icon={<PixelIcon name="browser" />}
+                  status={{ label: tp("status"), icon: "chip_done" }}
+                >
+                  {tp("platform")}
+                </Chip>
+              </li>
+            ) : null}
             {platforms.map((label, i) => (
               <li key={label}>
                 <Chip

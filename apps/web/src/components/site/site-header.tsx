@@ -6,21 +6,25 @@ import { PixelButton } from "@/components/ui/pixel-button";
 import { Sprite } from "@/components/ui/sprite";
 import { VolumeSlider } from "@/components/ui/volume-slider";
 import { liveFeaturesEnabled } from "@/lib/features";
+import { gameLinks } from "@/lib/game";
 import { HomeLink } from "./home-link";
 import { MobileMenu } from "./mobile-menu";
 import { type NavLink, visibleNavLinks } from "./nav-links";
+import { PlayButtons } from "./play-buttons";
 
 /**
  * Sticky navbar (handoff §3, row 0): logo, anchor links, music with volume, language segment,
  * CTA. Below `xl` the links, language and music move into a burger menu so the bar stays one
  * short row on phones and tablets. In teaser mode (`LIVE_FEATURES=false`) the leaderboards link
- * is dropped and the CTA leads into the game section.
+ * is dropped and the CTA leads into the game section. While the browser version is available
+ * (`GAME_URL`), the burger menu opens with its play and install buttons.
  */
 export function SiteHeader() {
   const t = useTranslations("landing");
   const tc = useTranslations("common");
   const live = liveFeaturesEnabled();
   const links = visibleNavLinks(t.raw("navLinks") as NavLink[], live);
+  const game = gameLinks();
 
   return (
     <header className="sticky top-0 z-40 border-line border-b-2 bg-[rgb(21_19_31/0.94)] backdrop-blur-sm">
@@ -84,6 +88,14 @@ export function SiteHeader() {
             </a>
           )}
           <MobileMenu label={tc("menu.label")}>
+            {game ? (
+              <section aria-label={tc("play.heading")} className="menu-play">
+                <PlayButtons links={game} size="sm" />
+                <p className="text-[14px] text-muted leading-relaxed">
+                  {tc("play.hint")}
+                </p>
+              </section>
+            ) : null}
             <nav aria-label={t("navLabel")}>
               <ul className="menu-links">
                 {links.map(([label, hash]) => (

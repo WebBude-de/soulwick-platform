@@ -33,6 +33,14 @@
   "menu": {
     "label": "Menü"
   },
+  "play": {
+    "heading": "Spielen",
+    "cta": "Im Browser spielen",
+    "install": "Web-App installieren",
+    "hint": "Läuft direkt im Browser, auf dem Handy als App installierbar.",
+    "platform": "Browser",
+    "status": "spielbar"
+  },
   "status": {
     "planned": "in Planung",
     "inDevelopment": "in Entwicklung",

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { Sprite } from "@/components/ui/sprite";
 import type { SpriteId } from "@/lib/sprite-manifest";
 
@@ -8,8 +8,8 @@ interface ChipProps {
   className?: string;
   /** Renders as link when set. */
   href?: string;
-  /** 16 px icon on the left. */
-  icon?: SpriteId;
+  /** 16 px icon on the left: a sprite id or a ready node (e.g. `PixelIcon`). */
+  icon?: SpriteId | ReactElement;
   /** Status part on the right (e.g. „geplant“ with `chip_planned`). */
   status?: { label: string; icon?: SpriteId };
 }
@@ -28,7 +28,11 @@ export function Chip({
     .join(" ");
   const content = (
     <>
-      {icon ? <Sprite id={icon} scale={1} /> : null}
+      {typeof icon === "string" ? (
+        <Sprite id={icon} scale={1} />
+      ) : (
+        (icon ?? null)
+      )}
       <span>{children}</span>
       {status ? (
         <span className="chip-status">
