@@ -13,6 +13,7 @@ import type {
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { api, apiBase, errorText } from "@/lib/api";
+import { BUG_STATUS_LABEL } from "@/lib/format";
 import { clearSession, getToken, setSession } from "@/lib/session";
 
 // Every action ends with a redirect carrying a flash message (?ok=… or ?fehler=…), so the
@@ -556,5 +557,45 @@ export async function kickRelayPlayer(
     result.ok && result.data.roomClosed
       ? `„${playerName}“ war Host – Raum ${code} wurde für alle geschlossen.`
       : `„${playerName}“ aus Raum ${code} entfernt.`
+  );
+}
+
+// --- bug reports (P-033) ------------------------------------------------------------------------
+
+const BUG_PATH = "/bug-meldungen";
+
+/** Status buttons of the detail page (`<button name="status" value="…">`); the API checks it too. */
+export async function setBugReportStatus(reportId: string, form: FormData) {
+  const path = `${BUG_PATH}/${encodeURIComponent(reportId)}`;
+  const status = str(form, "status");
+  if (!Object.hasOwn(BUG_STATUS_LABEL, status)) {
+    back(path, fail("Nicht ausgeführt: unbekannter Status."), "");
+  }
+  const result = await api(
+    `/admin/bug-reports/${encodeURIComponent(reportId)}`,
+    {
+      method: "PATCH",
+      body: { status },
+    }
+  );
+  back(path, result, `Status: ${BUG_STATUS_LABEL[status]}.`);
+}
+
+/** Admins only (the API answers 403 for moderators). Back to the list on success. */
+export async function deleteBugReport(reportId: string, form: FormData) {
+  const path = `${BUG_PATH}/${encodeURIComponent(reportId)}`;
+  if (!confirmed(form)) {
+    back(path, fail(NOT_CONFIRMED), "");
+  }
+  const result = await api(
+    `/admin/bug-reports/${encodeURIComponent(reportId)}`,
+    {
+      method: "DELETE",
+    }
+  );
+  back(
+    result.ok ? `${BUG_PATH}?status=alle` : path,
+    result,
+    "Bug-Meldung gelöscht."
   );
 }

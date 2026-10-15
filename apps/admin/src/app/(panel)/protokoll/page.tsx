@@ -41,6 +41,9 @@ function targetHref(
   if (type === "guild") {
     return `/gilden/${id}`;
   }
+  if (type === "bug_report" && action !== "bug_report.delete") {
+    return `/bug-meldungen/${id}`;
+  }
   return null;
 }
 
@@ -50,6 +53,7 @@ const AREAS = [
   { value: "guild.", label: "Gilden" },
   { value: "run.", label: "Runs" },
   { value: "relay.", label: "Live-Räume" },
+  { value: "bug_report.", label: "Bug-Meldungen" },
   { value: "admin.", label: "Admins" },
 ] as const;
 
@@ -59,6 +63,7 @@ const TARGET_TYPES = [
   "run",
   "relay_room",
   "admin_user",
+  "bug_report",
 ] as const;
 
 /**

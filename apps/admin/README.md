@@ -5,7 +5,7 @@
 Verwaltungsoberfläche für Admins und Moderatoren:
 
 - **Übersicht:** Kacheln „Moderation“ (Spieler, aktive Sperren, Gilden, gemeldete Runs mit
-  Warnrahmen, wenn etwas zu prüfen ist; Löschungen der letzten 7 Tage ohne Warnzustand) und
+  Warnrahmen, wenn etwas zu prüfen ist; neue Bug-Meldungen, falls die API `newBugReports` liefert; Löschungen der letzten 7 Tage ohne Warnzustand) und
   „Aktivität“ (nur, wenn die API die Felder liefert), Tagesreihe der letzten 14 Tage (Runs, aktive
   und neue Spieler aus `/admin/stats/daily`, kleine Säulendiagramme als Inline-SVG), dazu
   „zuletzt“-Listen (gemeldete Runs, letzte Löschungen, Protokoll)
@@ -15,12 +15,23 @@ Verwaltungsoberfläche für Admins und Moderatoren:
   mit allen Gilden und der Rolle je Gilde, Sperren mit Grund und Dauer (1 Tag, 7 Tage,
   30 Tage, dauerhaft), Entsperren, Umbenennen, Moderations-Notizen, Konto löschen (nur Rolle Admin,
   Bestätigung durch Eingabe des Namens, optionale Notiz fürs Protokoll; für Spieler ohne Zugang zum
-  Spiel)
+  Spiel); Zeile „Figur“ (P-034: Figur und die vier Palettenindizes Haare/Kleidung/Haut/Akzent als
+  nummerierte Kästchen, ohne Palette; „Standardfigur“ bei `null`) und „Namensverlauf“ (letzte 20
+  Wechsel, Umbenennungen im Panel als „durch Admin“ markiert); beides entfällt bei älteren API-Ständen
 - **Gilden:** Suche mit Statusfilter (aktiv, aufgelöst, alle), Details, Mitglied entfernen,
   Gildenleitung übertragen (mit Grund), Umbenennen, Einladungscode zurücksetzen, Auflösen
   (Bestätigung durch Eingabe des Kürzels); Notizen-Zahl je Mitglied und die letzten Notizen der
   Mitglieder (nur lesen, Notizen hängen an Spielern)
 - **Runs:** gemeldete Runs prüfen, markieren (mit Grund)/freigeben, löschen
+- **Bug-Meldungen** (`/bug-meldungen`, P-033): Meldungen aus dem Spiel (F9). Reiter je Status mit
+  Zahlen aus `counts` (Neu, Gesehen, Erledigt, Wird nicht behoben, Alle), Cursor-Seiten („Ältere →“),
+  Filter `?spieler=<id>` (Link auf der Spielerseite). Detail: Bildschirmfoto mit Markierungen
+  (nummerierte Rechtecke) und freien Strichen als SVG-Überlagerung in relativen Koordinaten
+  (ausblendbar per Häkchen, CSS `:has()`, ohne JS), Notiz, Kategorien, Ort/Szene/Seed/Auflösung/
+  Sprache, Plattform und Version, weitere Kontextfelder aufklappbar; Status setzen (alle Rollen),
+  Löschen nur Admin (Häkchen). Das Bild kommt über den Route-Handler
+  `/bug-meldungen/[id]/bild`, der es serverseitig mit dem Token aus dem Cookie bei der API holt und
+  nur die Bildbytes weitergibt (feste Pfade, nur WebP/JPEG/PNG, `Cache-Control: private`)
 - **Live-Räume:** offene Koop-Räume auf dem Relay, je Raum eine Karte: Kopf mit Code, Modus (bei
   Gildenräumen Kürzel und Name der Gilde, verlinkt), Status und „Schließen…“; darunter eine Zeile mit
   Dauer, Belegung, laufendem Run bzw. Lobby-Restzeit, Version und Datenverkehr; dann eine Zeile je

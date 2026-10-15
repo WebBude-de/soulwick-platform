@@ -37,6 +37,8 @@ const ERROR_TEXTS: Record<string, string> = {
   invalid_current_password: "Das aktuelle Passwort ist falsch.",
   password_unchanged: "Das neue Passwort ist dasselbe wie das aktuelle.",
   email_unchanged: "Das ist bereits deine E-Mail-Adresse.",
+  // Bug reports (P-033)
+  bug_report_not_found: "Die Bug-Meldung gibt es nicht (mehr).",
 };
 
 export function errorText(code: string, fallback?: string): string {
@@ -111,6 +113,27 @@ export async function api<T>(
     };
   }
   return { ok: true, status: res.status, data: json as T };
+}
+
+/**
+ * Server-side GET of a binary admin resource (bug report screenshots, P-033) with the token from
+ * the session cookie. Returns the raw API response, or null without a session or when the API is
+ * unreachable. The caller passes on the bytes only, never the token.
+ */
+export async function apiBinary(path: string): Promise<Response | null> {
+  const token = await getToken();
+  if (!token) {
+    return null;
+  }
+  try {
+    return await fetch(new URL(path, apiBase()), {
+      headers: { authorization: `Bearer ${token}` },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+  } catch {
+    return null;
+  }
 }
 
 /** Like `api`, but throws on failure (for page data that must exist). */

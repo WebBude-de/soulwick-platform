@@ -538,6 +538,76 @@
     border: 0;
   }
 
+  /* Palette index of a character colour (P-034): the panel has no palette, so a numbered box. */
+  .swatch {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 4px;
+    font-size: 13px;
+    color: var(--color-text);
+    background: var(--color-bg-deep);
+    border: 2px solid var(--color-line-light);
+    border-radius: 3px;
+  }
+
+  /*
+   * Bug report screenshot with marks and strokes on top (relative coordinates, P-033). The SVG
+   * uses a 0..1 viewBox stretched over the image; strokes keep their width (non-scaling-stroke).
+   */
+  .shot {
+    position: relative;
+    overflow: hidden;
+    background: var(--color-bg-deep);
+    border: 2px solid var(--color-line);
+    border-radius: 4px;
+  }
+  .shot > img {
+    display: block;
+    width: 100%;
+    height: auto;
+    image-rendering: auto;
+  }
+  .shot > svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  .shot-mark {
+    fill: rgb(255 138 60 / 0.12);
+    stroke: var(--color-effect);
+    stroke-width: 2px;
+  }
+  .shot-stroke {
+    fill: none;
+    stroke: var(--color-gold);
+    stroke-width: 3px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .shot-label {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 4px;
+    font-family: var(--font-pixel);
+    font-size: 13px;
+    color: var(--color-ink);
+    background: var(--color-effect);
+  }
+  /* "Markierungen ausblenden": a plain checkbox, no client JS. */
+  .shot-view:has(.shot-hide:checked) .shot > svg,
+  .shot-view:has(.shot-hide:checked) .shot-label {
+    display: none;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .btn {
       transition: none;

@@ -40,6 +40,7 @@ export default async function PanelLayout({
     { href: "/spieler", label: "Spieler", icon: "players" },
     { href: "/gilden", label: "Gilden", icon: "guilds" },
     { href: "/runs", label: "Runs", icon: "runs" },
+    { href: "/bug-meldungen", label: "Bug-Meldungen", icon: "info" },
     { href: "/live-raeume", label: "Live-Räume", icon: "live" },
     { href: "/loeschungen", label: "Löschprotokoll", icon: "deletion" },
     { href: "/protokoll", label: "Protokoll", icon: "audit" },

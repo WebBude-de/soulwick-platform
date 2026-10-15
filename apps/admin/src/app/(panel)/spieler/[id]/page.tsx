@@ -28,7 +28,12 @@ import {
   When,
 } from "@/components/ui";
 import { type ApiResult, api, getMe, isAdmin } from "@/lib/api";
-import { formatDateTime, GUILD_ROLE_LABEL } from "@/lib/format";
+import {
+  APPEARANCE_COLOR_SLOTS,
+  CHARACTER_LABEL,
+  formatDateTime,
+  GUILD_ROLE_LABEL,
+} from "@/lib/format";
 
 export const metadata: Metadata = { title: "Spieler" };
 
@@ -75,6 +80,13 @@ export default async function PlayerDetailPage({
             <span className="mx-2">·</span>
             <Link className="link" href={`/protokoll?id=${p.id}`}>
               Protokoll zu diesem Spieler
+            </Link>
+            <span className="mx-2">·</span>
+            <Link
+              className="link"
+              href={`/bug-meldungen?status=alle&spieler=${p.id}`}
+            >
+              Bug-Meldungen
             </Link>
           </>
         }
@@ -133,6 +145,15 @@ export default async function PlayerDetailPage({
                   </ul>
                 ),
             },
+            // Older API builds do not send `appearance` at all: leave the row out.
+            ...(p.appearance === undefined
+              ? []
+              : [
+                  {
+                    label: "Figur",
+                    value: <Appearance appearance={p.appearance} />,
+                  },
+                ]),
             {
               label: "Erstellt",
               value: (
@@ -198,6 +219,7 @@ export default async function PlayerDetailPage({
             Umbenennen
           </button>
         </form>
+        {p.nameHistory ? <NameHistory entries={p.nameHistory} /> : null}
       </Section>
 
       <Section
@@ -345,6 +367,88 @@ export default async function PlayerDetailPage({
         </Section>
       ) : null}
     </>
+  );
+}
+
+/**
+ * The account's character (P-034): figure name plus the four palette indexes. The panel has no
+ * palette, so the colours show as numbered swatches; null = the game's default character.
+ */
+function Appearance({
+  appearance,
+}: {
+  appearance: AdminPlayerDetail["appearance"];
+}) {
+  if (!appearance) {
+    return <span className="text-muted">Standardfigur (nichts gewählt)</span>;
+  }
+  return (
+    <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+      <span className="font-semibold">
+        {CHARACTER_LABEL[appearance.character] ?? appearance.character}
+      </span>
+      <span className="flex flex-wrap items-center gap-3 text-muted text-xs">
+        {APPEARANCE_COLOR_SLOTS.map((slot) => {
+          const index = appearance.colors[slot.key];
+          return (
+            <span
+              className="flex items-center gap-1.5"
+              key={slot.key}
+              title={
+                index === undefined
+                  ? `${slot.label}: nicht gewählt`
+                  : `${slot.label}: Farbe ${index} (Palette 0–7)`
+              }
+            >
+              {slot.label}
+              <span className="swatch font-data">{index ?? "–"}</span>
+            </span>
+          );
+        })}
+      </span>
+    </span>
+  );
+}
+
+/** Recent name changes, newest first (own changes in the game and renames in the panel). */
+function NameHistory({
+  entries,
+}: {
+  entries: NonNullable<AdminPlayerDetail["nameHistory"]>;
+}) {
+  return (
+    <div className="mt-5 border-line border-t-2 pt-4">
+      <h3 className="mb-2 font-bold text-sm">Namensverlauf</h3>
+      {entries.length === 0 ? (
+        <p className="text-muted text-sm">
+          Keine Namenswechsel in den letzten 90 Tagen.
+        </p>
+      ) : (
+        <ol className="space-y-1 text-sm">
+          {entries.slice(0, 20).map((entry) => (
+            <li
+              className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1"
+              key={`${entry.changedAt}-${entry.newName}`}
+            >
+              <When className="text-muted" iso={entry.changedAt} />
+              <span className="flex min-w-0 items-center gap-2">
+                <Truncate className="text-muted" max="max-w-56">
+                  {entry.oldName}
+                </Truncate>
+                <span aria-hidden="true" className="text-muted">
+                  →
+                </span>
+                <span className="sr-only">zu</span>
+                <Truncate className="font-semibold" max="max-w-56">
+                  {entry.newName}
+                </Truncate>
+              </span>
+              {entry.byAdmin ? <Chip tone="muted">durch Admin</Chip> : null}
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
   );
 }
 

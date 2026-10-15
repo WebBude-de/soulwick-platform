@@ -74,6 +74,8 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   "guild.transfer": "Gründerrolle übertragen",
   "relay.room_close": "Raum geschlossen",
   "relay.kick": "Aus Raum entfernt",
+  "bug_report.status": "Bug-Meldung bearbeitet",
+  "bug_report.delete": "Bug-Meldung gelöscht",
 };
 
 /** Deletion log channels (P-026). */
@@ -122,6 +124,7 @@ export const AUDIT_TARGET_LABEL: Record<string, string> = {
   deletion_request: "Löschantrag",
   legal_document: "Rechtstext",
   relay_room: "Raum",
+  bug_report: "Bug-Meldung",
 };
 
 /** Tone of an audit action in lists: destructive red, flags orange, reversals green. */
@@ -138,6 +141,7 @@ export function auditTone(
       "admin.disable",
       "relay.room_close",
       "relay.kick",
+      "bug_report.delete",
     ].includes(action)
   ) {
     return "danger";
@@ -182,6 +186,10 @@ const AUDIT_DETAIL_LABEL: Record<string, string> = {
   wasBanned: "war gesperrt",
   revokedSessions: "andere Sitzungen beendet",
   source: "Quelle",
+  categories: "Kategorien",
+  platform: "Plattform",
+  gameVersion: "Version",
+  createdAt: "erstellt",
   // Legacy: player.delete entries from the time of deletion requests (before P-026).
   deletionRequestId: "Löschantrag",
 };
@@ -228,6 +236,7 @@ export const PLATFORM_LABEL: Record<string, string> = {
   macos: "macOS",
   android: "Android",
   ios: "iOS",
+  web: "Web",
 };
 
 /** Short age like "4 min", "2 h 5 min", "3 d" for relay rooms and players. */
@@ -268,3 +277,59 @@ export const formatNumber = (n: number | null | undefined, digits = 0) =>
   n === null || n === undefined
     ? "–"
     : n.toLocaleString("de-DE", { maximumFractionDigits: digits });
+
+/** Characters of the account (P-034); the final names come from the game, the ids stay. */
+export const CHARACTER_LABEL: Record<string, string> = {
+  wick: "Wick",
+  ember: "Ember",
+  moss: "Moss",
+  frost: "Frost",
+};
+
+/** Colour slots of `PlayerAppearance.colors` in display order. */
+export const APPEARANCE_COLOR_SLOTS = [
+  { key: "hair", label: "Haare" },
+  { key: "outfit", label: "Kleidung" },
+  { key: "skin", label: "Haut" },
+  { key: "accent", label: "Akzent" },
+] as const;
+
+/** Bug report status (P-033). */
+export const BUG_STATUS_LABEL: Record<string, string> = {
+  new: "Neu",
+  seen: "Gesehen",
+  done: "Erledigt",
+  wont_fix: "Wird nicht behoben",
+};
+
+/** Chip tone per status: new needs attention, done is green, the rest calm. */
+export const BUG_STATUS_TONE: Record<
+  string,
+  "active" | "danger" | "flagged" | "muted"
+> = {
+  new: "flagged",
+  seen: "muted",
+  done: "active",
+  wont_fix: "muted",
+};
+
+export const BUG_CATEGORY_LABEL: Record<string, string> = {
+  ui: "Oberfläche",
+  graphics: "Grafik",
+  light: "Licht",
+  layout: "Raumaufbau",
+  gameplay: "Spielablauf",
+  bug: "Fehler",
+  text: "Text",
+};
+
+/** "8,4 KB", "1,2 MB". */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  if (bytes < 1024 * 1024) {
+    return `${formatNumber(bytes / 1024, 1)} KB`;
+  }
+  return `${formatNumber(bytes / (1024 * 1024), 1)} MB`;
+}

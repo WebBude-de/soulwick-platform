@@ -72,6 +72,16 @@ const MODERATION_TILES: StatTile[] = [
     hint: "zählen nicht in Ranglisten",
   },
   {
+    key: "newBugReports",
+    label: "Neue Bug-Meldungen",
+    icon: "info",
+    href: "/bug-meldungen?status=neu",
+    value: (s) => s.newBugReports,
+    warn: (n) => n > 0,
+    hint: "aus dem Spiel, noch nicht angesehen",
+    optional: true,
+  },
+  {
     // Deletions run automatically (P-026): a figure to watch, never a warning.
     key: "deletions7d",
     label: "Löschungen",
