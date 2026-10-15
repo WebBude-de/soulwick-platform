@@ -94,7 +94,6 @@ Der Seed **verweigert `NODE_ENV=production`**. Im Docker-Image ist er nur für d
 | `RELAY_INTERNAL_TIMEOUT_MS` | nein | `3000` | TESTWERT: Zeitlimit je Aufruf an den Relay |
 | `ERECHT24_API_KEY` | nein | leer | Projekt-Schlüssel der eRecht24 Rechtstexte-API v2 (P-025); ohne ihn oder ohne `ERECHT24_PLUGIN_KEY` meldet `GET /legal/:type` `missing`, die Website zeigt den Platzhalter |
 | `ERECHT24_PLUGIN_KEY` | nein | leer | Plugin-/Entwickler-Schlüssel von eRecht24 (Header `eRecht24-plugin-key`); wie bei DapItUp Pflicht für den Abruf |
-| `ERECHT24_API_URL` | nein | `https://api.e-recht24.de/v2` | Basis-URL der Rechtstexte-API |
 | `DEFAULT_ADMIN_PASSWORD` | nein | `soulwick-admin-local` | Nur Dev-Seed: Passwort der Zugänge `admin@soulwick.local` und `moderator@soulwick.local` (≥ 12 Zeichen) |
 
 ## Befehle

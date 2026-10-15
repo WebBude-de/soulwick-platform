@@ -99,7 +99,7 @@ Regeln: Eindeutigkeit von Gildenname und Kürzel gilt nur für aktive Gilden (P-
 
 **Rechtstexte (P-013, Umsetzung wie DapItUp nach P-025):**
 
-1. *Abruf:* `GET /legal/:type` holt bei Bedarf `GET <ERECHT24_API_URL>/imprint|privacyPolicy|privacyPolicySocialMedia` mit den Headern `eRecht24-api-key` und `eRecht24-plugin-key`. Ohne **beide** Schlüssel antwortet die API sofort `status: "missing"` (ohne Aufruf bei eRecht24).
+1. *Abruf:* `GET /legal/:type` holt bei Bedarf `GET https://api.e-recht24.de/v2/imprint|privacyPolicy|privacyPolicySocialMedia` mit den Headern `eRecht24-api-key` und `eRecht24-plugin-key`. Ohne **beide** Schlüssel antwortet die API sofort `status: "missing"` (ohne Aufruf bei eRecht24).
 2. *Cache im Speicher* (je API-Container, je Typ): Erfolg 24 h, Fehler 60 s; eine laufende Anfrage wird von parallelen Aufrufen geteilt. Hat eRecht24 den Text noch nicht (404) oder ist das HTML nach der Bereinigung leer, gilt `status: "missing"` (ebenfalls 60 s). Schlägt ein Nachladen fehl, liefert die API den letzten guten Text weiter; gab es noch keinen, antwortet sie `502` mit `erecht24_unavailable`, `erecht24_unauthorized`, `erecht24_bad_response` oder `erecht24_bad_request`. Nach einem Neustart wird beim ersten Aufruf neu geholt.
 3. *Bereinigung:* `html.de`/`html.en` werden nach Allowlist neu aufgebaut (`p`, `h2`–`h4`, Listen, Tabellen, `strong`/`em`/`b`/`i`, `br`, `hr`, `a[href]` nur mit http(s), mailto, tel; führendes `<h1>` entfällt). `warnings` kommen als Textzeilen.
 4. Keine Push-Clients, keine Tabelle, keine Admin-Funktionen (P-025). Neue Texte erscheinen spätestens nach 24 h (bzw. nach einem Neustart der API).

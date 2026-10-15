@@ -4,6 +4,7 @@ import type {
 } from "@soulwick/contracts";
 import {
   createErecht24Client,
+  ERECHT24_DEFAULT_BASE_URL,
   type Erecht24Client,
   type Erecht24Document,
   emptyToNull,
@@ -89,7 +90,7 @@ function createLegalService(deps: BaseDeps): LegalService {
   const logger: Logger = createLogger(config.LOG_LEVEL);
   const now = () => deps.now?.() ?? new Date();
   const client: Erecht24Client = createErecht24Client({
-    baseUrl: config.ERECHT24_API_URL,
+    baseUrl: ERECHT24_DEFAULT_BASE_URL,
     apiKey: config.ERECHT24_API_KEY,
     pluginKey: config.ERECHT24_PLUGIN_KEY,
     fetch: deps.fetch,

@@ -171,7 +171,6 @@ const ConfigSchema = z
      */
     ERECHT24_API_KEY: z.string().trim().default(""),
     ERECHT24_PLUGIN_KEY: z.string().trim().default(""),
-    ERECHT24_API_URL: z.url().default("https://api.e-recht24.de/v2"),
   })
   .refine(
     (c) =>

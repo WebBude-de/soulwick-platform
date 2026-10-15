@@ -355,7 +355,6 @@ RELAY_INTERNAL_TIMEOUT_MS=3000
 # Rechtstexte (P-025): beide Schlüssel nötig; fehlt einer, zeigt die Website den Platzhalter.
 ERECHT24_API_KEY=
 ERECHT24_PLUGIN_KEY=
-ERECHT24_API_URL=https://api.e-recht24.de/v2
 
 # Kontolöschung ohne Spielzugang (P-026): Adresse, die die Lösch-Seite der Website zeigt; leer = keine.
 SUPPORT_EMAIL=${{environment.SUPPORT_EMAIL}}

@@ -13,7 +13,6 @@ import { createTestContext, type TestContext, testConfig } from "./helpers.ts";
  * memory (24 h, failures 60 s), share a running pull. The service never touches the database.
  */
 
-const BASE_URL = "https://erecht24.test/v2";
 const API_KEY = "test-project-key-not-a-real-key";
 const PLUGIN_KEY = "test-plugin-key-not-a-real-key";
 const START = new Date("2026-10-14T10:00:00.000Z");
@@ -71,7 +70,6 @@ function legalApp(env: Record<string, string> = {}) {
     config: testConfig({
       ERECHT24_API_KEY: API_KEY,
       ERECHT24_PLUGIN_KEY: PLUGIN_KEY,
-      ERECHT24_API_URL: BASE_URL,
       ...env,
     }),
     fetch: fake.fetch,
