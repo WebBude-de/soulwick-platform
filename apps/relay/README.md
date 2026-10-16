@@ -61,8 +61,9 @@ neuen Verbindung ein frisches JWT holen; eine laufende Verbindung bleibt bestehe
 `frame_too_large`, `internal`, `room_not_started` (`end_run` ohne laufenden Run).
 
 **Close-Codes:** 1001 Neustart (`shutdown`), 4000 Zeitüberschreitung (Herzschlag/untätig),
-4001 `unauthorized`/`hello_required`, 4003 `banned`, 4006 `version_mismatch`, 4008 wiederholt `rate_limited`,
-4010 Empfänger zu langsam.
+4001 `unauthorized`/`hello_required`, 4003 `banned`, 4006 `version_mismatch`, 4008 `rate_limited` (wiederholt bei unzuverlässigen Paketen, sofort bei einem
+zuverlässigen über dem Limit), 4010 Empfänger zu langsam (Rückstau länger als
+`SLOW_CONSUMER_GRACE_SECONDS` über `MAX_BUFFERED_BYTES`).
 
 **Spielpakete** sind Binärrahmen, 10 Byte Kopf, Little Endian, danach das Godot-Paket unverändert:
 
@@ -119,10 +120,11 @@ Die `/internal/*`-Endpunkte brauchen keine neue `PROTOCOL_VERSION` (nur der Grun
 | `STATUS_CACHE_SECONDS` | nein | `30` | TESTWERT: Antworten der API werden so lange wiederverwendet |
 | `CLIENT_ROUTING` | nein | `host_only` | `host_only` oder `any` (Entscheidung mit MP2) |
 | `MAX_FRAME_BYTES` | nein | `65536` | TESTWERT: größter Rahmen (Kopf + Paket) |
-| `MAX_MESSAGES_PER_SECOND` / `MAX_BYTES_PER_SECOND` | nein | `1000` / `1048576` | TESTWERTE je Verbindung (Puffer für 2 s) |
+| `MAX_MESSAGES_PER_SECOND` / `MAX_BYTES_PER_SECOND` | nein | `1000` / `1048576` | TESTWERTE je Verbindung (Puffer für 2 s); darüber werden unzuverlässige Pakete verworfen, ein zuverlässiges trennt sofort (4008 `rate_limited`) |
 | `RATE_LIMIT_STRIKES` | nein | `5` | Limit-Hinweise (höchstens 1/s), danach Verbindungsende |
 | `MAX_CONNECTIONS_PER_IP_PER_MINUTE` | nein | `30` | TESTWERT |
-| `MAX_BUFFERED_BYTES` | nein | `1048576` | Rückstau je Empfänger: unzuverlässige Pakete werden verworfen, bei zuverlässigen wird getrennt |
+| `MAX_BUFFERED_BYTES` | nein | `4194304` | TESTWERT: Rückstau je Empfänger; darüber werden unzuverlässige Pakete verworfen, zuverlässige weiter eingereiht |
+| `SLOW_CONSUMER_GRACE_SECONDS` | nein | `5` | TESTWERT: bleibt der Rückstau so lange über `MAX_BUFFERED_BYTES`, wird der Empfänger getrennt (4010 `slow_consumer`); `0` = sofort |
 | `ROOM_IDLE_MINUTES` / `IDLE_MINUTES` | nein | `10` / `10` | TESTWERTE: Raum ohne Start / Verbindung ohne Raum |
 | `HELLO_TIMEOUT_SECONDS` | nein | `5` | TESTWERT |
 | `HEARTBEAT_INTERVAL_SECONDS` / `HEARTBEAT_TIMEOUT_SECONDS` | nein | `15` / `30` | TESTWERTE |
@@ -144,6 +146,9 @@ Die `/internal/*`-Endpunkte brauchen keine neue `PROTOCOL_VERSION` (nur der Grun
 (`room_closed` mit `shutdown`, dann Close 1001); das Spiel behandelt das wie einen Host-Abbruch.
 Deshalb den Relay nicht automatisch bei jedem Push deployen (`infra/DOKPLOY.md` §6). Im Log: `signal`
 und `shutdown` beim Stoppen; `connection_close` je Verbindung mit `code`, `room`, `peerId`, `silentMs`
-(Stille vor dem Ende) und `maxFrameIn` (größtes Paket); `slow_consumer` mit `buffered`. `/metrics`
+(Stille vor dem Ende), `maxFrameIn` (größtes Paket) und den Spitzen je Sekunde
+`peakMessagesInPerSecond`, `peakBytesInPerSecond`, `peakMessagesOutPerSecond`, `peakBytesOutPerSecond`;
+`slow_consumer` mit `buffered` und `overMs` (so lange über der Grenze); `rate_limited` mit `reliable: true`,
+wenn ein zuverlässiges Paket die Trennung auslöste. `/metrics`
 meldet zusätzlich `maxFrameIn`.
 Dokploy-Einrichtung: ROADMAP P17.

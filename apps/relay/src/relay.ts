@@ -23,7 +23,7 @@ import {
   type PlayerTokenVerifier,
 } from "./auth.ts";
 import type { Config } from "./config.ts";
-import { ConnectionLimiter } from "./limits.ts";
+import { ConnectionLimiter, PeakRate } from "./limits.ts";
 import type { Logger } from "./logger.ts";
 import type { Metrics } from "./metrics.ts";
 import {
@@ -98,6 +98,16 @@ export class Client {
   bytesOut = 0;
   /** Largest binary frame this connection sent (bytes), for the close log. Set in the constructor. */
   maxFrameIn: number;
+  /** Peak rates per second (incoming: every message, also dropped ones), for the close log. */
+  readonly peakMessagesIn = new PeakRate();
+  readonly peakBytesIn = new PeakRate();
+  readonly peakMessagesOut = new PeakRate();
+  readonly peakBytesOut = new PeakRate();
+  /**
+   * Since when (ms) this receiver's send buffer is over MAX_BUFFERED_BYTES; null while below.
+   * It is closed as slow consumer once that lasts SLOW_CONSUMER_GRACE_SECONDS.
+   */
+  bufferOverSince: number | null;
 
   constructor(id: number, transport: Transport, now: number, config: Config) {
     this.id = id;
@@ -105,6 +115,7 @@ export class Client {
     this.openedAt = now;
     this.closed = false;
     this.maxFrameIn = 0;
+    this.bufferOverSince = null;
     this.lastSeenAt = now;
     this.lastMessageAt = now;
     this.lastPingAt = now;
@@ -246,7 +257,9 @@ export class Relay {
       );
       return;
     }
-    if (!this.withinLimits(client, bytes.length, now)) {
+    const header = readFrameHeader(bytes);
+    const reliable = header?.mode === RelayTransferMode.reliable;
+    if (!this.withinLimits(client, bytes.length, now, reliable)) {
       metrics.drop("rate_limited");
       return;
     }
@@ -267,7 +280,6 @@ export class Relay {
       metrics.drop("not_in_room");
       return;
     }
-    const header = readFrameHeader(bytes);
     if (!header) {
       metrics.drop("invalid");
       this.notice(client, "invalid_message", "Frame shorter than header", now);
@@ -319,6 +331,10 @@ export class Relay {
       maxFrameIn: client.maxFrameIn || undefined,
       bytesIn: client.bytesIn,
       bytesOut: client.bytesOut,
+      peakMessagesInPerSecond: client.peakMessagesIn.peak,
+      peakBytesInPerSecond: client.peakBytesIn.peak,
+      peakMessagesOutPerSecond: client.peakMessagesOut.peak,
+      peakBytesOutPerSecond: client.peakBytesOut.peak,
     });
   }
 
@@ -345,6 +361,8 @@ export class Relay {
         this.disconnect(client, RELAY_CLOSE_CODES.timeout, "heartbeat timeout");
       } else if (!client.room && now - client.lastMessageAt >= idleMs) {
         this.disconnect(client, RELAY_CLOSE_CODES.timeout, "idle");
+      } else if (this.overBufferTooLong(client, now)) {
+        this.closeSlowConsumer(client, 0, now);
       } else if (now - client.lastPingAt >= heartbeatMs) {
         client.lastPingAt = now;
         client.transport.ping();
@@ -1097,29 +1115,28 @@ export class Relay {
     this.deliver(target, bytes, unreliable);
   }
 
-  /** Backpressure: unreliable packets are dropped, a reliable one closes the slow receiver. */
+  /**
+   * Backpressure: while the receiver's send buffer is over MAX_BUFFERED_BYTES, unreliable packets
+   * are dropped and reliable ones are still queued (never lost). Only when the buffer stays over
+   * the limit for SLOW_CONSUMER_GRACE_SECONDS is the receiver closed as slow consumer (4010).
+   */
   private deliver(target: Client, bytes: Uint8Array, unreliable: boolean) {
     if (target.closed) {
       return;
     }
-    if (target.transport.bufferedAmount() > this.config.MAX_BUFFERED_BYTES) {
-      if (unreliable) {
-        this.deps.metrics.drop("backpressure");
-        return;
-      }
-      this.deps.metrics.slowConsumersClosed += 1;
-      this.deps.logger.info("slow_consumer", {
-        conn: target.id,
-        playerId: target.player?.playerId,
-        room: target.room?.code,
-        buffered: target.transport.bufferedAmount(),
-        frameBytes: bytes.length,
-      });
-      this.disconnect(target, RELAY_CLOSE_CODES.slowConsumer, "slow consumer");
+    const now = this.deps.now();
+    if (this.overBufferTooLong(target, now)) {
+      this.closeSlowConsumer(target, bytes.length, now);
+      return;
+    }
+    if (unreliable && target.bufferOverSince !== null) {
+      this.deps.metrics.drop("backpressure");
       return;
     }
     target.transport.sendBinary(bytes);
     target.bytesOut += bytes.length;
+    target.peakMessagesOut.add(1, now);
+    target.peakBytesOut.add(bytes.length, now);
     if (target.room) {
       target.room.bytesOut += bytes.length;
     }
@@ -1131,10 +1148,41 @@ export class Relay {
   // Sending, errors, limits
   // -------------------------------------------------------------------------------------------
 
+  /**
+   * Tracks since when the send buffer is over MAX_BUFFERED_BYTES (reset once it is below again);
+   * true when that lasts SLOW_CONSUMER_GRACE_SECONDS.
+   */
+  private overBufferTooLong(client: Client, now: number): boolean {
+    if (client.transport.bufferedAmount() <= this.config.MAX_BUFFERED_BYTES) {
+      client.bufferOverSince = null;
+      return false;
+    }
+    client.bufferOverSince ??= now;
+    return (
+      now - client.bufferOverSince >=
+      this.config.SLOW_CONSUMER_GRACE_SECONDS * 1000
+    );
+  }
+
+  private closeSlowConsumer(target: Client, frameBytes: number, now: number) {
+    this.deps.metrics.slowConsumersClosed += 1;
+    this.deps.logger.info("slow_consumer", {
+      conn: target.id,
+      playerId: target.player?.playerId,
+      room: target.room?.code,
+      buffered: target.transport.bufferedAmount(),
+      overMs: now - (target.bufferOverSince ?? now),
+      frameBytes: frameBytes || undefined,
+    });
+    this.disconnect(target, RELAY_CLOSE_CODES.slowConsumer, "slow consumer");
+  }
+
   private received(client: Client, size: number, now: number) {
     client.lastSeenAt = now;
     client.lastMessageAt = now;
     client.bytesIn += size;
+    client.peakMessagesIn.add(1, now);
+    client.peakBytesIn.add(size, now);
     this.deps.metrics.bytesIn += size;
   }
 
@@ -1145,7 +1193,10 @@ export class Relay {
     const text = encodeServerMessage(message);
     client.transport.sendText(text);
     const size = Buffer.byteLength(text);
+    const now = this.deps.now();
     client.bytesOut += size;
+    client.peakMessagesOut.add(1, now);
+    client.peakBytesOut.add(size, now);
     this.deps.metrics.bytesOut += size;
   }
 
@@ -1201,10 +1252,34 @@ export class Relay {
     this.handleClose(client, code, reason);
   }
 
-  /** False = over the limit (message dropped). Repeated violations close the connection. */
-  private withinLimits(client: Client, size: number, now: number): boolean {
+  /**
+   * False = over the limit (message dropped). Repeated violations close the connection. A
+   * reliable game packet over the limit closes it at once (`rate_limited`, 4008): dropping it
+   * silently would let the game states of host and clients drift apart.
+   */
+  private withinLimits(
+    client: Client,
+    size: number,
+    now: number,
+    reliable = false
+  ): boolean {
     if (client.limiter.allow(size, now)) {
       return true;
+    }
+    if (reliable) {
+      this.deps.logger.info("rate_limited", {
+        conn: client.id,
+        playerId: client.player?.playerId,
+        reliable: true,
+        strikes: client.strikes,
+      });
+      this.fail(
+        client,
+        "rate_limited",
+        "Reliable packet over the rate limit; connection closed",
+        RELAY_CLOSE_CODES.rateLimited
+      );
+      return false;
     }
     if (now - client.lastLimitNoticeAt < THROTTLED_NOTICE_MS) {
       return false;

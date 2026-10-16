@@ -119,7 +119,11 @@ export const RelayErrorCode = z.enum([
   "invalid_target",
   /** The API could not be asked (guild rooms need it). Quick rooms keep working. */
   "api_unavailable",
-  /** Too many messages or bytes per second; the message was dropped. Repeated: closes (4008). */
+  /**
+   * Too many messages or bytes per second; the message was dropped. Repeated: closes (4008). A
+   * reliable game packet (mode 2) over the limit is never dropped silently: the connection closes
+   * at once with this error and 4008.
+   */
   "rate_limited",
   /** Message larger than `maxFrameBytes`; dropped. */
   "frame_too_large",
@@ -139,7 +143,10 @@ export const RELAY_CLOSE_CODES = {
   banned: 4003,
   versionMismatch: 4006,
   rateLimited: 4008,
-  /** The connection could not keep up with its incoming packets (backpressure). */
+  /**
+   * The connection could not keep up with its incoming packets: its send buffer stayed over the
+   * relay's limit for the grace time (backpressure; unreliable packets are dropped meanwhile).
+   */
   slowConsumer: 4010,
 } as const;
 

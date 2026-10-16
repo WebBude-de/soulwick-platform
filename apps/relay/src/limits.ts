@@ -78,3 +78,28 @@ export class IpConnectionLimiter {
     return bucket.count <= this.limit;
   }
 }
+
+/**
+ * Highest count per whole second (fixed one-second windows), e.g. messages or bytes of one
+ * connection for the close log. `now` in milliseconds.
+ */
+export class PeakRate {
+  private second = Number.NEGATIVE_INFINITY;
+  private current = 0;
+  private best = 0;
+
+  add(amount: number, now: number): void {
+    const second = Math.floor(now / 1000);
+    if (second !== this.second) {
+      this.best = Math.max(this.best, this.current);
+      this.second = second;
+      this.current = 0;
+    }
+    this.current += amount;
+  }
+
+  /** Peak including the running second. */
+  get peak(): number {
+    return Math.max(this.best, this.current);
+  }
+}

@@ -8,8 +8,11 @@ import {
   type VersionConflictResponse,
 } from "@soulwick/contracts";
 import { Hono } from "hono";
+import { createLogger } from "../lib/logger.ts";
+import { createRelayClient } from "../lib/relay-client.ts";
 import { parseBody, parseParam } from "../lib/validate.ts";
 import { requirePlayer } from "../middleware/auth.ts";
+import { listGuildRooms } from "../services/guild-rooms.ts";
 import {
   createGuild,
   emptyProgress,
@@ -32,6 +35,8 @@ import type { AppEnv, Deps } from "../types.ts";
 export function guildRoutes(deps: Deps) {
   const app = new Hono<AppEnv>();
   const now = () => deps.now?.() ?? new Date();
+  const relay = createRelayClient(deps.config, deps.fetch);
+  const logger = createLogger(deps.config.LOG_LEVEL);
   app.use("*", requirePlayer(deps));
 
   /** Create a guild; the caller becomes founder (counts towards the guild limit). */
@@ -83,6 +88,21 @@ export function guildRoutes(deps: Deps) {
       inviteCode: await rotateInviteCode(deps.db, id, c.get("player").id),
     };
     return c.json(body);
+  });
+
+  /** Open guild rooms on the relay (members only); 200 with `relayAvailable: false` without relay. */
+  app.get("/:id/rooms", async (c) => {
+    const id = parseParam(c, "id", Uuid);
+    return c.json(
+      await listGuildRooms(
+        deps.db,
+        relay,
+        logger,
+        id,
+        c.get("player").id,
+        now()
+      )
+    );
   });
 
   app.get("/:id/progress", async (c) => {

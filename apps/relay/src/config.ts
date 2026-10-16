@@ -61,8 +61,16 @@ const ConfigSchema = z
     RATE_LIMIT_STRIKES: int(1, 5),
     /** TESTWERT: new WebSocket connections per client IP and minute. */
     MAX_CONNECTIONS_PER_IP_PER_MINUTE: int(1, 30),
-    /** TESTWERT: unsent bytes per receiver before it counts as a slow consumer. */
-    MAX_BUFFERED_BYTES: int(1024, 1_048_576),
+    /**
+     * TESTWERT: unsent bytes per receiver above which its unreliable packets are dropped (reliable
+     * ones are still queued). Raised from 1 MiB to 4 MiB after the online test of 16.10.2026.
+     */
+    MAX_BUFFERED_BYTES: int(1024, 4_194_304),
+    /**
+     * TESTWERT: a receiver whose buffer stays over MAX_BUFFERED_BYTES this long is closed as slow
+     * consumer (4010). 0 = at once, as before the online test of 16.10.2026.
+     */
+    SLOW_CONSUMER_GRACE_SECONDS: z.coerce.number().min(0).max(60).default(5),
 
     /** TESTWERT: an unstarted room closes after this time (`expired`). */
     ROOM_IDLE_MINUTES: z.coerce.number().positive().default(10),

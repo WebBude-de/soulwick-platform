@@ -19,6 +19,24 @@ describe("relay config (P-027)", () => {
     expect(config.JWKS_URL).toBe("https://api.example.test/auth/jwks");
   });
 
+  it("backpressure defaults: 4 MiB buffer, 5 s grace (online test 16.10.2026)", () => {
+    const config = loadConfig({ API_INTERNAL_URL: "http://soulwick-api:8787" });
+    expect(config.MAX_BUFFERED_BYTES).toBe(4_194_304);
+    expect(config.SLOW_CONSUMER_GRACE_SECONDS).toBe(5);
+    expect(
+      loadConfig({
+        API_INTERNAL_URL: "http://soulwick-api:8787",
+        SLOW_CONSUMER_GRACE_SECONDS: "0.5",
+      }).SLOW_CONSUMER_GRACE_SECONDS
+    ).toBe(0.5);
+    expect(() =>
+      loadConfig({
+        API_INTERNAL_URL: "http://soulwick-api:8787",
+        SLOW_CONSUMER_GRACE_SECONDS: "-1",
+      })
+    ).toThrow("SLOW_CONSUMER_GRACE_SECONDS");
+  });
+
   it("needs API_INTERNAL_URL and no longer reads TOKEN_SECRET", () => {
     expect(() => loadConfig({ TOKEN_SECRET: "x".repeat(32) })).toThrow(
       "API_INTERNAL_URL"

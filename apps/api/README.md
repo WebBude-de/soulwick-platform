@@ -177,6 +177,11 @@ Spieler (Header `Authorization: Bearer <token>`):
   `404 invalid_invite_code`, `404 member_not_found`, `400 cannot_target_self`, `409 guild_name_taken`,
   `409 guild_tag_taken`. Die alten Routen `/guilds/me*` und `POST /guilds/leave` gibt es seit
   `API_VERSION` 1.1.0 nicht mehr (404).
+- `GET /guilds/:id/rooms` (nur Mitglieder, sonst `403 not_member`): offene Gildenräume dieser Gilde
+  auf dem Relay mit freiem Platz (`GuildRoomList`; laufende Runs mit `started: true`), älteste zuerst.
+  Fragt den Relay über `RELAY_INTERNAL_URL`/`RELAY_INTERNAL_KEY`; ist er nicht eingerichtet oder nicht
+  erreichbar, antwortet die Route `200` mit `relayAvailable: false` und leerer Liste (Fehler im Log
+  `relay_guild_rooms_failed`). Namen kommen aktuell aus der Datenbank.
 - `POST /runs` (Gilden-Run mit `endReason` und `remainingGold` zahlt in die Gildenkasse, P-032:
   Portal 100 %, sonst 50 % aufgerundet; Antwort zusätzlich `guildPayout`, `guildProgress`). Optionale
   `reportId` (UUID je Run): dieselbe ID erneut → `200` mit dem gespeicherten Ergebnis, keine zweite

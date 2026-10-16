@@ -8,6 +8,7 @@ import {
   PlayerAppearance,
   Uuid,
 } from "./common.ts";
+import { GameVersion, RoomCode } from "./lobby.ts";
 
 /** D-080 (TESTWERT). */
 export const MAX_GUILD_MEMBERS = 30;
@@ -28,6 +29,7 @@ export const MAX_GUILDS_PER_PLAYER = 5;
  * | `POST /guilds/:id/invite-code`          | -                           | 200 `RotateInviteCodeResponse` |
  * | `GET /guilds/:id/progress`              | -                           | 200 `GuildProgress`       |
  * | `PATCH /guilds/:id/progress`            | `PatchGuildProgressRequest` | 200 `GuildProgress`       |
+ * | `GET /guilds/:id/rooms`                 | -                           | 200 `GuildRoomList`       |
  *
  * Error codes (`ErrorResponse.error`): 400 `validation_error`, 403 `not_member` (caller is not a
  * member of `:id`, or the guild does not exist / is disbanded), 403 `forbidden_role`, 404
@@ -191,3 +193,49 @@ export const PublicGuild = z.object({
   bestRun: PublicGuildBestRun.nullable(),
 });
 export type PublicGuild = z.infer<typeof PublicGuild>;
+
+/**
+ * One open relay room of the guild (`GET /guilds/:id/rooms`), joined in the game with the relay
+ * message `join` and `code`. Only rooms with a free slot are listed.
+ */
+export const GuildRoom = z.object({
+  code: RoomCode,
+  /** Current player name of the host (falls back to the relay's name; null if neither is known). */
+  hostName: z.string().nullable(),
+  hostPlayerId: Uuid,
+  /** Players in the room including the host. */
+  playerCount: z.number().int().min(0),
+  maxPlayers: z.number().int(),
+  /**
+   * True while a run is in progress: the relay refuses `join` with `room_started` until the host
+   * ends the run. The game decides how to show such rooms.
+   */
+  started: z.boolean(),
+  /** Every member runs this game version; `join` with another version fails (`version_mismatch`). */
+  gameVersion: GameVersion,
+  /** Host first, then clients by peer id. */
+  players: z.array(
+    z.object({
+      playerId: Uuid,
+      name: z.string().nullable(),
+      host: z.boolean(),
+    })
+  ),
+  createdAt: IsoDateTime,
+  /** Lobby expiry; null while a run is in progress. */
+  expiresAt: IsoDateTime.nullable(),
+});
+export type GuildRoom = z.infer<typeof GuildRoom>;
+
+/**
+ * `GET /guilds/:id/rooms` (members only, otherwise 403 `not_member`): open relay rooms of mode
+ * `guild` for this guild, oldest first. Never fails because of the relay: when it is not
+ * configured or not reachable, the answer is 200 with `relayAvailable: false` and no rooms.
+ */
+export const GuildRoomList = z.object({
+  /** Server time of the answer, for showing `expiresAt` without trusting the device clock. */
+  time: IsoDateTime,
+  relayAvailable: z.boolean(),
+  rooms: z.array(GuildRoom),
+});
+export type GuildRoomList = z.infer<typeof GuildRoomList>;

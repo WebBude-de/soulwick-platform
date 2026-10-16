@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { RELAY_CLOSE_CODES } from "@soulwick/contracts";
+import { encodeRelayFrame, RELAY_CLOSE_CODES } from "@soulwick/contracts";
 import type { Logger } from "../src/logger.ts";
 import { Metrics } from "../src/metrics.ts";
 import { Relay } from "../src/relay.ts";
@@ -160,6 +160,46 @@ describe("diagnostics", () => {
     expect(r.metrics.maxFrameIn).toBe(510);
   });
 
+  it("connection_close logs the peak rates per second in both directions", async () => {
+    const r = loggedRelay();
+    const host = await r.player("Host");
+    await r.relay.handleText(
+      host.client,
+      JSON.stringify({ type: "create", mode: "quick" })
+    );
+    const code = host.t.of("created")[0]?.code;
+    const guest = await r.player("Guest");
+    await r.relay.handleText(
+      guest.client,
+      JSON.stringify({ type: "join", code })
+    );
+    const frame = encodeRelayFrame({
+      from: 0,
+      to: 1,
+      channel: 0,
+      mode: 0,
+      data: new Uint8Array(1000),
+    });
+    // One busy second (6 frames), then a quiet one (1 frame).
+    r.advance(1000);
+    for (let i = 0; i < 6; i += 1) {
+      r.relay.handleBinary(guest.client, frame);
+    }
+    r.advance(1000);
+    r.relay.handleBinary(guest.client, frame);
+    r.relay.handleClose(guest.client, 1000, "");
+    r.relay.handleClose(host.client, 1000, "");
+    const closes = r.lines.filter((l) => l.msg === "connection_close");
+    expect(closes[0]?.fields).toMatchObject({
+      peakMessagesInPerSecond: 6,
+      peakBytesInPerSecond: 6 * 1010,
+    });
+    expect(closes[1]?.fields).toMatchObject({
+      peakMessagesOutPerSecond: 6,
+      peakBytesOutPerSecond: 6 * 1010,
+    });
+  });
+
   it("shutdown is logged with the open rooms before room_closed goes out", async () => {
     const r = loggedRelay();
     const host = await r.player("Host");
@@ -188,12 +228,19 @@ describe("diagnostics", () => {
       guest.client,
       JSON.stringify({ type: "join", code })
     );
-    guest.t.buffered = 2 * 1_048_576;
+    guest.t.buffered = 8 * 1_048_576;
     const frame = new Uint8Array(10 + 4);
     frame[9] = 2;
     r.relay.handleBinary(host.client, frame);
+    expect(guest.client.closed).toBe(false);
+    r.advance(5000);
+    r.relay.handleBinary(host.client, frame);
     expect(guest.t.closed?.code).toBe(RELAY_CLOSE_CODES.slowConsumer);
     const slow = r.lines.find((l) => l.msg === "slow_consumer");
-    expect(slow?.fields).toMatchObject({ buffered: 2 * 1_048_576 });
+    expect(slow?.fields).toMatchObject({
+      buffered: 8 * 1_048_576,
+      overMs: 5000,
+      frameBytes: 14,
+    });
   });
 });

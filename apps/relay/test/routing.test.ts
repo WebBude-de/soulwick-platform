@@ -134,14 +134,15 @@ describe("limits", () => {
     expect(host.t.errors()).toEqual(["frame_too_large"]);
   });
 
-  it("rate-limits messages per second and closes after repeated violations", async () => {
+  it("rate-limits unreliable messages per second and closes after repeated violations", async () => {
     const { h, host, peers } = await room(1, {
       MAX_MESSAGES_PER_SECOND: "10",
       RATE_LIMIT_STRIKES: "3",
     });
+    const unreliable = { mode: 0 };
     // Bucket holds 2 s worth (20 messages).
     for (let i = 0; i < 25; i += 1) {
-      host.frame(2, [i]);
+      host.frame(2, [i], unreliable);
     }
     expect(peers[0]?.t.frames).toHaveLength(20);
     expect(host.t.errors()).toEqual(["rate_limited"]);
@@ -150,15 +151,15 @@ describe("limits", () => {
     // Refill: 1 s = 10 messages.
     h.advance(1000);
     for (let i = 0; i < 10; i += 1) {
-      host.frame(2, [i]);
+      host.frame(2, [i], unreliable);
     }
     expect(peers[0]?.t.frames).toHaveLength(30);
 
     // Keep flooding over several seconds: strike 2, then strike 3 closes.
-    host.frame(2, [0]);
+    host.frame(2, [0], unreliable);
     h.advance(1000);
     for (let i = 0; i < 30; i += 1) {
-      host.frame(2, [i]);
+      host.frame(2, [i], unreliable);
     }
     expect(host.client.closed).toBe(true);
     expect(host.t.closed?.code).toBe(RELAY_CLOSE_CODES.rateLimited);
@@ -171,15 +172,46 @@ describe("limits", () => {
       MAX_FRAME_BYTES: "1024",
     });
     for (let i = 0; i < 6; i += 1) {
-      host.frame(2, new Array(1014).fill(0));
+      host.frame(2, new Array(1014).fill(0), { mode: 1 });
     }
     // 4 KiB burst = 4 frames of 1024 bytes.
     expect(peers[0]?.t.frames).toHaveLength(4);
     expect(host.t.errors()).toEqual(["rate_limited"]);
+    expect(host.client.closed).toBe(false);
   });
 
-  it("backpressure: drops unreliable frames, closes a slow consumer on reliable ones", async () => {
-    const { h, host, peer } = await room(2, { MAX_BUFFERED_BYTES: "1024" });
+  it("closes at once (4008) instead of dropping a reliable frame over the limit", async () => {
+    const { h, host, peers } = await room(1, {
+      MAX_MESSAGES_PER_SECOND: "10",
+      RATE_LIMIT_STRIKES: "5",
+    });
+    const client = peers[0];
+    if (!client) {
+      throw new Error("no client");
+    }
+    // Unreliable traffic uses up the bucket (20) and is only dropped ...
+    for (let i = 0; i < 22; i += 1) {
+      client.frame(1, [i], { mode: 0 });
+    }
+    expect(host.t.frames).toHaveLength(20);
+    expect(client.client.closed).toBe(false);
+    expect(h.metrics.framesDropped.rate_limited).toBe(2);
+    // ... the next reliable one would be lost, so the connection ends cleanly.
+    client.frame(1, [99], { mode: 2 });
+    expect(host.t.frames).toHaveLength(20);
+    expect(client.t.errors()).toEqual(["rate_limited", "rate_limited"]);
+    expect(client.t.closed?.code).toBe(RELAY_CLOSE_CODES.rateLimited);
+    expect(host.t.of("peer_left")[0]).toMatchObject({
+      peerId: 2,
+      reason: "disconnected",
+    });
+  });
+
+  it("backpressure: drops unreliable frames, keeps reliable ones queued during the grace time", async () => {
+    const { h, host, peer } = await room(2, {
+      MAX_BUFFERED_BYTES: "1024",
+      SLOW_CONSUMER_GRACE_SECONDS: "5",
+    });
     const slow = peer(0);
     const fine = peer(1);
     slow.t.buffered = 4096;
@@ -189,13 +221,72 @@ describe("limits", () => {
     expect(slow.client.closed).toBe(false);
     expect(h.metrics.framesDropped.backpressure).toBe(1);
 
+    // Reliable frames are never dropped while the receiver may still catch up.
     host.frame(0, [2], { mode: 2 });
+    h.advance(4999);
+    host.frame(0, [3], { mode: 2 });
+    expect(decoded(slow.t.frames).map((f) => f?.data)).toEqual([[2], [3]]);
+    expect(slow.client.closed).toBe(false);
+
+    // Over the limit for the whole grace time: closed as slow consumer.
+    h.advance(1);
+    host.frame(0, [4], { mode: 2 });
     expect(slow.t.closed?.code).toBe(RELAY_CLOSE_CODES.slowConsumer);
-    expect(fine.t.frames).toHaveLength(2);
+    expect(slow.t.frames).toHaveLength(2);
+    expect(fine.t.frames).toHaveLength(4);
+    expect(h.metrics.slowConsumersClosed).toBe(1);
     expect(host.t.of("peer_left")[0]).toMatchObject({
       peerId: 2,
       reason: "disconnected",
     });
+  });
+
+  it("backpressure: the grace time restarts once the buffer drained", async () => {
+    const { h, host, peer } = await room(1, {
+      MAX_BUFFERED_BYTES: "1024",
+      SLOW_CONSUMER_GRACE_SECONDS: "5",
+    });
+    const slow = peer(0);
+    slow.t.buffered = 4096;
+    host.frame(2, [1], { mode: 2 });
+    h.advance(4000);
+    slow.t.buffered = 0;
+    host.frame(2, [2], { mode: 0 });
+    slow.t.buffered = 4096;
+    h.advance(2000);
+    host.frame(2, [3], { mode: 2 });
+    h.advance(4000);
+    host.frame(2, [4], { mode: 2 });
+    expect(slow.client.closed).toBe(false);
+    expect(slow.t.frames).toHaveLength(4);
+  });
+
+  it("backpressure: the sweep closes a receiver that stays over the limit without traffic", async () => {
+    const { h, host, peer } = await room(1, {
+      MAX_BUFFERED_BYTES: "1024",
+      SLOW_CONSUMER_GRACE_SECONDS: "5",
+    });
+    const slow = peer(0);
+    slow.t.buffered = 4096;
+    host.frame(2, [1], { mode: 2 });
+    h.advance(3000);
+    h.relay.sweep();
+    expect(slow.client.closed).toBe(false);
+    h.advance(2000);
+    h.relay.sweep();
+    expect(slow.t.closed?.code).toBe(RELAY_CLOSE_CODES.slowConsumer);
+  });
+
+  it("backpressure: grace 0 closes on the first frame over the limit (old behaviour)", async () => {
+    const { host, peer } = await room(1, {
+      MAX_BUFFERED_BYTES: "1024",
+      SLOW_CONSUMER_GRACE_SECONDS: "0",
+    });
+    const slow = peer(0);
+    slow.t.buffered = 4096;
+    host.frame(2, [1], { mode: 2 });
+    expect(slow.t.closed?.code).toBe(RELAY_CLOSE_CODES.slowConsumer);
+    expect(slow.t.frames).toHaveLength(0);
   });
 });
 
