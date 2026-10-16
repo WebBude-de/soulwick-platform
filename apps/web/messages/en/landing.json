@@ -5,7 +5,8 @@
     ["Biomes", "#biome"],
     ["Village", "#dorf"],
     ["Co-op & Guilds", "#koop"],
-    ["Leaderboards", "#ranglisten"]
+    ["Leaderboards", "#ranglisten"],
+    ["Open source", "open-source"]
   ],
   "navCta": "Leaderboards",
   "navCtaTeaser": "Discover the game",

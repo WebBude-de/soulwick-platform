@@ -270,6 +270,7 @@ je Umgebung ein eigener.
 ```dotenv
 WEB_URL=https://dev.playsoulwick.com
 ADMIN_URL=https://admin-dev.playsoulwick.com
+GAME_URL=https://game-dev.playsoulwick.com
 API_PUBLIC_URL=https://api-dev.playsoulwick.com
 RELAY_PUBLIC_URL=wss://play-dev.playsoulwick.com
 API_INTERNAL_URL=http://soulwick-api-dev:8787
@@ -288,6 +289,7 @@ SUPPORT_EMAIL=
 ```dotenv
 WEB_URL=https://playsoulwick.com
 ADMIN_URL=https://admin.playsoulwick.com
+GAME_URL=https://game.playsoulwick.com
 API_PUBLIC_URL=https://api.playsoulwick.com
 RELAY_PUBLIC_URL=wss://play.playsoulwick.com
 API_INTERNAL_URL=http://soulwick-api-prod:8787
@@ -338,7 +340,7 @@ GOOGLE_PLAY_CLIENT_ID=
 GOOGLE_PLAY_CLIENT_SECRET=
 EXTERNAL_AUTH_TIMEOUT_MS=8000
 
-CORS_ORIGINS=${{environment.WEB_URL}},${{environment.ADMIN_URL}}
+CORS_ORIGINS=${{environment.WEB_URL}},${{environment.ADMIN_URL}},${{environment.GAME_URL}}
 TRUST_PROXY=true
 # Rate-Limits (TESTWERTE)
 RATE_LIMIT_PER_MINUTE=120
@@ -787,13 +789,13 @@ für Produktion mit `-Env production`.
 
 Das Spiel läuft zusätzlich als Browser-Version auf eigener Subdomain: `https://game-dev.playsoulwick.com`
 (development) bzw. `https://game.playsoulwick.com` (production). Aufbau, Deploy und Installierbarkeit
-beschreibt `soulwick/docs/WEB_BUILD.md` im Spiel-Repo. Die Plattform braucht dafür nur zwei Variablen:
+beschreibt `soulwick/docs/WEB_BUILD.md` im Spiel-Repo. Die Adresse steht zentral als `GAME_URL` in den
+Variablen der Umgebung (`.env.dev` / `.env.prod`); die Services lesen sie von dort:
 
-- **`soulwick-web` → Environment:** `GAME_URL=https://game-dev.playsoulwick.com` (development) bzw.
-  `GAME_URL=https://game.playsoulwick.com` (production, erst bei Freischaltung; leer = Knöpfe
-  ausgeblendet). Laufzeit-Variable: Die Website zeigt dann „Im Browser spielen“ und „Web-App
+- **`soulwick-web` → Environment:** `GAME_URL=${{environment.GAME_URL}}` (development); production
+  bleibt `GAME_URL=` leer bis zur Freischaltung, dann ebenfalls `${{environment.GAME_URL}}` (leer =
+  Knöpfe ausgeblendet). Laufzeit-Variable: Die Website zeigt dann „Im Browser spielen“ und „Web-App
   installieren“ (`GAME_URL?install`) in Hero und Handy-Menü; nach dem Ändern neu deployen.
-- **`soulwick-api` → Environment:** `CORS_ORIGINS` um die Spiel-Adresse ergänzen, weil das Spiel im
-  Browser die API direkt aufruft, z. B. development
-  `CORS_ORIGINS=${{environment.WEB_URL}},${{environment.ADMIN_URL}},https://game-dev.playsoulwick.com`,
-  production entsprechend mit `https://game.playsoulwick.com`.
+- **`soulwick-api` → Environment:** `CORS_ORIGINS=${{environment.WEB_URL}},${{environment.ADMIN_URL}},${{environment.GAME_URL}}`
+  (schon in `apps/api/.env.dev` / `.env.prod`), weil das Spiel im Browser die API direkt aufruft.
+  Ohne den Eintrag geht im Browser nur Einzelspieler. Gilt in production auch vor der Freischaltung.

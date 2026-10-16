@@ -25,6 +25,7 @@ const ROUTES: {
     priority: 0.8,
     live: true,
   },
+  { path: "/open-source", changeFrequency: "monthly", priority: 0.5 },
   { path: "/privacy", changeFrequency: "monthly", priority: 0.3 },
   { path: "/imprint", changeFrequency: "monthly", priority: 0.3 },
   { path: "/delete-account", changeFrequency: "yearly", priority: 0.3 },

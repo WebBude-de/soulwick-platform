@@ -65,11 +65,17 @@ describe("sitemap", () => {
     expect(urls).toContain("/delete-account");
   });
 
-  it("drops the leaderboards in teaser mode but keeps legal and deletion pages", () => {
+  it("drops the leaderboards in teaser mode but keeps the other pages", () => {
     process.env.LIVE_FEATURES = "false";
     const urls = sitemap().map((entry) => new URL(entry.url).pathname);
     expect(urls).not.toContain("/leaderboards");
-    expect(urls).toEqual(["/", "/privacy", "/imprint", "/delete-account"]);
+    expect(urls).toEqual([
+      "/",
+      "/open-source",
+      "/privacy",
+      "/imprint",
+      "/delete-account",
+    ]);
   });
 });
 
@@ -78,6 +84,7 @@ describe("navigation links", () => {
     ["Game", "#spiel"],
     ["Co-op & Guilds", "#koop"],
     ["Leaderboards", "#ranglisten"],
+    ["Open source", "open-source"],
   ];
 
   it("keeps every link while live", () => {
@@ -88,6 +95,7 @@ describe("navigation links", () => {
     expect(visibleNavLinks(links, false)).toEqual([
       ["Game", "#spiel"],
       ["Co-op & Guilds", "#koop"],
+      ["Open source", "open-source"],
     ]);
   });
 });

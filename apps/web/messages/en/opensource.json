@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "title": "Open source",
+    "description": "Soulwick is open source: the game, its online part and this website are all on GitHub. Take a look, grab new versions or join in."
+  },
+  "title": "Soulwick is open source",
+  "lead": "Everything you play is out in the open on GitHub: every room, every enemy, every tune. See how Soulwick is made, grab new versions or lend a hand.",
+  "repos": {
+    "title": "Two places on GitHub",
+    "game": {
+      "title": "The game",
+      "text": "Dungeon, village, weapons, bosses and music. Every version is here to download, too.",
+      "link": "Game on GitHub"
+    },
+    "platform": {
+      "title": "Online & website",
+      "text": "Everything that holds co-op rooms, guilds and leaderboards together, plus this website.",
+      "link": "Online part on GitHub"
+    }
+  },
+  "join": {
+    "title": "Join in",
+    "download": {
+      "title": "Download the game",
+      "text": "Every new version shows up under Releases: unzip and play.",
+      "link": "Go to releases"
+    },
+    "bugs": {
+      "title": "Found a bug?",
+      "text": "Tell us on GitHub: what happened and how you got there.",
+      "link": "Report a bug"
+    },
+    "build": {
+      "title": "Build with us",
+      "text": "Got an idea for rooms, enemies or translations? Have a look at the project and send us your suggestion.",
+      "link": "View the project"
+    }
+  }
+}

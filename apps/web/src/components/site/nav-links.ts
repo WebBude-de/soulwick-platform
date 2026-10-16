@@ -1,4 +1,7 @@
-/** `[label, hash]` pairs from `landing.navLinks`. */
+/**
+ * `[label, target]` pairs from `landing.navLinks`, rendered as `/${target}`: a landing anchor
+ * (`#spiel`) or a page of its own (`open-source`).
+ */
 export type NavLink = [label: string, hash: string];
 
 /** Landing anchors that only exist while the online parts are live (see `liveFeaturesEnabled`). */

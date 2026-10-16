@@ -4,17 +4,19 @@ import deGuilds from "../../messages/de/guilds.json";
 import deLanding from "../../messages/de/landing.json";
 import deLeaderboards from "../../messages/de/leaderboards.json";
 import deLegal from "../../messages/de/legal.json";
+import deOpenSource from "../../messages/de/opensource.json";
 import enCommon from "../../messages/en/common.json";
 import enDeletion from "../../messages/en/deletion.json";
 import enGuilds from "../../messages/en/guilds.json";
 import enLanding from "../../messages/en/landing.json";
 import enLeaderboards from "../../messages/en/leaderboards.json";
 import enLegal from "../../messages/en/legal.json";
+import enOpenSource from "../../messages/en/opensource.json";
 import type { Locale } from "./locale";
 
 /**
  * One namespace per message file: `messages/<locale>/<namespace>.json`
- * (common, landing, legal, leaderboards, guilds, deletion).
+ * (common, landing, legal, leaderboards, guilds, deletion, opensource).
  * Components address keys as `useTranslations("landing")` → `t("hero.title")`.
  */
 const de = {
@@ -24,6 +26,7 @@ const de = {
   leaderboards: deLeaderboards,
   guilds: deGuilds,
   deletion: deDeletion,
+  opensource: deOpenSource,
 };
 
 const en = {
@@ -33,6 +36,7 @@ const en = {
   leaderboards: enLeaderboards,
   guilds: enGuilds,
   deletion: enDeletion,
+  opensource: enOpenSource,
 };
 
 export type Messages = typeof de;

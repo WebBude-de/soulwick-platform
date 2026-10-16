@@ -5,7 +5,8 @@
     ["Biome", "#biome"],
     ["Dorf", "#dorf"],
     ["Koop & Gilden", "#koop"],
-    ["Ranglisten", "#ranglisten"]
+    ["Ranglisten", "#ranglisten"],
+    ["Open Source", "open-source"]
   ],
   "navCta": "Ranglisten",
   "navCtaTeaser": "Spiel entdecken",
