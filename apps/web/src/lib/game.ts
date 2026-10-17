@@ -1,4 +1,5 @@
 import "server-only";
+import { liveFeaturesEnabled } from "./features";
 
 /** Links to the browser version of the game; both open in the same tab. */
 export interface GameLinks {
@@ -42,4 +43,14 @@ export function parseGameUrl(value: string | undefined): GameLinks | null {
  */
 export function gameLinks(): GameLinks | null {
   return parseGameUrl(process.env.GAME_URL);
+}
+
+/**
+ * Play and install links as the site shows them: only while the live parts are on
+ * (`LIVE_FEATURES`) and `GAME_URL` is set. Production runs with `LIVE_FEATURES=false` before the
+ * release, so every play or install action turns into the "playable at release" state, whatever
+ * `GAME_URL` says. Read per request like both variables.
+ */
+export function playLinks(): GameLinks | null {
+  return liveFeaturesEnabled() ? gameLinks() : null;
 }

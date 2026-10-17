@@ -9,7 +9,8 @@
  * Frame data comes from `art/index.json` and the `*.json` files next to the sprites; files
  * without metadata fall back to the `_<n>f` suffix convention of the HANDOUT. Website sprites in
  * `public/brand/sprites/` take precedence over the game copies (same ids) and web-only sprites
- * (chips, divider, tiles, cursor) are added with inferred frames.
+ * (chips, divider, tiles, cursor) are added with inferred frames. `art/fonts` and the large store
+ * graphics in `art/store` (capsules, icons, feature graphics) are never copied.
  */
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -29,6 +30,8 @@ const brandSpritesDir = path.join(webRoot, "public", "brand", "sprites");
 const manifestPath = path.join(webRoot, "src", "lib", "sprite-manifest.ts");
 const force = process.argv.includes("--force");
 
+/** Folders under `art/` that are not sprites: the pixel font and the store graphics. */
+const SKIPPED_DIRS = new Set(["fonts", "store"]);
 const PNG = /\.png$/i;
 const JSON_EXT = /\.json$/;
 const ART_PREFIX = /^art\//;
@@ -90,7 +93,7 @@ async function walk(
     entries.map(async (entry) => {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) {
-        if (entry.name !== "fonts") {
+        if (!SKIPPED_DIRS.has(entry.name)) {
           await walk(full, matches, acc);
         }
       } else if (matches(entry.name)) {

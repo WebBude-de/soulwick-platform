@@ -26,7 +26,6 @@
   padding: 0;
   line-height: 0;
   pointer-events: auto;
-  cursor: pointer;
   background: none;
   border: 0;
 }
@@ -93,7 +92,8 @@
 }
 
 /* ---------- Cat on the scrollbar thumb ---------- */
-/* Fixed boxes end at the scrollbar edge, so right: 0 puts the cat flush against the thumb. */
+/* Fixed boxes end at the scrollbar edge, so right: 0 puts the cat flush against the thumb. It never
+   hangs higher than the header's lower edge, so it cannot cover the buttons at the top right. */
 .scroll-cat {
   position: fixed;
   top: 0;
@@ -101,7 +101,7 @@
   z-index: 60;
   display: none;
   pointer-events: none;
-  transform: translateY(calc(var(--thumb-top, 0px) + 6px));
+  transform: translateY(max(calc(var(--thumb-top, 0px) + 6px), 4.5rem));
 }
 .scroll-cat[data-show] {
   display: block;
@@ -211,7 +211,6 @@
   padding: 0;
   line-height: 0;
   pointer-events: auto;
-  cursor: pointer;
   background: none;
   border: 0;
 }
@@ -367,28 +366,9 @@ html[data-shadow-realm] body::after {
   }
 }
 
-/* Biome cards: the boss portrait shakes, the torch flares. */
-.biome-card:hover .biome-plaque .sprite {
-  animation: fun-shake 0.4s steps(4) 1;
-}
-@keyframes fun-shake {
-  25% {
-    transform: translateX(-2px) rotate(-3deg);
-  }
-  50% {
-    transform: translateX(2px) rotate(3deg);
-  }
-  75% {
-    transform: translateX(-1px);
-  }
-}
-.biome-card:hover .biome-torch .sprite {
+/* Biome windows: the torch burns faster while the boss attacks. */
+.biome:hover .biome-torch .sprite {
   animation-duration: calc(var(--dur) / 2);
-}
-.biome-card:hover .biome-torch::before {
-  width: 220px;
-  height: 220px;
-  animation-duration: 0.5s;
 }
 
 /* Leaderboard rows: coins spin, the trophy turns. */
@@ -409,11 +389,8 @@ html[data-shadow-realm] body::after {
   }
 }
 
-/* Co-op: the hovered player jumps, the ones to the right turn to look. */
-.coop-player:hover > span {
-  animation: fun-jump 0.45s ease-out;
-}
-.coop-player:hover ~ .coop-player > span {
+/* Co-op lobby: the hovered friend jumps, the ones to the right turn to look. */
+.coop-friend:hover ~ .coop-friend .figure {
   transform: scaleX(-1);
 }
 @keyframes fun-jump {
@@ -423,15 +400,6 @@ html[data-shadow-realm] body::after {
   70% {
     transform: translateY(0) scaleY(0.9);
   }
-}
-
-/* Hero: the soul flame grows while the headline is hovered. */
-.hero-flame {
-  transform-origin: 50% 100%;
-  transition: transform 200ms steps(3);
-}
-.hero:has(#hero-title:hover) .hero-flame {
-  transform: scale(1.35);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -446,14 +414,11 @@ html[data-shadow-realm] body::after {
   .chicken[data-panic] .chicken-body,
   .btn-primary:hover::after,
   .pixel-button-primary:hover::after,
-  .biome-card:hover .biome-plaque .sprite,
   .lb-table tr:hover .lb-trophy,
-  .coop-player:hover > span,
   html[data-shadow-realm] body::after {
     animation: none;
   }
-  .nav-link::before,
-  .hero-flame {
+  .nav-link::before {
     transition: none;
   }
 }

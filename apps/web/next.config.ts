@@ -9,10 +9,19 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: monorepoRoot,
-  // Optional legal fallback files are read at runtime (src/lib/legal-files.ts), not imported.
+  // Content read at runtime, not imported: optional legal fallback files
+  // (src/lib/legal-files.ts) and the news posts (src/lib/news.ts) for the landing page, the
+  // sitemap and the background refresh of the prebuilt news pages. Keys match every route whose
+  // path contains them (`/` = all routes, the pages live under the hidden `[locale]` segment).
   outputFileTracingIncludes: {
     "/imprint": ["./content/legal/*.html"],
     "/privacy": ["./content/legal/*.html"],
+    "/": ["./content/news/*/*.md"],
+    "/sitemap.xml": ["./content/news/*/*.md"],
+  },
+  experimental: {
+    // `app/global-not-found.tsx`: 404 for URLs outside the `[locale]` segment (no root layout there).
+    globalNotFound: true,
   },
   turbopack: { root: monorepoRoot },
   transpilePackages: ["@soulwick/contracts"],

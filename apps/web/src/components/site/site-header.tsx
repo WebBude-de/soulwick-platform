@@ -3,28 +3,36 @@ import { LanguageSwitch } from "@/components/ui/language-switch";
 import { MusicControl } from "@/components/ui/music-control";
 import { MusicToggle } from "@/components/ui/music-toggle";
 import { PixelButton } from "@/components/ui/pixel-button";
+import { PixelIcon } from "@/components/ui/pixel-icon";
 import { Sprite } from "@/components/ui/sprite";
 import { VolumeSlider } from "@/components/ui/volume-slider";
 import { liveFeaturesEnabled } from "@/lib/features";
-import { gameLinks } from "@/lib/game";
+import { playLinks } from "@/lib/game";
+import { steamStoreUrl } from "@/lib/stores";
 import { HomeLink } from "./home-link";
 import { MobileMenu } from "./mobile-menu";
-import { type NavLink, visibleNavLinks } from "./nav-links";
+import type { NavLink } from "./nav-links";
 import { PlayButtons } from "./play-buttons";
 
 /**
- * Sticky navbar (handoff §3, row 0): logo, anchor links, music with volume, language segment,
- * CTA. Below `xl` the links, language and music move into a burger menu so the bar stays one
- * short row on phones and tablets. In teaser mode (`LIVE_FEATURES=false`) the leaderboards link
- * is dropped and the CTA leads into the game section. While the browser version is available
- * (`GAME_URL`), the burger menu opens with its play and install buttons.
+ * Sticky navbar: logo, links, music with volume, language segment, CTA. Below `xl` the links,
+ * language and music move into a burger menu so the bar stays one short row on phones and
+ * tablets. From `xl` the bar is wider than the page content (`container-header`) so the German
+ * links, the controls and the longest CTA fit one row; the controls never shrink, and should the
+ * links ever run out of room they wrap to a second row instead of sliding under the controls. The CTA is "Play" while playing is live (`playLinks`: `LIVE_FEATURES` and
+ * `GAME_URL`), else the leaderboards (`LIVE_FEATURES`), else the Steam wishlist once
+ * `content/stores.json` has the store page, else the news. Never a play link with the live
+ * functions off; with them on the burger menu opens with its play and install buttons.
  */
 export function SiteHeader() {
   const t = useTranslations("landing");
   const tc = useTranslations("common");
   const live = liveFeaturesEnabled();
-  const links = visibleNavLinks(t.raw("navLinks") as NavLink[], live);
-  const game = gameLinks();
+  const links = t.raw("navLinks") as NavLink[];
+  /** Pages that only fit the burger menu and the footer, not the desktop row. */
+  const menuLinks = [...links, ...(t.raw("navExtra") as NavLink[])];
+  const game = playLinks();
+  const steam = steamStoreUrl();
 
   return (
     <header className="sticky top-0 z-40 border-line border-b-2 bg-[rgb(21_19_31/0.94)] backdrop-blur-sm">
@@ -34,7 +42,7 @@ export function SiteHeader() {
       >
         {tc("skipToContent")}
       </a>
-      <div className="container-site flex min-h-16 items-center gap-3 py-2 xl:grid xl:grid-cols-[auto_1fr_auto] xl:gap-x-6">
+      <div className="container-header flex min-h-16 items-center gap-3 py-2 xl:gap-x-6">
         <HomeLink
           aria-label={tc("siteName")}
           className="flex items-center py-1"
@@ -51,13 +59,13 @@ export function SiteHeader() {
 
         <nav
           aria-label={t("navLabel")}
-          className="hidden min-w-0 xl:flex xl:justify-start"
+          className="hidden min-w-0 flex-1 xl:block"
         >
-          <ul className="flex gap-1 whitespace-nowrap">
+          <ul className="nav-row">
             {links.map(([label, hash]) => (
               <li key={hash}>
                 <a
-                  className="nav-link inline-flex min-h-10 items-center px-2.5 font-medium text-[15px] text-soft transition-colors hover:text-gold"
+                  className="nav-link inline-flex min-h-10 items-center whitespace-nowrap px-2 font-medium text-[15px] text-soft transition-colors hover:text-gold 2xl:px-2.5"
                   href={`/${hash}`}
                 >
                   {label}
@@ -67,24 +75,44 @@ export function SiteHeader() {
           </ul>
         </nav>
 
-        <div className="ml-auto flex items-center justify-end gap-2 sm:gap-3">
+        <div className="ml-auto flex shrink-0 items-center justify-end gap-2 sm:gap-3">
           <span className="hidden xl:block">
             <MusicControl />
           </span>
           <LanguageSwitch className="hidden xl:block" />
-          {live ? (
+          {game ? (
+            <a className="btn btn-primary btn-sm" href={game.play}>
+              <span className="header-cta-icon">
+                <PixelIcon name="play" />
+              </span>
+              {t("navCtaPlay")}
+            </a>
+          ) : live ? (
             <PixelButton href="/leaderboards" size="sm" variant="primary">
               <span className="header-cta-icon">
                 <Sprite id="trophy_icon" scale={1} />
               </span>
               {t("navCta")}
             </PixelButton>
-          ) : (
-            <a className="btn btn-primary btn-sm" href="/#spiel">
+          ) : steam ? (
+            <a
+              className="btn btn-primary btn-sm"
+              href={steam}
+              rel="noopener"
+              target="_blank"
+            >
               <span className="header-cta-icon">
-                <Sprite id="icon_sword" scale={1} />
+                <Sprite id="heart_full" scale={1} />
               </span>
-              {t("navCtaTeaser")}
+              {t("navCtaWishlist")}
+              <span className="sr-only"> {tc("footer.newTab")}</span>
+            </a>
+          ) : (
+            <a className="btn btn-primary btn-sm" href="/news">
+              <span className="header-cta-icon">
+                <Sprite id="torch_4f" scale={1} still />
+              </span>
+              {t("navCtaNews")}
             </a>
           )}
           <MobileMenu label={tc("menu.label")}>
@@ -98,7 +126,7 @@ export function SiteHeader() {
             ) : null}
             <nav aria-label={t("navLabel")}>
               <ul className="menu-links">
-                {links.map(([label, hash]) => (
+                {menuLinks.map(([label, hash]) => (
                   <li key={hash}>
                     <a className="menu-link" href={`/${hash}`}>
                       {label}

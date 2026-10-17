@@ -19,6 +19,11 @@ COPY packages/db/package.json packages/db/
 RUN bun install --frozen-lockfile --ignore-scripts --filter @soulwick/web
 COPY packages/contracts packages/contracts
 COPY apps/web apps/web
+# The news pages are built ahead of time and show the live switch in the header. Build them in
+# the safe pre-release state (no links to pages that may be off); the running server rebuilds
+# them in the background with its own LIVE_FEATURES and GAME_URL within five minutes.
+ARG LIVE_FEATURES=false
+ENV LIVE_FEATURES=$LIVE_FEATURES
 RUN cd apps/web && node ../../node_modules/next/dist/bin/next build
 
 FROM node:24-slim AS runtime

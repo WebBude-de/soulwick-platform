@@ -1,9 +1,10 @@
 /**
  * Converts the delivered website graphics in `public/brand/**` (PNG, see the README there) to the
- * WebP files the site reads. Pixel art stays lossless; `keyart` and `og_image` use quality 90.
+ * WebP files the site reads. Pixel art stays lossless; `keyart` and the share images
+ * (`og_image`, `og_image_en`, `og_image_de`) use quality 90.
  * The PNG originals are deleted after a successful conversion so they do not ship with the build
- * (`--keep-png` keeps them). `cursor.png` and `favicon-32.png` stay PNG (CSS cursors and
- * favicons need it).
+ * (`--keep-png` keeps them). `cursor/**` (the game's cursors, `sync-cursor.ts`), `cursor.png`
+ * and `favicon-32.png` stay PNG (CSS cursors and favicons need it).
  *
  *   bun apps/web/scripts/sync-brand.ts
  *   bun apps/web/scripts/sync-brand.ts --keep-png
@@ -18,8 +19,15 @@ const brandDir = path.resolve(here, "..", "public", "brand");
 const keepPng = process.argv.includes("--keep-png");
 
 const PNG = /\.png$/i;
-const LOSSY = new Set(["keyart.png", "og_image.png"]);
+const LOSSY = new Set([
+  "keyart.png",
+  "og_image.png",
+  "og_image_en.png",
+  "og_image_de.png",
+]);
 const SKIP = new Set(["cursor.png", "favicon-32.png"]);
+/** Folders whose PNGs are final (CSS cursors). */
+const SKIP_DIRS = new Set(["cursor"]);
 
 async function walk(dir: string, acc: string[] = []): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -27,7 +35,9 @@ async function walk(dir: string, acc: string[] = []): Promise<string[]> {
     entries.map(async (entry) => {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) {
-        await walk(full, acc);
+        if (!SKIP_DIRS.has(entry.name)) {
+          await walk(full, acc);
+        }
       } else if (PNG.test(entry.name)) {
         acc.push(full);
       }

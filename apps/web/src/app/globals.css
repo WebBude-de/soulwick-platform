@@ -53,6 +53,21 @@
   --color-grass: #5a8f46;
   --color-path: #a8875a;
 
+  /* Light (D-174): the warm light the player brings into the dark. Glows, light pools, Wick. */
+  --color-candle: #ffb54a;
+  --color-candle-light: #ffe2a8;
+  --color-candle-deep: #e07a2e;
+  --color-night: #0c0a14;
+
+  /* Day (D-174): the village is the one bright, cozy place on the page. */
+  --color-day-sky: #bfe4f2;
+  --color-day-sky-deep: #8fcbe6;
+  --color-day-meadow: #8fd16a;
+  --color-day-meadow-deep: #5aa845;
+  --color-day-paper: #fff8e6;
+  --color-day-wood: #8a5a34;
+  --color-day-ink-soft: #3b3650;
+
   /* Aliases kept for existing code (same values as above). */
   --color-void: #15131f;
   --color-page: #1e1b2c;
@@ -105,24 +120,65 @@
       scroll-behavior: auto;
     }
   }
-  /* Optional pixel cursor on desktop; links and buttons keep the hand. */
+  /*
+   * The game's own mouse cursor (`public/brand/cursor/`, `scripts/sync-cursor.ts`): the pixel
+   * arrow from the menus everywhere, on links and buttons too (no rounded system hand), hotspot
+   * at the tip like in the game. One file per screen density with whole pixels, never a blurry
+   * upscale; browsers without `image-set()` for cursors keep the 1× game file. Text fields keep
+   * the text caret. The dungeon on the landing page shows the in-game crosshair (`landing.css`).
+   */
   @media (pointer: fine) {
-    html {
-      cursor:
-        url("/brand/sprites/cursor.png") 0 0,
-        auto;
+    :root {
+      --cursor-arrow: url("/brand/cursor/pointer.png") 1 1, auto;
     }
+    @supports (
+        cursor:
+          image-set(url("/brand/cursor/pointer.png") 1x) 1 1,
+          auto
+      ) {
+      :root {
+        --cursor-arrow:
+          image-set(
+            url("/brand/cursor/pointer.png") 1x,
+            url("/brand/cursor/pointer@1.5x.png") 1.5x,
+            url("/brand/cursor/pointer@2x.png") 2x,
+            url("/brand/cursor/pointer@3x.png") 3x
+          )
+          1 1,
+          auto;
+      }
+    }
+    html,
     a,
     button,
     [role="button"],
-    summary {
-      cursor: pointer;
+    summary,
+    label,
+    select,
+    input[type="range"],
+    input[type="checkbox"],
+    input[type="radio"],
+    input[type="submit"],
+    input[type="button"] {
+      cursor: var(--cursor-arrow);
+    }
+    input:not(
+        [type="range"],
+        [type="checkbox"],
+        [type="radio"],
+        [type="submit"],
+        [type="button"]
+      ),
+    textarea {
+      cursor: text;
     }
   }
   body {
     min-height: 100vh;
     font-family: var(--font-body);
     font-size: 1rem;
+    /* Pixelify Sans draws "fi"/"fl" as one glyph that reads like an "A". */
+    font-variant-ligatures: no-common-ligatures;
     -webkit-font-smoothing: antialiased;
     line-height: 1.55;
     color: var(--color-text);
@@ -528,6 +584,15 @@
       0 0 14px rgb(242 207 74 / 0.45);
   }
 
+  /* Availability chips: lit (at release) glows warm, later stays quiet. */
+  .chip-lit {
+    border-color: var(--color-candle-deep);
+  }
+  .chip-lit .chip-status {
+    color: var(--color-candle-light);
+    border-left-color: var(--color-candle-deep);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .sprite {
       animation-play-state: paused !important;
@@ -556,6 +621,22 @@
   @media (min-width: 80rem) {
     padding-inline: 0;
   }
+}
+
+/* Header row: a little wider than the page content, so links and controls share one row. */
+@utility container-header {
+  width: 100%;
+  max-width: 80rem;
+  padding-inline: 1.25rem;
+  margin-inline: auto;
+  @media (min-width: 40rem) {
+    padding-inline: 2rem;
+  }
+}
+.nav-row {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 2px;
 }
 
 /* Segmented control (header language switch, leaderboard period). Global, because the header
@@ -755,6 +836,21 @@
   border-left-color: #2f944c;
 }
 
+/* Social channels (`content/social.json`): chips with a pixel icon, big enough for fingers. */
+.social-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.social-chip {
+  min-height: 44px;
+  padding: 0 14px;
+  font-size: 15px;
+}
+.social-chip .pixel-icon {
+  color: var(--color-gold);
+}
+
 /* Desktop speaker with its volume popover. */
 .music-ctl {
   position: relative;
@@ -795,7 +891,6 @@
   height: 44px;
   margin: 0;
   appearance: none;
-  cursor: pointer;
   background: transparent;
 }
 .vol-range:focus-visible {

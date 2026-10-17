@@ -1,0 +1,216 @@
+/*
+ * Wick, the mascot (D-175), a small living candle: placeholder animation (squash, flicker,
+ * blink), its glow and the clickable Wick with a speech bubble. Everything stops under prefers-reduced-motion.
+ */
+.wick {
+  --s: var(--px);
+  display: inline-block;
+  flex: none;
+  width: calc(32px * var(--s));
+  height: calc(32px * var(--s));
+  overflow: visible;
+  vertical-align: bottom;
+  image-rendering: pixelated;
+}
+.wick-bob {
+  transform-origin: 16px 31px;
+  animation: wick-breathe 1.4s steps(2) infinite;
+}
+.wick-flame {
+  filter: drop-shadow(0 0 1.5px rgb(255 181 74 / 0.95));
+  transform-origin: 16px 15px;
+  animation: wick-flicker 0.75s steps(3) infinite;
+}
+.wick-eyes {
+  transform-origin: 16px 20px;
+  animation: wick-blink 4.6s steps(1) infinite;
+}
+@keyframes wick-breathe {
+  50% {
+    transform: scale(1.06, 0.94);
+  }
+}
+@keyframes wick-flicker {
+  33% {
+    transform: scale(0.9, 1.14) skewX(-4deg);
+  }
+  66% {
+    transform: scale(1.08, 0.92) skewX(3deg);
+  }
+}
+@keyframes wick-blink {
+  0%,
+  93%,
+  100% {
+    transform: none;
+  }
+  95% {
+    transform: scaleY(0.25);
+  }
+}
+
+/* Warm light around Wick: a soft radial pool that breathes with the flame. */
+.wick-glow {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+.wick-glow::before {
+  position: absolute;
+  top: 34%;
+  left: 50%;
+  width: 260%;
+  aspect-ratio: 1;
+  pointer-events: none;
+  content: "";
+  background: radial-gradient(
+    circle,
+    rgb(255 181 74 / 0.5) 0%,
+    rgb(255 181 74 / 0.16) 38%,
+    transparent 68%
+  );
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: wick-pulse 2.4s ease-in-out infinite alternate;
+}
+.wick-glow > * {
+  position: relative;
+}
+@keyframes wick-pulse {
+  from {
+    opacity: 0.75;
+    transform: translate(-50%, -50%) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.04);
+  }
+}
+
+/* Sparks rising from the flame (hero and "Meet Wick"). */
+.wick-sparks {
+  position: absolute;
+  top: 34%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.wick-sparks > i {
+  position: absolute;
+  width: calc(1px * var(--s, 2));
+  height: calc(1px * var(--s, 2));
+  background: var(--color-candle-light);
+  box-shadow: 0 0 4px var(--color-candle);
+  opacity: 0;
+  animation: wick-spark 2.2s linear infinite;
+  animation-delay: calc(var(--i) * -0.45s);
+}
+.wick-sparks > i:nth-child(1) {
+  --i: 0;
+  --dx: -10px;
+}
+.wick-sparks > i:nth-child(2) {
+  --i: 1;
+  --dx: 8px;
+}
+.wick-sparks > i:nth-child(3) {
+  --i: 2;
+  --dx: -4px;
+}
+.wick-sparks > i:nth-child(4) {
+  --i: 3;
+  --dx: 12px;
+}
+.wick-sparks > i:nth-child(5) {
+  --i: 4;
+  --dx: 2px;
+}
+@keyframes wick-spark {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), -56px);
+  }
+}
+
+/* Clickable Wick ("Meet Wick", news): hops, flares and says something. */
+.wick-button {
+  position: relative;
+  display: inline-block;
+  padding: 0;
+  line-height: 0;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+}
+.wick-button-body {
+  display: inline-block;
+  transform-origin: 50% 100%;
+}
+.wick-button[data-hop] .wick-button-body {
+  animation: wick-hop 0.6s ease-out;
+}
+.wick-button[data-hop] .wick-flame {
+  animation-duration: 0.3s;
+}
+@keyframes wick-hop {
+  20% {
+    transform: scale(1.12, 0.86);
+  }
+  45% {
+    transform: translateY(-22%) scale(0.92, 1.1);
+  }
+  75% {
+    transform: translateY(0) scale(1.08, 0.92);
+  }
+}
+.wick-bubble {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  z-index: 3;
+  padding: 6px 10px;
+  font-family: var(--font-pixel);
+  font-size: 15px;
+  line-height: 1;
+  color: var(--color-ink);
+  white-space: nowrap;
+  background: var(--color-day-paper);
+  border: 2px solid var(--color-ink);
+  border-radius: 3px;
+  box-shadow: 0 3px 0 var(--color-ink);
+  transform: translate(-50%, -6px);
+}
+.wick-bubble::after {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  content: "";
+  background: var(--color-day-paper);
+  border: solid var(--color-ink);
+  border-width: 0 2px 2px 0;
+  transform: translate(-50%, -3px) rotate(45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wick-bob,
+  .wick-flame,
+  .wick-eyes,
+  .wick-glow::before,
+  .wick-sparks > i,
+  .wick-button[data-hop] .wick-button-body {
+    animation: none;
+  }
+  .wick-sparks {
+    display: none;
+  }
+}

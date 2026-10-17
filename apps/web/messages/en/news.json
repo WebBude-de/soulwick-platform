@@ -1,0 +1,20 @@
+{
+  "meta": {
+    "title": "News",
+    "description": "What's happening in Soulwick: new rooms, new bosses, new plans. Straight from the workshop."
+  },
+  "title": "News",
+  "lead": "What's happening in Soulwick: new rooms, new bosses, new plans. Straight from the workshop.",
+  "read": "Read the post",
+  "back": "All news",
+  "more": "More news",
+  "empty": "No news here yet. See you in the dark.",
+  "fallback": "This post is only available in {language} so far.",
+  "languages": {
+    "en": "English",
+    "de": "German"
+  },
+  "play": "Play free in your browser",
+  "discover": "More about the game",
+  "release": "Playable at release"
+}

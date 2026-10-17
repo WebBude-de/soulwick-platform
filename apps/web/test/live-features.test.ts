@@ -12,16 +12,18 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 /**
- * The teaser switch (`LIVE_FEATURES`) on the routes that do not need a running Next.js request:
- * sitemap, navigation, the guild and leaderboards pages, and the legal file fallback.
+ * The live switch (`LIVE_FEATURES`) on the routes that do not need a running Next.js request:
+ * sitemap, the guild and leaderboards pages, and the legal file fallback. Navigation and every
+ * feature description are the same in both modes (see `release-copy.test.ts`).
  */
 
 // `server-only` throws outside the react-server condition; Next.js resolves it to an empty module.
 mock.module("server-only", () => ({}));
 const { default: sitemap } = await import("../src/app/sitemap.ts");
-const { visibleNavLinks } = await import("../src/components/site/nav-links.ts");
-const guildPage = await import("../src/app/guilds/[tag]/page.tsx");
-const leaderboardsPage = await import("../src/app/leaderboards/page.tsx");
+const guildPage = await import("../src/app/[locale]/guilds/[tag]/page.tsx");
+const leaderboardsPage = await import(
+  "../src/app/[locale]/leaderboards/page.tsx"
+);
 const { withLegalFileFallback } = await import("../src/lib/legal-files.ts");
 
 const ORIGINAL_LIVE = process.env.LIVE_FEATURES;
@@ -57,20 +59,28 @@ async function expectNotFound(promise: Promise<unknown>) {
   expect(String((error as { digest?: string }).digest)).toContain("404");
 }
 
+/** Page paths of the sitemap, without the news posts (those depend on `content/news`). */
+async function sitemapPages(): Promise<string[]> {
+  return (await sitemap())
+    .map((entry) => new URL(entry.url).pathname)
+    .filter((pathname) => !pathname.startsWith("/news/"));
+}
+
 describe("sitemap", () => {
-  it("lists the leaderboards while live", () => {
+  it("lists the leaderboards while live", async () => {
     process.env.LIVE_FEATURES = "true";
-    const urls = sitemap().map((entry) => new URL(entry.url).pathname);
+    const urls = await sitemapPages();
     expect(urls).toContain("/leaderboards");
     expect(urls).toContain("/delete-account");
   });
 
-  it("drops the leaderboards in teaser mode but keeps the other pages", () => {
+  it("drops the leaderboards page with the live functions off but keeps the other pages", async () => {
     process.env.LIVE_FEATURES = "false";
-    const urls = sitemap().map((entry) => new URL(entry.url).pathname);
+    const urls = await sitemapPages();
     expect(urls).not.toContain("/leaderboards");
     expect(urls).toEqual([
       "/",
+      "/news",
       "/open-source",
       "/privacy",
       "/imprint",
@@ -79,31 +89,10 @@ describe("sitemap", () => {
   });
 });
 
-describe("navigation links", () => {
-  const links: [string, string][] = [
-    ["Game", "#spiel"],
-    ["Co-op & Guilds", "#koop"],
-    ["Leaderboards", "#ranglisten"],
-    ["Open source", "open-source"],
-  ];
-
-  it("keeps every link while live", () => {
-    expect(visibleNavLinks(links, true)).toEqual(links);
-  });
-
-  it("drops only the leaderboards anchor in teaser mode", () => {
-    expect(visibleNavLinks(links, false)).toEqual([
-      ["Game", "#spiel"],
-      ["Co-op & Guilds", "#koop"],
-      ["Open source", "open-source"],
-    ]);
-  });
-});
-
 describe("guild page", () => {
   const props = { params: Promise.resolve({ tag: "DOCHT" }) };
 
-  it("is a 404 without any API call in teaser mode", async () => {
+  it("is a 404 without any API call with the live functions off", async () => {
     process.env.LIVE_FEATURES = "false";
     await expectNotFound(guildPage.default(props));
     await expectNotFound(guildPage.generateMetadata(props));
@@ -120,7 +109,7 @@ describe("guild page", () => {
 });
 
 describe("leaderboards page", () => {
-  it("is a 404 without any API call in teaser mode", async () => {
+  it("is a 404 without any API call with the live functions off", async () => {
     process.env.LIVE_FEATURES = "false";
     await expectNotFound(
       leaderboardsPage.default({ searchParams: Promise.resolve({}) })

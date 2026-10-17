@@ -1,15 +1,16 @@
 {
   "meta": {
     "title": "Open Source",
-    "description": "Soulwick ist Open Source: Spiel, Online-Teil und Website liegen offen auf GitHub. Schau rein, hol dir neue Versionen oder mach mit."
+    "description": "Soulwick ist Open Source: Spiel, Online-Teil und Website liegen offen auf GitHub. Schau rein oder mach mit."
   },
   "title": "Soulwick ist Open Source",
-  "lead": "Alles, was du spielst, liegt offen auf GitHub: jeder Raum, jeder Gegner, jede Melodie. Schau rein, wie Soulwick entsteht, hol dir neue Versionen oder hilf mit.",
+  "lead": "Der Code hinter allem, was du spielst, liegt offen auf GitHub: jeder Raum, jeder Gegner, jeder Boss. Schau rein, wie Soulwick entsteht, oder hilf mit.",
+  "licenseNote": "Der Code ist frei unter GPL-3.0. Grafik, Musik, der Name Soulwick und die Figuren (Wick, das Huhn) bleiben bei uns: alle Rechte vorbehalten.",
   "repos": {
     "title": "Zwei Orte auf GitHub",
     "game": {
       "title": "Das Spiel",
-      "text": "Dungeon, Dorf, Waffen, Bosse und Musik. Hier liegt auch jede Version zum Herunterladen.",
+      "text": "Dungeon, Dorf, Waffen, Bosse und Musik.",
       "link": "Spiel auf GitHub"
     },
     "platform": {

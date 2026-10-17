@@ -1,0 +1,297 @@
+/* News (devlog): overview, post page and the reading style for post bodies. */
+
+.news-page {
+  padding-bottom: 72px;
+}
+.news-head {
+  background:
+    radial-gradient(
+      45% 90% at 78% 70%,
+      rgb(255 181 74 / 0.12) 0%,
+      transparent 70%
+    ),
+    var(--color-night);
+  border-bottom: 2px solid var(--color-line);
+}
+.news-head-inner {
+  display: grid;
+  gap: 24px;
+  align-items: end;
+  padding-block: 48px 0;
+}
+@media (min-width: 48rem) {
+  .news-head-inner {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding-block: 64px 0;
+  }
+}
+/* The scene stands on the header's bottom edge; the text keeps clear of it. */
+.news-head-copy {
+  padding-bottom: 40px;
+}
+@media (min-width: 48rem) {
+  .news-head-copy {
+    padding-bottom: 64px;
+  }
+}
+.news-title {
+  font-size: clamp(40px, 5vw, 56px);
+}
+/* Wick and the chicken by a torch, standing on the edge of the header. */
+.news-scene {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 4px;
+}
+.news-scene-torch {
+  line-height: 0;
+  filter: drop-shadow(0 0 10px rgb(255 138 60 / 0.7));
+}
+.news-scene-wick {
+  --s: 4;
+  line-height: 0;
+}
+.news-scene-wick.wick-glow::before {
+  width: 200%;
+}
+.news-scene-art {
+  width: min(100%, 320px);
+  height: auto;
+}
+
+.news-body {
+  padding-top: 48px;
+}
+.news-empty {
+  color: var(--color-soft);
+}
+/* Posts by date: a dashed path with a candle mark per post. */
+.news-timeline {
+  position: relative;
+  display: grid;
+  gap: 28px;
+  max-width: 48rem;
+  padding-left: 32px;
+}
+.news-timeline::before {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 9px;
+  width: 4px;
+  content: "";
+  background: repeating-linear-gradient(
+    180deg,
+    var(--color-gold-dark) 0 8px,
+    transparent 8px 16px
+  );
+  opacity: 0.45;
+}
+.news-entry {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.news-entry::before {
+  position: absolute;
+  top: 4px;
+  left: -29px;
+  width: 12px;
+  height: 12px;
+  content: "";
+  background: var(--color-candle);
+  border: 2px solid var(--color-ink);
+  box-shadow: 0 0 10px rgb(255 181 74 / 0.8);
+}
+.news-entry-title {
+  font-size: clamp(24px, 2.6vw, 30px);
+}
+.news-entry-title a {
+  color: var(--color-text);
+  text-decoration: none;
+}
+.news-entry-title a::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+}
+.news-entry-title a:focus-visible {
+  outline: none;
+}
+.news-entry:has(a:focus-visible) {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 6px;
+}
+@media (hover: hover) {
+  .news-entry:hover .news-entry-title a {
+    color: var(--color-gold);
+  }
+}
+.news-entry-summary {
+  max-width: 40rem;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--color-soft);
+}
+.news-entry-more {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-violet-link);
+}
+.news-date {
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  color: var(--color-candle);
+  text-shadow: 1px 1px 0 var(--color-ink);
+}
+
+/* Post page */
+.news-article {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  max-width: 46rem;
+  padding-top: 40px;
+}
+.news-back {
+  align-self: flex-start;
+  font-family: var(--font-pixel);
+  font-size: 15px;
+  color: var(--color-soft);
+  text-decoration: none;
+  text-shadow: 1px 1px 0 var(--color-ink);
+}
+.news-back::before {
+  margin-right: 8px;
+  color: var(--color-gold);
+  content: "<";
+}
+.news-back:hover {
+  color: var(--color-gold);
+}
+.news-article-head {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.news-article-title {
+  font-size: clamp(34px, 4.4vw, 50px);
+  text-wrap: balance;
+}
+.news-fallback {
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--color-soft);
+  background: var(--color-panel);
+  border-left: 3px solid var(--color-line-light);
+}
+.news-cover {
+  width: 100%;
+  height: auto;
+  border-radius: 2px;
+  box-shadow: var(--shadow-frame);
+}
+.news-prose {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--color-soft);
+}
+.news-prose h2 {
+  margin-top: 18px;
+  font-size: clamp(24px, 2.6vw, 30px);
+  color: var(--color-text);
+}
+.news-prose h3 {
+  margin-top: 8px;
+  font-size: 21px;
+  color: var(--color-gold);
+}
+.news-prose strong {
+  color: var(--color-text);
+}
+.news-prose a {
+  font-weight: 500;
+  color: var(--color-violet-link);
+  text-decoration: underline;
+}
+.news-prose a:hover {
+  color: var(--color-gold);
+}
+.news-prose ul {
+  display: grid;
+  gap: 8px;
+  padding-left: 4px;
+}
+.news-prose li {
+  position: relative;
+  padding-left: 22px;
+}
+.news-prose li::before {
+  position: absolute;
+  top: 0.65em;
+  left: 2px;
+  width: 8px;
+  height: 8px;
+  content: "";
+  background: var(--color-candle);
+  box-shadow: 0 0 6px rgb(255 181 74 / 0.7);
+}
+.news-prose blockquote {
+  padding: 4px 0 4px 18px;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  line-height: 1.4;
+  color: var(--color-text);
+  border-left: 4px solid var(--color-candle-deep);
+}
+.news-article-end {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: center;
+  padding-top: 24px;
+  border-top: 2px dashed var(--color-line);
+}
+/* "Playable at release" where the play button sits while the live functions are on. */
+.news-release {
+  min-height: 44px;
+  margin-bottom: 4px;
+  font-size: 15px;
+  color: var(--color-gold);
+}
+.news-more {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 46rem;
+  padding-top: 56px;
+}
+.news-more-title {
+  font-size: 22px;
+  color: var(--color-text);
+}
+.news-more-list {
+  display: grid;
+  gap: 10px;
+}
+.news-more-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  align-items: baseline;
+}
+.news-more-list a {
+  color: var(--color-text);
+  text-decoration: underline;
+  text-decoration-color: var(--color-line-light);
+  text-underline-offset: 3px;
+}
+.news-more-list a:hover {
+  color: var(--color-gold);
+}

@@ -1,0 +1,10 @@
+{
+  "channels": [
+    { "id": "discord", "label": "Discord", "url": "" },
+    { "id": "tiktok", "label": "TikTok", "url": "" },
+    { "id": "youtube", "label": "YouTube", "url": "" },
+    { "id": "instagram", "label": "Instagram", "url": "" },
+    { "id": "x", "label": "X", "url": "" },
+    { "id": "reddit", "label": "Reddit", "url": "" }
+  ]
+}

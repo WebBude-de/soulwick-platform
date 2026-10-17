@@ -1,7 +1,7 @@
 {
   "siteName": "Soulwick",
-  "tagline": "Das letzte Licht im endlosen Dunkel",
-  "description": "Soulwick ist ein dunkles 2D-Dungeon-Roguelite: ein endloser Dungeon, vier Biome mit eigenen Bossen, ein Dorf, das mit jedem Run wächst. Koop, Gilden und Ranglisten sind in Planung.",
+  "tagline": "Schnapp dir deine Freunde. Bring Licht ins Dunkel.",
+  "description": "Soulwick ist das Pixel-Roguelite, in das du mit Freunden reinrennst. Jeder Run anders, jeder Boss ein Clip – und deinen eigenen kannst du dir wünschen. Koop für bis zu vier, ein endloser Dungeon, ein gemütliches Dorf und Wick, dein Begleiter.",
   "skipToContent": "Zum Inhalt springen",
   "nav": {
     "label": "Hauptnavigation",
@@ -41,17 +41,11 @@
     "platform": "Browser",
     "status": "spielbar"
   },
-  "status": {
-    "planned": "in Planung",
-    "inDevelopment": "in Entwicklung",
-    "soon": "folgt"
-  },
   "footer": {
     "copyright": "© {year} Soulwick",
     "credit": "Mit ♥ gemacht von WebBude",
     "legal": "Rechtliches",
-    "newTab": "(öffnet in neuem Tab)",
-    "project": "Soulwick ist ein Teamprojekt. Alle Angaben ohne Gewähr, Inhalte können sich bis zur Veröffentlichung ändern."
+    "newTab": "(öffnet in neuem Tab)"
   },
   "notFound": {
     "title": "Hier endet der Dungeon",
@@ -63,6 +57,8 @@
     "chickenLabel": "Huhn – anklicken",
     "chickenSays": ["Gak!", "Gaaak!", "Bok bok!"],
     "chickenPanic": "GAAAK!!",
-    "slimeHit": "Schleimkönigin treffen"
+    "slimeHit": "Schleimkönigin treffen",
+    "wickLabel": "Wick – anklicken",
+    "wickSays": ["Hi!", "Komm mit!", "Licht an!", "Wo ist das Huhn?"]
   }
 }

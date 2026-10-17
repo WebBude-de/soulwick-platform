@@ -1,18 +1,19 @@
 import type { ReactNode } from "react";
 
 interface SectionIntroProps {
-  /** Rendered next to the eyebrow (e.g. a „geplant“ chip). */
+  /** Rendered next to the eyebrow, or alone above the title (e.g. a status chip). */
   aside?: ReactNode;
   className?: string;
-  eyebrow: string;
-  /** Icon in front of the eyebrow (hero soul flame). */
+  /** Small caps line above the title; only where it carries information. */
+  eyebrow?: string;
+  /** Icon in front of the eyebrow. */
   eyebrowIcon?: ReactNode;
   id: string;
   text?: string;
   title: string;
 }
 
-/** Eyebrow + H2 + lead paragraph, the opening of every landing section. */
+/** Optional eyebrow + H2 + lead paragraph, the opening of a landing section. */
 export function SectionIntro({
   id,
   eyebrow,
@@ -28,12 +29,14 @@ export function SectionIntro({
         .filter(Boolean)
         .join(" ")}
     >
-      <p className="flex flex-wrap items-center gap-3">
-        {eyebrowIcon}
-        <span className="eyebrow">{eyebrow}</span>
-        {aside}
-      </p>
-      <h2 className="text-text" id={id}>
+      {eyebrow || aside ? (
+        <p className="flex flex-wrap items-center gap-3">
+          {eyebrowIcon}
+          {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
+          {aside}
+        </p>
+      ) : null}
+      <h2 className="section-title" id={id}>
         {title}
       </h2>
       {text ? <p className="lead">{text}</p> : null}

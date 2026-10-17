@@ -1,7 +1,7 @@
 {
   "siteName": "Soulwick",
-  "tagline": "The last light in the endless dark",
-  "description": "Soulwick is a dark 2D dungeon roguelite: an endless dungeon, four biomes with their own bosses, and a village that grows with every run. Co-op, guilds and leaderboards are planned.",
+  "tagline": "Grab your friends. Light the dark.",
+  "description": "Soulwick is the pixel roguelite you rush into with your friends. Every run is different, every boss is a clip – and you can wish for your own. Co-op for up to four, an endless dungeon, a cozy village and Wick, your companion.",
   "skipToContent": "Skip to content",
   "nav": {
     "label": "Main navigation",
@@ -41,17 +41,11 @@
     "platform": "Browser",
     "status": "playable"
   },
-  "status": {
-    "planned": "planned",
-    "inDevelopment": "in development",
-    "soon": "coming"
-  },
   "footer": {
     "copyright": "© {year} Soulwick",
     "credit": "Made with ♥ by WebBude",
     "legal": "Legal",
-    "newTab": "(opens in a new tab)",
-    "project": "Soulwick is a team project. Everything shown is work in progress and may change before release."
+    "newTab": "(opens in a new tab)"
   },
   "notFound": {
     "title": "The dungeon ends here",
@@ -63,6 +57,8 @@
     "chickenLabel": "Chicken – click it",
     "chickenSays": ["Bawk!", "Cluck!", "Bok bok!"],
     "chickenPanic": "BAWWWK!!",
-    "slimeHit": "Hit the Slime Queen"
+    "slimeHit": "Hit the Slime Queen",
+    "wickLabel": "Wick – click it",
+    "wickSays": ["Hi!", "Come on!", "Lights on!", "Where's the chicken?"]
   }
 }

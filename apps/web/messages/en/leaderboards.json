@@ -38,6 +38,6 @@
     "title": "The leaderboards are asleep.",
     "text": "The server is not reachable right now. Please try again later."
   },
-  "planned": "Leaderboards fill up once the game can report runs. That is planned, but not live yet.",
-  "plannedLabel": "planned"
+  "liveLabel": "live",
+  "liveNote": "Runs from the game land here shortly after they end."
 }

@@ -11,7 +11,7 @@ import {
   useId,
   useRef,
 } from "react";
-import { submitDeletionStep } from "@/app/delete-account/actions";
+import { submitDeletionStep } from "@/app/[locale]/delete-account/actions";
 import { PixelPanel } from "@/components/ui/pixel-panel";
 import { Sprite } from "@/components/ui/sprite";
 import {

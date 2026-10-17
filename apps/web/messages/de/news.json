@@ -1,0 +1,20 @@
+{
+  "meta": {
+    "title": "Neuigkeiten",
+    "description": "Was gerade in Soulwick passiert: neue Räume, neue Bosse, neue Pläne. Direkt aus der Werkstatt."
+  },
+  "title": "Neuigkeiten",
+  "lead": "Was gerade in Soulwick passiert: neue Räume, neue Bosse, neue Pläne. Direkt aus der Werkstatt.",
+  "read": "Beitrag lesen",
+  "back": "Alle Neuigkeiten",
+  "more": "Weitere Neuigkeiten",
+  "empty": "Hier gibt es noch keine Neuigkeiten. Wir sehen uns im Dunkeln.",
+  "fallback": "Diesen Beitrag gibt es bisher nur auf {language}.",
+  "languages": {
+    "en": "Englisch",
+    "de": "Deutsch"
+  },
+  "play": "Kostenlos im Browser spielen",
+  "discover": "Mehr übers Spiel",
+  "release": "Zum Release spielbar"
+}

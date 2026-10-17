@@ -1,175 +1,277 @@
 {
+  "meta": {
+    "title": "Soulwick – Grab your friends. Light the dark.",
+    "description": "Soulwick is the pixel roguelite you rush into with your friends. Every run is different, every boss is a clip – and you can wish for your own. Co-op for up to four, an endless dungeon, a cozy village and Wick, your companion."
+  },
   "navLinks": [
-    ["Game", "#spiel"],
-    ["Weapons", "#waffen"],
-    ["Biomes", "#biome"],
+    ["Co-op", "#koop"],
+    ["Bosses", "#bosse"],
+    ["Wick", "#wick"],
+    ["Dungeon", "#spiel"],
     ["Village", "#dorf"],
-    ["Co-op & Guilds", "#koop"],
-    ["Leaderboards", "#ranglisten"],
-    ["Open source", "open-source"]
+    ["News", "news"],
+    ["What's next", "#was-kommt"],
+    ["Leaderboards", "#ranglisten"]
   ],
+  "navExtra": [["Open source", "open-source"]],
+  "navLabel": "Main navigation",
+  "navCtaPlay": "Play",
   "navCta": "Leaderboards",
-  "navCtaTeaser": "Discover the game",
-  "planned": "planned",
-  "hoverHint": "Hover: attack",
-  "tapHint": "Tap: attack",
-  "heroEyebrow": "2D top-down dungeon roguelite · pixel art",
-  "heroTitle": "The last light in the endless dark",
-  "heroText": "From the village you descend into an endless dungeon. With sword, bow, mage staff, daggers or war hammer you fight through four biomes and their bosses, collect gold and upgrades, and decide for yourself when to return with the loot.",
-  "heroCta1": "How the game works",
-  "heroCta2": "View leaderboards",
-  "heroCta2Teaser": "Explore the biomes",
-  "heroHud": "Room 12 · Cycle 3",
-  "platformNote": "Steam, Google Play and App Store are planned; crossplay across all three is the goal. Store links follow once they exist.",
-  "platforms": ["PC", "Mobile", "Crossplay"],
-  "descentEyebrow": "The descent",
-  "descentTitle": "No two descents are alike",
-  "descentText": "Fight, rescue, choose, climb. And deep down, something big is waiting.",
-  "descentStops": [
-    ["Combat", "The gate slams shut. Nobody leaves until it's quiet."],
-    ["Mini-game", "Sometimes you fight. Sometimes you save a chicken."],
-    ["Crossroads", "Two doors. One choice."],
-    ["Descent", "Between rooms, you jump your way down."],
-    ["Boss", "Every 15 rooms, things get serious."],
-    ["Campfire", "Catch your breath. Then go deeper."]
-  ],
-  "minigamesTitle": "Not every room is a fight",
-  "minigamesText": "Eight mini-games shake up every run.",
-  "minigames": [
-    ["Guard the flame", "Keep a flame alive against the night."],
-    ["Escort", "Lead a lost villager home. Sometimes it's a chicken."],
-    ["Fetch the relic", "Grab it. Then run."],
-    ["Gather souls", "Catch the souls before they fade."],
-    ["Close the rifts", "Something crawls out of the walls. Seal the cracks."],
-    ["Hunt", "The crowned one runs off with the gold."],
-    ["Beacon fires", "Stone guardians fear only the light."],
-    ["Collapse", "The floor gives way. Hold on where there's still ground."]
-  ],
-  "goldTitle": "Gold is a decision.",
-  "goldText": "Leave through an exit portal and 100 % of the run gold goes to the village. Die or give up and you keep half.",
-  "weaponsEyebrow": "Weapons & upgrades",
-  "weaponsTitle": "Five weapons, two slots, plenty of upgrades",
-  "weaponsText": "Sword, bow, mage staff, daggers and war hammer: the weapon follows the mouse, and each has a special attack. Two slots, swap with Q. Upgrades last for the whole run and stack.",
-  "weapons": [
-    [
-      "Sword",
-      "Melee",
-      "Fast swing in an arc in front of you. Hits everything in the arc, including several enemies.",
-      "12 damage",
-      "1.5 / s",
-      "100° arc"
+  "navCtaWishlist": "Wishlist",
+  "navCtaNews": "News",
+  "status": {
+    "playable": "playable",
+    "atRelease": "at release",
+    "later": "later"
+  },
+  "hero": {
+    "titleA": "Grab your friends.",
+    "titleB": "Light the dark.",
+    "lead": "The pixel roguelite you rush into with your friends. Every run is different, every boss is a clip.",
+    "play": "Play free in your browser",
+    "discover": "See what's inside",
+    "news": "Read the news",
+    "wishlist": "Wishlist on Steam",
+    "install": "On your phone? <link>Install it as an app</link>.",
+    "releaseTitle": "Playable at release",
+    "releaseText": "In your browser, on Steam, Android, iPhone and iPad, all from day one.",
+    "platformsLabel": "Where you can play",
+    "platform": {
+      "browser": "Browser",
+      "steam": "PC · Steam",
+      "android": "Android",
+      "ios": "iPhone & iPad"
+    },
+    "platformNote": "Free in the browser and on phones, a small price on Steam. Crossplay puts you all in one room, whatever you play on.",
+    "storesLabel": "Get Soulwick",
+    "badgeAlt": {
+      "app_store": "Download on the App Store",
+      "google_play": "Get it on Google Play",
+      "steam": "Soulwick on Steam"
+    },
+    "storeLegal": {
+      "app_store": "Apple, the Apple logo, iPhone and iPad are trademarks of Apple Inc., registered in the U.S. and other countries. App Store is a service mark of Apple Inc.",
+      "google_play": "Google Play and the Google Play logo are trademarks of Google LLC.",
+      "steam": "© {year} Valve Corporation. Steam and the Steam logo are trademarks and/or registered trademarks of Valve Corporation in the U.S. and/or other countries."
+    },
+    "hintPointer": "Move your mouse: Wick lights the way.",
+    "hintTouch": "Tap the dark: Wick flies there.",
+    "walkersLabel": "Monsters chase four friends, the friends chase Wick, Wick chases the chicken."
+  },
+  "coop": {
+    "title": "Rush in with your friends",
+    "lead": "Open a room, send your friends the link, and they're in. Up to four of you, each with your own figure and colour, and the chaos starts in the very first room.",
+    "beats": [
+      [
+        "Link or room code",
+        "One link or six letters, and your friends are in. No sign-up, no waiting."
+      ],
+      [
+        "Up to four",
+        "Everyone picks a figure and a colour, everyone gets their own upgrades. The gold goes into one pot."
+      ],
+      [
+        "Nobody stays down",
+        "If someone falls, stand next to them for a moment and off you go again."
+      ]
     ],
-    [
-      "Bow",
-      "Ranged",
-      "Arrows with long reach. Pierce and double shot turn it into a volley.",
-      "9 damage",
-      "1.2 / s",
-      "600 px"
+    "guilds": "Want to stick together? Found a guild with a shared treasury and climb the leaderboards as a team.",
+    "codeLabel": "Room code",
+    "code": "CHKN47",
+    "linkLabel": "Invite link",
+    "linkCopied": "copied",
+    "host": "Host",
+    "vitrineAlt": "A co-op room: four friends as four different figures, Wick, the room code and the invite link"
+  },
+  "bosses": {
+    "title": "Wish for a boss",
+    "lead": "Beat a boss and you get a wish at the campfire: describe your nightmare boss. A few rooms later it's standing in front of you and your friends, built by an AI in Soulwick's style. Made for clips.",
+    "steps": [
+      [
+        "Make a wish",
+        "After a boss fight, describe your nightmare at the campfire. The wilder, the better."
+      ],
+      [
+        "It takes shape",
+        "While you keep playing, an AI builds your boss: look, name and attacks, all in the game's style."
+      ],
+      [
+        "Clip it",
+        "A few rooms later it's there. Beat it together, record it, send it around."
+      ]
     ],
-    [
-      "Mage Staff",
-      "Area",
-      "Slow magic orb that explodes on impact and hits everything around it.",
-      "8 damage",
-      "0.8 / s",
-      "area hit"
+    "wishLabel": "Your wish",
+    "bossLabel": "Your boss",
+    "another": "Another wish",
+    "examplesNote": "Examples we made up. Yours will be weirder.",
+    "examples": [
+      [
+        "A giant toaster that shoots burning toast",
+        "Toastor, Lord of Crumbs",
+        "Pops out of the floor when it's hot."
+      ],
+      [
+        "A laughing emoji that bites",
+        "Grinzilla",
+        "Laughs at you. Then it bites."
+      ],
+      [
+        "A knight who is really just a very angry pumpkin",
+        "Sir Gourdon the Hollow",
+        "Rolls at you when he runs out of patience."
+      ],
+      [
+        "A chicken. But huge. And furious.",
+        "The Elder Chicken",
+        "Wick knows this one. Wick is scared."
+      ]
     ]
-  ],
-  "upgradeCats": [
-    ["Attribute", "Damage, attack rate, shield. Stacks without limit."],
-    ["Mechanic", "Pierce, wall bounce, double shot, wider swing. Limited."],
-    ["Effect", "Explosive hit, heal or shield on kill."]
-  ],
-  "upgradesNote": "After the third combat room of every cycle you pick one of three upgrades, never duplicates. Limited upgrades show “2 / 3”, unlimited ones the next level.",
-  "biomesEyebrow": "Four biomes",
-  "biomesTitle": "Each biome changes light, enemies and boss",
-  "biomesText": "Every 15 rooms a new biome begins, with its own boss. After the Ember Forge it is back to the Crypt, only harder: elite enemies carry badges for swift, armored or volatile.",
-  "bossLabel": "Boss",
-  "biomes": [
-    [
-      "Crypt",
-      "Rooms 1–15",
-      "Bone King",
-      "Stone slabs, torches, skeletons and archers. The entry, ending with a shield charge."
+  },
+  "wick": {
+    "title": "Meet Wick",
+    "lead": "This is Wick, your companion. A tiny wick creature with a flame on its head that lights your way from your very first step into the dark.",
+    "text": "Where Wick goes, the chicken is never far behind. Nobody knows why. The chicken isn't telling.",
+    "outfitsTitle": "Outfits for you, Wick and your village",
+    "outfitsText": "Pick colours and looks that suit your crew. Only looks, never power.",
+    "tryPointer": "Go on, click Wick.",
+    "tryTouch": "Go on, tap Wick."
+  },
+  "descent": {
+    "title": "No two descents are alike",
+    "lead": "Every room wants something different from you: fight, hold out or win a mini-game. Every 15 rooms a boss is waiting, then a campfire, then a new world. And it never ends.",
+    "bossLabel": "Boss",
+    "biomes": [
+      [
+        "Crypt",
+        "Bone King",
+        "Torches, bones and a king who charges with his shield."
+      ],
+      [
+        "Slime Grotto",
+        "Slime Queen",
+        "Green light, toxic puddles and slimes that split."
+      ],
+      [
+        "Shadow Realm",
+        "Shadow Lord",
+        "Fog, violet cracks and shadows that blind you."
+      ],
+      [
+        "Ember Forge",
+        "Ember Golem",
+        "Lava cracks and a golem who breaks the floor."
+      ]
     ],
-    [
-      "Slime Grotto",
-      "Rooms 16–30",
-      "Slime Queen",
-      "Damp rock, green crystal torches, toxic puddles. Slimes split when they die."
+    "minigamesTitle": "Not every room is a fight",
+    "minigames": [
+      ["Guard the flame", "Keep a flame alive against the night."],
+      ["Escort", "Lead a lost villager home. Sometimes it's a chicken."],
+      ["Fetch the relic", "Grab it. Then run."],
+      ["Gather souls", "Catch the souls before they fade."],
+      [
+        "Close the rifts",
+        "Something crawls out of the walls. Seal the cracks."
+      ],
+      ["Hunt", "The crowned one runs off with the gold."],
+      ["Beacon fires", "Stone guardians fear only the light."],
+      ["Collapse", "The floor gives way. Hold on where there's still ground."]
     ],
-    [
-      "Shadow Realm",
-      "Rooms 31–45",
-      "Shadow Lord",
-      "Violet glowing cracks, fog, shadows that blind. The lord teleports."
+    "skill": "Five weapons, piles of upgrades, a choice at every fork. The first rooms are for everyone, the deep ones for the brave."
+  },
+  "village": {
+    "title": "Your village",
+    "lead": "After the dungeon comes the cozy part. The forge makes you stronger, the merchant packs supplies, the chronicle remembers your best runs. And the chicken pecks around as if nothing happened.",
+    "items": [
+      [
+        "Build it up",
+        "Gold from the dungeon goes into the forge, the trading post and your home. Your village grows, and you head into the next run stronger."
+      ],
+      [
+        "Make it yours",
+        "Decorations, paths, flowers and outfits: your village, your style. Only looks, never power."
+      ],
+      [
+        "Invite your friends",
+        "Bring your friends over, show them what you've built and hang out between runs. Or drop by their village."
+      ]
     ],
-    [
-      "Ember Forge",
-      "Rooms 46–60",
-      "Ember Golem",
-      "Basalt, ember veins, lava cracks and braziers. The golem stomps and the floor breaks."
+    "sceneAlt": "The village in the game by day: forge with glowing fire, chronicle, fountain square, market stall, villagers and chickens"
+  },
+  "roadmap": {
+    "title": "What's next",
+    "lead": "Everything above is in the game at release. This is what comes after.",
+    "legend": "The lit torch is up next.",
+    "steps": [
+      [
+        "Party mode",
+        "Only mini-games, and this time you play against each other. Same rooms, same look, more shouting."
+      ],
+      [
+        "More of everything",
+        "New mini-games, new bosses, new worlds. Soulwick keeps growing after release."
+      ]
     ]
-  ],
-  "villageEyebrow": "The village",
-  "villageTitle": "The warm counterpart to the dungeon",
-  "villageText": "Between runs you improve permanently. Village gold from the dungeon and soul crystals from bosses flow into the Forge, the Trading Post and the Chronicle.",
-  "villageCaption": "Village with Forge, Trading Post, Chronicle, guild hall and dungeon entrance",
-  "villageList": [
-    [
-      "Forge",
-      "",
-      "Permanent upgrades: more hearts, starting shield, sharpness, dash, second starting weapon."
+  },
+  "newsTeaser": {
+    "title": "From the workshop",
+    "lead": "What's happening in Soulwick right now.",
+    "read": "Read the post",
+    "all": "All news",
+    "followTitle": "Follow Soulwick"
+  },
+  "faq": {
+    "title": "Questions and answers",
+    "items": [
+      [
+        "Does it cost anything?",
+        "In the browser Soulwick is free, and on phones too. On Steam it costs a small amount. You can only ever buy looks, never strength: no pay-to-win, no loot boxes."
+      ],
+      [
+        "Who can I play with?",
+        "With up to three friends in one room: send them the link or the room code and they're in. Playing on your own works too, of course."
+      ],
+      [
+        "Which devices does it run on?",
+        "In the browser on computer and phone, with nothing to install, on Steam, on Android and on iPhone and iPad. Crossplay puts you all in one room."
+      ],
+      [
+        "How does the wish boss work?",
+        "After a boss fight you describe a boss at the campfire. An AI builds it in the game's style, and a few rooms later you fight it. The examples on this page are made up by us."
+      ],
+      [
+        "Is it suitable for kids?",
+        "Soulwick is made for teens and young adults. The fights are pixel art without blood, and there are no loot boxes. The official age rating comes from the stores once Soulwick is out there."
+      ],
+      [
+        "Do I need an account?",
+        "No. No sign-up, no email: you pick a player name and off you go."
+      ]
     ],
-    [
-      "Trading Post",
-      "",
-      "Provisions for your next run, paid in soul crystals."
+    "release": [
+      "When does Soulwick come out?",
+      "There's no date yet; we only name dates once they're certain. From day one you can play in the browser, on Steam, Android, iPhone and iPad. The news always has the latest."
     ],
-    ["Chronicle", "", "Records, kills, playtime and your best runs."],
-    ["Guild hall", "planned", "Lobby for co-op runs and guilds."],
-    ["Home", "", "Starting point and a wardrobe for your outfit colour."]
-  ],
-  "coopEyebrow": "Co-op & guilds",
-  "coopTitle": "Deeper together",
-  "coopText": "Soon you descend as a party of four. Found a guild, fill its treasury and climb the leaderboards together.",
-  "coopHost": "Host",
-  "coopCardTitle": "Co-op up to four",
-  "coopCardText": "Up to four players, each in their own colour. If someone falls, bring them back.",
-  "guildCardTitle": "Guilds with treasury and forge",
-  "guildCardText": "Up to 30 members, join by invite code. The guild treasury funds guild forge levels that benefit everyone. Guild runs are members only.",
-  "guildChips": ["Guild treasury", "Guild forge", "Guild leaderboard"],
-  "lbEyebrow": "Leaderboards",
+    "released": [
+      "Where do I get Soulwick?",
+      "Right in your browser, with nothing to install, and on Steam, Android, iPhone and iPad. The news always has what's new."
+    ]
+  },
+  "openSource": {
+    "title": "Open source",
+    "text": "Soulwick's code is public on GitHub (GPL-3.0). Graphics, music, the name and the characters stay ours.",
+    "link": "More about open source"
+  },
   "lbTitle": "Who gets deepest?",
   "lbText": "Three boards: solo, group and guilds, per season and all-time. The deepest room counts; ties go to the faster run.",
+  "lbGuilds": "Guilds get a shared treasury, their own page and their own board to climb together.",
+  "lbAtRelease": "The boards go live at release.",
   "lbPeriods": ["Season October", "All-time"],
   "lbTabs": ["Solo", "Group", "Guilds"],
   "lbHeads": ["Player", "Group", "Guild"],
   "lbRank": "Rank",
   "lbRoom": "Room",
   "lbTime": "Time",
-  "lbNote": "Sample data until the first runs come in.",
   "lbAll": "All leaderboards",
-  "footerText": "Soulwick is a pixel-art dungeon roguelite. One light, one village, a dungeon without end. Solo, and soon with friends.",
-  "footerGame": "Game",
-  "footerLegal": "Legal",
-  "imprint": "Imprint",
-  "privacy": "Privacy",
-  "deleteAccount": "Delete account",
-  "footerMade": "Deutsch · English",
-  "meta": {
-    "title": "Soulwick – The last light in the endless dark",
-    "description": "Soulwick is a 2D top-down dungeon roguelite in pixel art: an endless dungeon, four biomes with bosses, five weapons, plenty of upgrades and a village that grows with every run. Co-op, guilds and leaderboards are in progress."
-  },
-  "navLabel": "Main navigation",
-  "langLabel": "Language",
-  "keyartAlt": "Key art: the player with a mage staff in front of the dungeon entrance at night",
-  "hudLabel": "Health: three hearts",
-  "walkersLabel": "Player and enemies walking across the dungeon floor",
-  "villageSceneAlt": "Village scene from the game: buildings, paths and villagers",
-  "coopVitrineAlt": "Four player characters in different colours",
-  "guildVitrineAlt": "Guild emblems and the guild hall",
   "lbSeason": "Season {month}",
   "lbTabsLabel": "Choose a board",
   "lbPeriodLabel": "Choose a period",
@@ -177,6 +279,13 @@
   "lbMembers": "{n} members",
   "lbEmpty": "No entries on this board yet.",
   "lbUnavailable": "Leaderboards are not reachable right now.",
-  "lbLive": "Live from the test phase.",
+  "lbLive": "Live from the game.",
+  "footerText": "Soulwick is the pixel roguelite you rush into with your friends. A tiny light, a cozy village and a dungeon that never ends.",
+  "footerGame": "Game",
+  "footerLegal": "Legal",
+  "footerCommunity": "Community",
+  "imprint": "Imprint",
+  "privacy": "Privacy",
+  "deleteAccount": "Delete account",
   "footerCredit": "Made with <heart></heart> by <studio>WebBude</studio>"
 }

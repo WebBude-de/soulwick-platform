@@ -139,9 +139,9 @@ export function LeaderboardsView({
 
         <p className="flex flex-wrap items-center gap-2 border-panel-edge border-t-2 px-4 py-3 text-muted text-sm">
           <span className="inline-flex items-center border-2 border-panel-edge bg-void px-2 py-0.5 font-pixel text-muted text-sm shadow-px">
-            {t("plannedLabel")}
+            {t("liveLabel")}
           </span>
-          <span>{t("planned")}</span>
+          <span>{t("liveNote")}</span>
         </p>
       </PixelPanel>
     </div>

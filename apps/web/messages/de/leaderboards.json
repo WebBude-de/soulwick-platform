@@ -38,6 +38,6 @@
     "title": "Die Ranglisten schlafen gerade.",
     "text": "Der Server ist im Moment nicht erreichbar. Bitte versuche es später noch einmal."
   },
-  "planned": "Ranglisten füllen sich, sobald das Spiel Runs melden kann. Das ist geplant, aber noch nicht live.",
-  "plannedLabel": "geplant"
+  "liveLabel": "live",
+  "liveNote": "Runs aus dem Spiel landen hier kurz nach ihrem Ende."
 }
