@@ -1,6 +1,6 @@
 # Design-Tokens – Website und Admin-Panel
 
-> **Stand:** 14.10.2026 · **Gilt für:** `apps/web` **und** `apps/admin`. **Quelle:** Übergabe aus Claude Design [web/HANDOFF_WEB.md](web/HANDOFF_WEB.md) §2 (Tokens, Typografie, Komponenten) und §7 (Kontrast); Palette und Pixel-Regeln stammen aus dem Spiel-Handout `../../../soulwick/docs/HANDOUT.md` (dort auch Biom-Töne, Material- und Akzentfarben des Spiels). Neue Werte zuerst hier eintragen, dann im Code; Änderungen nur durch den Integrator.
+> **Stand:** 17.10.2026 (warmes Licht, Dorf bei Tag und Status-Chips nach D-174 ergänzt) · **Gilt für:** `apps/web` **und** `apps/admin`. **Quelle:** Übergabe aus Claude Design [web/HANDOFF_WEB.md](web/HANDOFF_WEB.md) §2 (Tokens, Typografie, Komponenten) und §7 (Kontrast); Palette und Pixel-Regeln stammen aus dem Spiel-Handout `../../../soulwick/docs/HANDOUT.md` (dort auch Biom-Töne, Material- und Akzentfarben des Spiels). Neue Werte zuerst hier eintragen, dann im Code; Änderungen nur durch den Integrator.
 
 **Das Admin-Panel nutzt dieselben Tokens, aber ruhiger:** keine Easter Eggs, keine Sprite-Animationen, keine Lichtschein-Effekte; dichte Tabellen und Formulare, Statuschips und Pixel-Buttons aus §3, Gold nur für Fokus und Primäraktionen. Details: [admin/README.md](admin/README.md).
 
@@ -33,6 +33,30 @@
 
 Biom-Töne (Karten, Hintergründe): Krypta `#4a4560`, Schleimgrotte `#3f5a4a`, Schattenreich `#2e2640`, Glutkammer `#2f2a2a` (Handout).
 
+### 1a. Licht und Tag (D-174, nur Website)
+
+Die Website erzählt mit Licht: Dunkle Abschnitte haben genau eine warme Lichtquelle, das Dorf ist der einzige Abschnitt bei Tag. Im Code als Tailwind-Farben (`--color-*` in `apps/web/src/app/globals.css`).
+
+```css
+/* Warmes Licht: Lichtkreise, Glow, Wick, Status „in Arbeit“ */
+--candle: #ffb54a; --candle-light: #ffe2a8; --candle-deep: #e07a2e;
+--night: #0c0a14;     /* tiefste Nacht: Hero, Dungeon-Ende */
+/* Tag: nur der Dorf-Abschnitt */
+--day-sky: #bfe4f2; --day-sky-deep: #8fcbe6;
+--day-meadow: #8fd16a; --day-meadow-deep: #5aa845;
+--day-paper: #fff8e6;  /* Holzschilder, Bilderrahmen */
+--day-wood: #8a5a34;   /* Rahmen der Schilder (Unterkante #6b4226) */
+--day-ink-soft: #3b3650; /* Fließtext auf Tag-Flächen */
+```
+
+| Token | Verwendung |
+| --- | --- |
+| `--candle`, `--candle-light`, `--candle-deep` | Lichtschein (radiale Verläufe, `mix-blend-mode: screen`), Datumszeilen, Status-Chip „in Arbeit“, Glow unter Überschriften (`0 0 32px rgb(255 181 74 / .35)`) |
+| `--night` | Hero-Grund und Dunkelheit über der Hero-Szene (93–95 % Deckkraft) |
+| `--day-*` | Himmel-Wiese-Verlauf des Dorf-Abschnitts, Schilder aus `--day-paper` mit `--day-wood`-Rand, Text in `--ink` bzw. `--day-ink-soft` |
+
+Kontrast: `--ink` auf `--day-sky` ≈ 13:1, `--day-ink-soft` auf `--day-paper` ≈ 10:1. Pixel-Überschriften auf Tag-Flächen bekommen statt des Tinte-Schattens `text-shadow: 2px 2px 0 var(--day-paper)`.
+
 ## 2. Typografie
 
 - **Display: Pixelify Sans** (Google Fonts, liegt im Asset-Paket als `fonts/PixelifySans-Variable.ttf` + OFL). 700 für H1/H2, 400 für Eyebrows, Zahlen und Chips. H1 `clamp(38px, 5vw, 60px)`, H2 `clamp(30px, 3.6vw, 42px)`, Kartentitel 20–22 px, Eyebrow 14 px in Versalien mit `letter-spacing: 0.08em`. Überschriften mit `text-shadow: 2px 2px 0 var(--ink)` (H1: 3 px).
@@ -50,6 +74,8 @@ Biom-Töne (Karten, Hintergründe): Krypta `#4a4560`, Schleimgrotte `#3f5a4a`, S
 | **Chip** | `background: var(--bg-deep); border: 2px solid var(--line); border-radius: 3px; font: 14px Pixelify Sans`, 16-px-Icon links. Status „geplant“ als innerer Teil (`chip_planned.png`), „fertig“ `chip_done.png` |
 | **Bild-Rahmen** | gestapelte `box-shadow`-Ringe `0 0 0 3px #1c1a2b, 0 0 0 6px #8f88ad, 0 0 0 9px #5d577a, 0 0 0 12px #1c1a2b` |
 | **Trenner** | `divider.png` (32×8) als `background: repeat-x`, 2× skaliert (64×16) |
+| **Status-Chip** (Web) | Chip in Versalien (`chip-caps`) mit 16-px-Icon: **in Arbeit / kommt** Rand `--candle-deep`, Icon Seelenflamme; **im Spiel / spielbar** Rand `#2f944c`, Text `--mech`, Icon `chip_done`; **geplant** Standard-Chip mit `chip_planned`. Auf Tag-Flächen weißer Grund, `--day-wood`-Rand |
+| **Holzschild** (Web, Dorf) | `background: var(--day-paper); border: 2px solid var(--day-wood); border-radius: 4px; box-shadow: 0 4px 0 #6b4226` |
 
 ## 4. Pixel-Skalierung
 
@@ -57,6 +83,7 @@ Biom-Töne (Karten, Hintergründe): Krypta `#4a4560`, Schleimgrotte `#3f5a4a`, S
 - Sprite-Streifen laufen als CSS `steps()`-Animation (Außen-Element `overflow: hidden` in Framegröße × Skalierung, Innen-Element in Streifenbreite); fps und Pivots stehen in den JSONs neben den Originalen (`soulwick/art/**/<name>.json`). Beispiel und Dateiliste: [web/HANDOFF_WEB.md](web/HANDOFF_WEB.md) §4.
 - Bilder als WebP (P-015): Pixel-Art **verlustfrei** (`cwebp -lossless -z 9`), Szenen dürfen `-q 90`. Sprite-Streifen nie verlustbehaftet.
 - Bewegung läuft über `animation-play-state` und pausiert bei `prefers-reduced-motion: reduce` (erster Frame bleibt). Keine Animation über Text, kein Autoplay-Ton.
+- Lichtkreise und Glow dürfen weich sein (radiale Verläufe, Unschärfe): moderne Pixel-Art heißt scharfe Pixel, weiches Licht (D-174).
 
 ## 5. Kontrast und Barrierefreiheit
 

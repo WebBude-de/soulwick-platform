@@ -45,10 +45,10 @@ Spiel (Godot, Host-Modell)          Browser                              eRecht2
 | `apps/api/src/lib/` | Querschnitt: Fehler (`ApiError`), Logger, Rate-Limit, `tokens.ts` (nur noch das Bestätigungstoken der Website-Löschung, HS256), `secrets.ts` (HMAC-Schlüssel aus `BETTER_AUTH_SECRET` abgeleitet), Einladungscodes, Client-IP, `erecht24/` (HTTP-Client für die Rechtstexte-API v2 über `Deps.fetch`, Datums- und HTML-Hilfen, `sanitize.ts` bereinigt das HTML nach Allowlist mit Bun-`HTMLRewriter`). |
 | `apps/api/src/scripts/` | `seed.ts` (Basis-Seed für jede Umgebung: Start-Admin aus `DEFAULT_ADMIN_EMAIL`/`DEFAULT_ADMIN_PASSWORD`, nur wenn die Adresse fehlt, nie überschrieben; läuft bei jedem Start des API-Images), `seed-dev.ts` (Testdaten für lokal und Dokploy-`development`; idempotent, verweigert `NODE_ENV=production`). Migrationen laufen über die Prisma CLI in `packages/db`. |
 | `apps/api/test/` | `bun test` gegen den Docker-Postgres: Wegwerf-Datenbank je Lauf, `prisma migrate deploy`, `Deps` mit festem `now` und gemocktem `fetch`. |
-| `apps/web/src/app/` | Seiten mit englischen Pfaden für beide Sprachen: `/`, `leaderboards`, `guilds/[tag]`, `delete-account`, `imprint`, `privacy`; Sprache per Cookie `NEXT_LOCALE` (P-012). |
-| `apps/web/messages/{de,en}/*.json` | Alle Texte der Website je Sprache (`common`, `landing`, `leaderboards`, `guilds`, `legal`, `deletion`). |
-| `apps/web/public/brand/` | Website-Grafiken vom Projektmitglied (WebP; Liste in der dortigen README, Briefing `soulwick/docs/SPRITES_V5.md` §8); fehlt eine Datei, zeigt die Seite einen Platzhalter. |
-| `apps/web/public/sprites/` | Spiel-Sprites als verlustfreies WebP, erzeugt von `apps/web/scripts/sprites.ts` aus `../soulwick/art/`; versioniert, damit der Build ohne Spiel-Repo läuft. |
+| `apps/web/src/app/` | Seiten mit englischen Pfaden für beide Sprachen: `/`, `news`, `leaderboards`, `guilds/[tag]`, `delete-account`, `open-source`, `imprint`, `privacy`; Sprache per Cookie `NEXT_LOCALE` (P-012). |
+| `apps/web/messages/{de,en}/*.json` | Alle Texte der Website je Sprache (`common`, `landing`, `news`, `leaderboards`, `guilds`, `legal`, `deletion`, `opensource`). |
+| `apps/web/public/brand/` | Website-Grafiken vom Projektmitglied (WebP; Liste in der dortigen README, Briefings [design/web/BRIEFING_WEB.md](design/web/BRIEFING_WEB.md) und `soulwick/docs/design/sprites/SPRITES_V5.md` §8); fehlt eine Datei, zeigt die Seite einen Platzhalter. |
+| `apps/web/public/sprites/` | Spiel-Sprites als verlustfreies WebP, erzeugt von `apps/web/scripts/sync-sprites.ts` aus `../soulwick/art/`; versioniert, damit der Build ohne Spiel-Repo läuft. |
 | `apps/admin/src/app/` | `/login` und die Panel-Seiten unter `(panel)/`: Übersicht, `statistik`, `spieler`, `gilden`, `runs`, `live-raeume`, `loeschungen` (Löschprotokoll), `protokoll`, `admins` (die Seite „Rechtstexte“ entfällt mit P-025). `actions.ts`: Server Actions. `lib/session.ts`: httpOnly-Cookie. `proxy.ts`: ohne Cookie → `/login`. |
 | `infra/` | Nur lokale Dienste: `docker-compose.yml` mit Postgres (Port 5432; kein Objektspeicher, weil nichts Dateien speichert). Die Apps laufen lokal über `bun dev` und auf Dokploy getrennt aus ihren Dockerfiles. Betrieb: [infra/DOKPLOY.md](../infra/DOKPLOY.md). |
 
@@ -134,7 +134,7 @@ Regeln: Eindeutigkeit von Gildenname und Kürzel gilt nur für aktive Gilden (P-
 
 - **Crossplay-Konten (D-108, CP0/CP1):** Soulwick-Konto, an das Steam-, Google-Play-Games-, Game-Center- und Geräte-Identitäten geknüpft werden; Verknüpfungscode (wie Among Us), Konto löschen in-App (Store-Pflicht). Plattform-Seite gebaut (P14/P15, 14.10.2026); im Spiel fehlen noch Konto-Panel und Plattform-Logins (CP1).
 - **Relay-Server (CP3):** mit D-119 entschieden (P-016), gebaut (P13), Betrieb auf dem Server noch offen (P17); Protokoll und Betrieb in [KONZEPT_ONLINE.md](KONZEPT_ONLINE.md), Pakete P13 und P17. Offen: Regionen und ob Clients nur an den Host senden dürfen.
-- **Geschäftsmodell (CP6, OFFEN):** mobil kostenlos + PC bezahlt (wie Among Us) oder überall kostenlos mit Kosmetik; Tabellen `purchases`/`entitlements` erst danach.
+- **Geschäftsmodell (D-176, D-177):** Browser und Handy kostenlos, Steam mit kleinem Preis; verkauft werden nur Kosmetik und „Werbefrei“, serverseitig am Konto geprüft (Quittungen der Stores, Steam-Ticket über die Steam Web API). Tabellen `purchases`/`entitlements` erst mit CP6; Preise OFFEN.
 - Rate-Limit über mehrere API-Instanzen.
 - Gilden-Wappen, Gilden-Schmiede-Werte (P4, zusammen mit dem Spiel, nach MP0 und CP0).
 - Server-Teil der KI-Wunschbosse (OFFEN, siehe Spiel-Repo `KONZEPT_KI_BOSS.md`).

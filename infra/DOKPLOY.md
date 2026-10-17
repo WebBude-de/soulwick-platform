@@ -36,11 +36,13 @@ Reihenfolge einhalten; jeder Schritt verweist auf den Abschnitt mit den Details.
 
 ### A. Vorbereitung (einmalig)
 
-- [ ] **Code auf GitHub:** Das Repo `WebBude-de/soulwick-platform` (privat) enthält den Stand. Commit und
-  Push macht das Projektmitglied selbst (Agenten pushen nicht). Vorher `git status` prüfen: Es darf
-  **keine** `.env.local`, `.env.dev` oder `.env.prod` dabei sein (nur `.env.example`; `.gitignore` deckt das ab).
-- [ ] **Branch für `development` festlegen:** vorerst `feature/platform-foundation` (der einzige Branch
-  mit Code). Später, sobald `main` existiert, auf `main` umstellen (Application → Provider → Branch).
+- [ ] **Code auf GitHub:** Das Repo `WebBude-de/soulwick-platform` ist **öffentlich** (Code GPL-3.0,
+  Inhalte nach [LICENSE-ASSETS.md](../LICENSE-ASSETS.md)) und enthält den Stand. Commit und Push macht
+  das Projektmitglied selbst (Agenten pushen nicht). Vorher `git status` prüfen: Es darf **keine**
+  `.env.local`, `.env.dev` oder `.env.prod` und kein Schlüssel dabei sein (nur `.env.example`;
+  `.gitignore` deckt die `.env*`-Dateien ab).
+- [ ] **Branch für `development` festlegen:** `dev` (Application → Provider → Branch); `production`
+  baut aus dem Branch `production` (§10).
 - [ ] **Dokploy mit GitHub verbinden:** *Settings → Git → GitHub → Create GitHub App*, die App für die
   Organisation **`WebBude-de`** installieren und Zugriff auf `soulwick-platform` geben.
 - [ ] **Cloudflare-Ursprungszertifikat** (§2): in Cloudflare erzeugen und in Dokploy unter
@@ -116,7 +118,7 @@ Reihenfolge einhalten; jeder Schritt verweist auf den Abschnitt mit den Details.
 
 ## 1. Überblick
 
-- **`development`** baut vorerst aus `feature/platform-foundation`, später aus `main` (Auto Deploy).
+- **`development`** baut aus dem Branch `dev` (Auto Deploy).
   Spielwiese für Test-Builds des Spiels (Freunde-Builds, später Steam-Beta-Branch und Play „Interner
   Test“) und für die Admin-Schulung.
 - **`production`** baut aus dem Branch `production`. Auf diesen Branch wird **nie direkt committet**, er
@@ -126,8 +128,8 @@ Reihenfolge einhalten; jeder Schritt verweist auf den Abschnitt mit den Details.
 
 ### Welche Umgebung nutzt das Spiel?
 
-Das Spiel wählt Dev oder Prod **beim Export**, nicht im laufenden Spiel (P-018; Code im Spiel-Repo,
-derzeit im Worktree `soulwick-mp`: `online/online_config.gd`, `online/environment.cfg`):
+Das Spiel wählt Dev oder Prod **beim Export**, nicht im laufenden Spiel (P-018; Code im Spiel-Repo
+`soulwick`: `online/online_config.gd`, `online/environment.cfg`; Details in `soulwick/docs/MULTIPLAYER.md`):
 
 1. **Editor:** Der Godot-Editor (und jeder Start mit der Editor-EXE) nutzt immer `local` =
    `http://localhost:8787` und `ws://localhost:8790/v1`, also `bun dev` aus diesem Repo.
@@ -423,20 +425,24 @@ Gildenräume antworten mit `api_unavailable`.
 ```dotenv
 API_URL=${{environment.API_INTERNAL_URL}}
 SITE_URL=${{environment.WEB_URL}}
-# Online-Teile (Ranglisten, Gildenseiten, Ranglisten-Teaser), je Umgebung verschieden:
+# Live-Funktionen (Spielen/Installieren, Ranglisten, Gildenseiten), je Umgebung verschieden:
 #   development: LIVE_FEATURES=true
-#   production:  LIVE_FEATURES=false   (Teaser, solange der Online-Teil nicht live ist)
+#   production:  LIVE_FEATURES=false   (bis zum Release, D-179)
 LIVE_FEATURES=<true|false>
 ```
 
-- **`LIVE_FEATURES`** (Stand 15.10.2026): in `development` `true` (oder weglassen, Standard ist `true`),
-  in `production` **`false`**, solange der Online-Teil nicht live ist. Mit `false` ist die Website ein
-  reiner Teaser: `/leaderboards` und `/guilds/<TAG>` antworten mit 404, Ranglisten-Teaser, Header-Knopf
-  und Navigationslinks dazu verschwinden, die Sitemap listet die Ranglisten nicht, und die Website ruft
-  keine Ranglisten-API auf. Konto-Löschung (`/delete-account`), Impressum und Datenschutz bleiben. Die
-  Variable wird zur Laufzeit gelesen (kein `NEXT_PUBLIC_`): Umschalten = Wert ändern und den Service neu
-  starten, kein Neubau. Jeder andere Wert als leer, `true`, `1`, `on`, `yes` gilt als aus.
-- **Produktion vorerst:** Für den Teaser braucht `production` nur `soulwick-web`, `soulwick-api` und
+- **`LIVE_FEATURES`** (Stand 17.10.2026, D-179): in `development` `true` (oder weglassen, Standard ist
+  `true`), in `production` **`false`** bis zum Release. `false` schaltet nur die Live-Funktionen ab:
+  Spielen und Installieren der Browser-Version (zeigen „zum Release“), `/leaderboards` und `/guilds/<TAG>`
+  (404, keine Ranglisten-API, nicht in der Sitemap) und die Downloads auf `/open-source`. Die Texte
+  beschreiben in beiden Modi den Release-Stand des Spiels; Navigation, `/delete-account`, Impressum und
+  Datenschutz bleiben. Gelesen zur Laufzeit (kein `NEXT_PUBLIC_`): Wert ändern, Service neu starten, kein
+  Neubau. Jeder andere Wert als leer, `true`, `1`, `on`, `yes` gilt als aus.
+- **`GAME_URL`** wirkt nur mit `LIVE_FEATURES=true` (Abschnitt „Web-Spiel“ unten).
+- **Store- und Social-Media-Links** sind keine Variablen, sondern versionierte Dateien der Website:
+  `apps/web/content/stores.json` (`steam`, `google_play`, `app_store`) und `apps/web/content/social.json`;
+  nur ausgefüllte erscheinen.
+- **Produktion vorerst:** Vor dem Release braucht `production` nur `soulwick-web`, `soulwick-api` und
   `soulwick-postgres` (die API liefert Rechtstexte und `SUPPORT_EMAIL` für `/delete-account`).
   `soulwick-relay` und `soulwick-admin` werden in `production` erst mit dem Online-Teil angelegt.
 - Liefert die API keinen Rechtstext (eRecht24-Schlüssel fehlen, API nicht erreichbar), zeigt die Website
@@ -486,7 +492,7 @@ unterscheiden sich.
 | Einstellung | Wert |
 | --- | --- |
 | Provider | GitHub (App der Organisation `WebBude-de`), Repository `soulwick-platform` |
-| Branch | `development`: vorerst `feature/platform-foundation`, später `main`; `production`: `production` |
+| Branch | `development`: `dev`; `production`: `production` |
 | Build Type | Dockerfile |
 | Dockerfile Path | `apps/api/Dockerfile`, `apps/relay/Dockerfile`, `apps/web/Dockerfile`, `apps/admin/Dockerfile` |
 | Docker Context Path | **`.`** (Repo-Wurzel). Ohne Angabe nimmt Dokploy den Ordner des Dockerfiles, dann fehlen `bun.lock`, die Workspace-Dateien und `packages/*`. Jede App hat eine eigene `apps/<app>/Dockerfile.dockerignore`. |
@@ -736,8 +742,10 @@ geändert hat), Zugänge ausgeschiedener Personen deaktivieren.
 
 ## 12. Test-Build an einen Freund geben
 
-Gebaut wird im **Spiel-Repo** (derzeit im Worktree `soulwick-mp`, Branch `feature/multiplayer`, weil
-`online/` nur dort liegt). Details: dortige `docs/MULTIPLAYER.md` §3d.
+Gebaut wird im **Spiel-Repo** `soulwick` (`online/online_config.gd`, `online/environment.cfg`). Jeder
+Push auf dessen Branch `dev` baut die Test-Builds gegen die Test-Server automatisch und veröffentlicht
+sie als Vorabversion `v<version>-dev.<Lauf>` auf GitHub (`soulwick/docs/RELEASE.md`); von Hand geht
+es so wie unten. Details: `soulwick/docs/MULTIPLAYER.md` §3d.
 
 1. Einmalig die **Export-Vorlagen** für Godot 4.7.2 installieren (Editor → *Editor → Export-Vorlagen
    verwalten* → *Herunterladen und installieren*). Das Skript bricht sonst vor dem Export ab.
@@ -793,9 +801,10 @@ beschreibt `soulwick/docs/WEB_BUILD.md` im Spiel-Repo. Die Adresse steht zentral
 Variablen der Umgebung (`.env.dev` / `.env.prod`); die Services lesen sie von dort:
 
 - **`soulwick-web` → Environment:** `GAME_URL=${{environment.GAME_URL}}` (development); production
-  bleibt `GAME_URL=` leer bis zur Freischaltung, dann ebenfalls `${{environment.GAME_URL}}` (leer =
-  Knöpfe ausgeblendet). Laufzeit-Variable: Die Website zeigt dann „Im Browser spielen“ und „Web-App
-  installieren“ (`GAME_URL?install`) in Hero und Handy-Menü; nach dem Ändern neu deployen.
+  bleibt `GAME_URL=` leer bis zum Release (D-179), dann ebenfalls `${{environment.GAME_URL}}` zusammen
+  mit `LIVE_FEATURES=true` (leer oder `LIVE_FEATURES=false` = Knöpfe zeigen „zum Release“).
+  Laufzeit-Variable: Die Website zeigt dann „Im Browser spielen“ und „Web-App installieren“
+  (`GAME_URL?install`) in Hero und Handy-Menü; nach dem Ändern neu deployen.
 - **`soulwick-api` → Environment:** `CORS_ORIGINS=${{environment.WEB_URL}},${{environment.ADMIN_URL}},${{environment.GAME_URL}}`
   (schon in `apps/api/.env.dev` / `.env.prod`), weil das Spiel im Browser die API direkt aufruft.
   Ohne den Eintrag geht im Browser nur Einzelspieler. Gilt in production auch vor der Freischaltung.

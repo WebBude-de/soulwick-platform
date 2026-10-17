@@ -121,7 +121,8 @@ Zielbild Crossplay über Steam, Google Play und App Store (D-108), Architektur e
 Host-Modell plus eigener Relay, Reihenfolge Steam → Android → iOS, Publisher WebBude. Konzept für
 Entwickler: [KONZEPT_ONLINE.md](KONZEPT_ONLINE.md); Spiel-Pakete:
 [`../soulwick/docs/ROADMAP_CROSSPLAY.md`](../../soulwick/docs/ROADMAP_CROSSPLAY.md); Plattform-Pakete:
-[ROADMAP.md](ROADMAP.md) P13–P20. Noch OFFEN: Geschäftsmodell (CP0 Frage 1), Touch-Schema,
+[ROADMAP.md](ROADMAP.md) P13–P20. Geschäftsmodell als Arbeitsentscheidung: Browser und Handy kostenlos, Steam mit kleinem Preis, verkauft werden nur
+Kosmetik und „Werbefrei“ (D-176, Preise OFFEN); Store-Zielgruppe ab 13 (D-173); Touch-Steuerung D-168. Noch OFFEN:
 Relay-Regionen, Ranglisten je Plattform (CP0 Frage 7); Stand in [KONZEPT_ONLINE.md](KONZEPT_ONLINE.md) §0 und §8.
 
 ## 4. Bewusst nicht
@@ -133,7 +134,8 @@ Relay-Regionen, Ranglisten je Plattform (CP0 Frage 7); Stand in [KONZEPT_ONLINE.
 - **Keine Spielanleitung auf der Website**: Die Website ist ein Teaser (Entscheidung Projektmitglied
   14.10.2026); keine Steuerungs-, Waffen- oder Upgrade-Tabellen.
 - **Kein Matchmaking**, keine öffentlichen Raumlisten: Freunde teilen einen Raumcode.
-- Kein Cloud-Save (CP5) und keine Käufe (CP6), solange das Geschäftsmodell OFFEN ist.
+- Kein Cloud-Save (CP5) und keine Käufe (CP6) vor ihrem Paket; Käufe nur Kosmetik und „Werbefrei“, keine Lootboxen,
+  kein Pay-to-win, serverseitig geprüft (D-176, D-177).
 
 ## 5. Abnahme
 

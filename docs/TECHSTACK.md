@@ -16,7 +16,7 @@
 | Auth | **Better Auth** ^1.7 (wie DapItUp) mit Prisma-Adapter, Plugins `admin`, `bearer`, `jwt` und eigenem Plugin `soulwickPlayerAuth`; Admins E-Mail/Passwort (argon2id über `Bun.password`), Spieler über Plattform-Identitäten; Session-Token als `Authorization: Bearer`; der Relay prüft kurzlebige Spieler-JWTs (EdDSA) mit `jose` gegen die JWKS der API | P-027; Better-Auth-Handler nicht gemountet, nur Hono-Routen |
 | Website / Admin | Next.js 16 (App Router), React 19, Tailwind 4, `output: "standalone"` | |
 | i18n (Website) | **next-intl**, Locales `en` (Standard) und `de`, ohne Sprache im Pfad (Cookie `NEXT_LOCALE`), Texte in `apps/web/messages/{de,en}/*.json` | P-012 |
-| Bilder (Website) | **WebP** überall; `sharp` nur als devDependency für das Sprite-Skript (`apps/web/scripts/sprites.ts`) | P-015; keine Bildverarbeitung zur Laufzeit |
+| Bilder (Website) | **WebP** überall; `sharp` nur als devDependency für das Sprite-Skript (`apps/web/scripts/sync-sprites.ts`) | P-015; keine Bildverarbeitung zur Laufzeit |
 | Rechtstexte | eRecht24 Rechtstexte-API v2, Abruf durch die API mit Speicher-Cache (24 h, Fehler 60 s), HTML-Bereinigung mit Bun-`HTMLRewriter` | P-013, P-025 |
 | Tests | **`bun test`** (API und Relay); API gegen den lokalen Docker-Postgres (Wegwerf-Datenbank je Lauf) | P-011; braucht `bun run services:up` |
 | Lint / Format | Biome 2.5 mit Ultracite 7 (Presets `core`, `react`, `next`), Husky 9 (`pre-commit`, `pre-push`) | `biome.jsonc`; ersetzt ESLint und Prettier (P-007) |
@@ -38,7 +38,7 @@
 
 ## 3. Git
 
-- Branch-Modell und Commit-Präfixe wie im Spiel-Repo (`feat`, `fix`, `refactor`, `docs`, `test`, `chore`; `feature/*` von `main`, Pull Request mit Review). Hauptbranch hier: `main`; Remote auf GitHub `WebBude-de/soulwick-platform` (privat). Dokploy baut `development` aus dem Dev-Branch und `production` aus dem Branch `production` ([infra/DOKPLOY.md](../infra/DOKPLOY.md) §10).
+- Branch-Modell und Commit-Präfixe wie im Spiel-Repo (`feat`, `fix`, `refactor`, `docs`, `test`, `chore`; `feature/*` von `dev`, Pull Request mit Review, siehe [CONTRIBUTING.md](../CONTRIBUTING.md)). Hauptbranch hier: `main`; Remote auf GitHub `WebBude-de/soulwick-platform` (öffentlich, Code GPL-3.0, Inhalte siehe [LICENSE-ASSETS.md](../LICENSE-ASSETS.md)). Dokploy baut `development` aus dem Dev-Branch und `production` aus dem Branch `production` ([infra/DOKPLOY.md](../infra/DOKPLOY.md) §10).
 - **Versioniert:** Quellcode, `bun.lock`, Migrationen in `packages/db/prisma/migrations/`, erzeugte Sprites in `apps/web/public/sprites/`, `.env.example`, Dockerfiles, Doku.
 - **Nicht versioniert:** `node_modules/`, `.next/`, `dist/`, `coverage/`, `*.tsbuildinfo`, `next-env.d.ts`, `packages/db/generated/`, `.turbo/`, `.env` und `.env.*` außer `.env.example` (siehe `.gitignore`).
 - Kein Commit und kein Push durch Agenten ohne ausdrückliche Freigabe.
@@ -70,7 +70,7 @@
 | Migrationen prüfen | `bun run db:verify` (baut alle Migrationen in einer Wegwerf-DB und vergleicht mit dem Schema; läuft im `pre-push`) |
 | Testdaten einspielen | `bun run db:seed:dev` (idempotent, verweigert `NODE_ENV=production`; siehe `apps/api/README.md`) |
 | Ersten Admin anlegen | `DEFAULT_ADMIN_EMAIL`/`DEFAULT_ADMIN_PASSWORD` setzen, dann `bun run db:seed` (im API-Image bei jedem Start; vorhandene Konten bleiben unverändert) |
-| Sprites für die Website erzeugen | `bun run --cwd apps/web sprites` (aus `../soulwick/art/` nach `public/sprites/`, verlustfreies WebP) |
+| Sprites für die Website erzeugen | `bun apps/web/scripts/sync-sprites.ts` (aus `../soulwick/art/` nach `public/sprites/`, verlustfreies WebP; `--force` kodiert alles neu) |
 | Compose prüfen | `docker compose -f infra/docker-compose.yml config` |
 
 Mindestens vor jedem Bericht: `bun run check`, `bun run typecheck`, `bun test`, `bun run build`.

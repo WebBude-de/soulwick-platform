@@ -7,8 +7,11 @@ model: inherit
 
 You build the public website of Soulwick (apps/web: Next.js 16 App Router, React 19, Tailwind v4,
 next-intl, `output: "standalone"`; Bun workspaces + Turborepo). Read `AGENTS.md` first; its rules are
-binding. Read `docs/PRD.md` (what the site must show, tone), `docs/ARCHITECTURE.md` (section
-"apps/web", the `apiGet` contract), `apps/web/README.md` and `docs/design/web/HANDOFF_WEB.md`.
+binding. Then read `../soulwick/docs/PRODUKT.md` §2–§4 (audience, tone, mascot; D-173 to D-175),
+`docs/design/web/KONZEPT_WEB.md` (story and page structure), `docs/design/web/BRIEFING_WEB.md`
+(missing art), `docs/PRD.md` (what the site must show), `docs/ARCHITECTURE.md` (section "apps/web",
+the `apiGet` contract) and `apps/web/README.md`. `docs/design/web/HANDOFF_WEB.md` is superseded
+(17.10.2026); its layout and pixel components are inspiration only.
 
 ## Ownership
 
@@ -29,7 +32,14 @@ binding. Read `docs/PRD.md` (what the site must show, tone), `docs/ARCHITECTURE.
   `/imprint` (legal texts from the API via eRecht24, placeholder while missing; never invent legal
   details or addresses).
 - All copy lives in `apps/web/messages/{de,en}/*.json`, never in components.
-- Visual language: dark dungeon roguelite, pixel display font (`font-pixel`), tokens from
+- Tone (D-174): an atmospheric dungeon that may be dark but never grim, a cute, bright village, modern
+  pixel art (light, glow, particles, smooth motion). Call it "modern pixel art", never "8-bit" or
+  retro.
+- The website describes the game as it will be at release (it is promoted only after release):
+  co-op with friends and the AI bosses are part of the game, not "in development"; only the party
+  mode goes under "What's coming" (D-179). `LIVE_FEATURES=false` hides the pages that need the live
+  servers (leaderboards, guild pages).
+- Visual language: pixel display font (`font-pixel`), tokens from
   `src/app/globals.css` (`ember`, `ember-light`, `mist`, `void`, `crypt`, `stone-*`, `blood`,
   `pixel-panel`). Load the `frontend-design:frontend-design` skill before designing new sections and
   avoid its listed generic defaults.
@@ -42,11 +52,14 @@ binding. Read `docs/PRD.md` (what the site must show, tone), `docs/ARCHITECTURE.
 
 - `bun run --cwd apps/web typecheck`, `bun run --cwd apps/web build` and `bunx biome check apps/web`
   must be green (run `bunx biome check --write apps/web` first for formatting).
+- Never start a second Next dev server in `apps/web`: Next allows one per folder and the member runs
+  `bun dev` himself. If his server answers on port 3000, check the pages there; start your own only
+  when nothing runs, and stop it by its PID when done.
 - Run the site against seeded data. Ask the user whether the API already runs; otherwise
   `bun run services:up`, `bun run db:seed:dev` (after `bun run db:deploy` if the database is new; never
-  reset the user's database) and `bun run dev:api`, then `bun run --cwd apps/web dev` (port 3000; use
-  `bun run --cwd apps/web dev --port 3010` if taken). Check `/leaderboards` in every tab and both
-  periods, `/guilds/DOCHT` and `/delete-account`, each in English and German.
+  reset the user's database) and `bun run dev:api`, then `bun run --cwd apps/web dev` (port 3000, only
+  if no dev server runs in `apps/web`). Check `/leaderboards` in every tab and both periods,
+  `/guilds/DOCHT` and `/delete-account`, each in English and German.
 - Screenshots with headless Chrome at 1440 px and 390 px into `.screenshots/web-<page>.png`
   (gitignored; add the folder to `.gitignore` if missing) and look at them.
 

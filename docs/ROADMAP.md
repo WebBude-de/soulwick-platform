@@ -1,6 +1,6 @@
 # ROADMAP – Soulwick Platform
 
-> **Stand:** 16.10.2026 · **Fokus jetzt: Website zuerst**, davor die Umstellung auf Bun/Turbo/Prisma (P7, P8). Die Pakete P1–P6 entsprechen MP7, MP7b, MP8 und MP9 aus `soulwick/docs/ROADMAP_MULTIPLAYER.md`, hier nur der **Plattform-Teil**. Spielseitige Punkte (GDScript-Client, Gildengebäude, Anzeige im Spiel) bleiben in der Spiel-Roadmap. Das Zielbild Crossplay (Steam, Google Play, App Store) steht in `soulwick/docs/ROADMAP_CROSSPLAY.md` (D-108); die Architektur (Host + eigener Relay, Steam → Android → iOS, Publisher WebBude) ist mit **D-119** entschieden (14.10.2026). Konzept für die Online-Pakete P13–P17: [KONZEPT_ONLINE.md](KONZEPT_ONLINE.md).
+> **Stand:** 17.10.2026 · **Fokus jetzt: Website zuerst**, davor die Umstellung auf Bun/Turbo/Prisma (P7, P8). Die Pakete P1–P6 entsprechen MP7, MP7b, MP8 und MP9 aus `soulwick/docs/ROADMAP_MULTIPLAYER.md`, hier nur der **Plattform-Teil**. Spielseitige Punkte (GDScript-Client, Gildengebäude, Anzeige im Spiel) bleiben in der Spiel-Roadmap. Das Zielbild Crossplay (Steam, Google Play, App Store) steht in `soulwick/docs/ROADMAP_CROSSPLAY.md` (D-108); die Architektur (Host + eigener Relay, Steam → Android → iOS, Publisher WebBude) ist mit **D-119** entschieden (14.10.2026). Konzept für die Online-Pakete P13–P17: [KONZEPT_ONLINE.md](KONZEPT_ONLINE.md).
 > **Abhaken** nur mit Nachweis (Prüfbefehle grün, Datum). Jedes Paket ist für **einen Agenten** geschnitten und nennt seine Dateien; der Koordinator hakt nach Prüfung ab.
 
 ## Überblick und Reihenfolge
@@ -24,6 +24,8 @@
 | **P20** | Gast-Anmeldung je Gerät `POST /auth/device` (P-028) | **API fertig (15.10.2026)**; offen: Spiel-Client (Gast statt Dev-Schlüssel), Variablen in Dokploy prüfen, Hinweis „Konto verknüpfen“ im Spiel (CP1) | P14, P15 (Verknüpfungscode) |
 | **P21** | Bug-Meldungen aus dem Spiel mit Screenshot, Auswertung im Admin-Panel (P-033) | **API fertig (16.10.2026)**; offen: Admin-Seite (admin-dev), Absenden im Spiel (F9), Zusatz Datenschutzerklärung, Variablen in Dokploy | P19 (Sessions), P20 (Gastkonten) |
 | **P22** | Konto-Profil: ein Charakter (Name + Aussehen) je Konto (P-034, D-152) | **API fertig (16.10.2026)**; offen: Profil-Editor im Spiel, Anzeige im Admin-Panel (admin-dev), Namensfilter | P20 |
+| **P23** | Kosmetik im Profil (Plattform-Teil von WK2): Kosmetik von Spielfigur und Wick im Vertrag `PlayerAppearance`, Übertragung über `PATCH /me` | geplant | **WK0** (Spiel-Repo: Aussehen und Rolle von Wick, D-175 OFFEN), P22 |
+| **P24** | Dorf-Schnappschuss (Plattform-Teil von WK6): Dorf mit Deko auf dem Server, Gilde und Freunde schauen es an (nur ansehen) | geplant | WK0, WK5 (Dorf-Deko im Spiel), P4 (Gilden, MP8) |
 | P2 | Online gehen (Dokploy) | geplant | P7, P8 (Images auf Bun, Prisma-Migrationen) |
 | P3 | Website fertig (alte Fassung) | offene Punkte gehen in P9, P10, P12 auf | – |
 | P4 | Gilden im Spiel nutzbar | geplant | **MP0** (Spiel-Repo), **CP0** (Fragen 3/4 entschieden, D-119), P13 (Gilden-Räume) |
@@ -64,7 +66,7 @@ Die offenen Punkte sind in **P9** (Seiten, zwei Sprachen), **P10** (Rechtstexte)
 
 ## P4 – Gilden im Spiel nutzbar (MP8, zusammen mit dem Spiel-Repo)
 
-**Wartet ausdrücklich auf** die Multiplayer-Entscheidungen **MP0** (`soulwick/docs/ROADMAP_MULTIPLAYER.md`) und die Crossplay-Entscheidungen **CP0** (`soulwick/docs/ROADMAP_CROSSPLAY.md`): Lobby/Relay ist mit D-119 entschieden, das Konto-Modell ist noch OFFEN. Gilden-Runs laufen über den Relay im Modus `guild`; die Mitgliedschaft prüft der Relay über die API (**P13**, interner Endpunkt).
+**Wartet ausdrücklich auf** die Multiplayer-Entscheidungen **MP0** (`soulwick/docs/ROADMAP_MULTIPLAYER.md`) und die Crossplay-Entscheidungen **CP0** (`soulwick/docs/ROADMAP_CROSSPLAY.md`): Lobby/Relay ist mit D-119 entschieden, das Konto-Modell mit D-121 und D-122 (ein Soulwick-Konto mit verknüpften Plattform-Identitäten, Regel zum Zusammenführen). Gilden-Runs laufen über den Relay im Modus `guild`; die Mitgliedschaft prüft der Relay über die API (**P13**, interner Endpunkt).
 
 - [x] *(15.10.2026; Migration `multi_guilds`, `db:verify` grün; `bun test` 306/306, live gegen eigene API 8797 und eigenen Relay 8798 mit Seed-Spielern geprüft)* **Gilden vollständig online (D-147, P-031):** bis zu 5 Gilden je Spieler (TESTWERT), `GET /me/guilds`, Gilden-Routen mit Gilden-ID (`/guilds/:id`, `…/leave`, `…/members/:playerId`, `…/invite-code`, `…/progress`), Rechte Gründer/Offizier/Mitglied, alte `/guilds/me*`-Routen entfernt (`API_VERSION` 1.1.0); Relay lässt in Gilden-Räume nur Mitglieder (`guildIds` im internen Status-Endpunkt, frische Nachfrage bei „kein Mitglied“); Konto verknüpfen und löschen mit mehreren Gilden; Dev-Seed mit zweiter Gilde „Aschenrunde“, Lumen in beiden.
 - [ ] Gilden-Wappen (8 Stück) und Wappen-Auswahl in Verträgen und API.
@@ -126,16 +128,16 @@ Die offenen Punkte sind in **P9** (Seiten, zwei Sprachen), **P10** (Rechtstexte)
 
 **Ziel:** Die öffentliche Website wird der aktuelle Fokus: verspielte Landingpage mit Spiel-Sprites und Animationen, eine Seite, die das Spiel erklärt, ein Plattform-Abschnitt (Steam, Google Play, App Store als „geplant“, Hinweis auf Crossplay), Ranglisten und Gildenseiten, Rechtsseiten aus der API. Deutsch **und** Englisch von Anfang an (P-012), alle Bilder als WebP (P-015).
 
-**Agent:** `web-dev`. **Dateien:** `apps/web/**` (`src/app/…`, `src/i18n/*`, `src/proxy.ts` bzw. Middleware, `messages/de/*.json`, `messages/en/*.json`, `src/components/*`, `public/sprites/` erzeugt, `scripts/sprites.ts`, `next.config.ts`, `package.json`, `README.md`). **Nicht:** `apps/web/public/brand/*` (Lieferung P12, README dort bleibt), API, Verträge.
+**Agent:** `web-dev`. **Dateien:** `apps/web/**` (`src/app/…`, `src/i18n/*`, `src/proxy.ts` bzw. Middleware, `messages/de/*.json`, `messages/en/*.json`, `src/components/*`, `public/sprites/` erzeugt, `scripts/sync-sprites.ts`, `next.config.ts`, `package.json`, `README.md`). **Nicht:** `apps/web/public/brand/*` (Lieferung P12, README dort bleibt), API, Verträge.
 
 - [x] *(14.10.2026: Build grün, Cookie/Browsersprache/alte Links per curl und Chrome geprüft)* `next-intl` **ohne Sprache im Pfad** (P-012, Projektmitglied 14.10.2026): englische Pfade `/`, `/leaderboards`, `/guilds/[tag]`, `/imprint`, `/privacy`; Sprache aus Cookie `NEXT_LOCALE` (Umschalter, zusätzlich `localStorage`), sonst Browsersprache, sonst Englisch; alte `/de/...`- und `/en/...`-Links leiten um; Metadaten und Open Graph (`og_image.webp`).
 - [ ] Texte ausschließlich in `messages/{de,en}/*.json` (Namensräume `common`, `home`, `game`, `leaderboards`, `guilds`, `legal`); keine Texte im Code.
 - [ ] Landingpage: Hero mit `logo.webp` und `keyart.webp` (Fallback `hero_player_lantern.webp`, dann das 1×-Logo aus dem Spiel hochskaliert); Abschnitte Spiel in einem Satz, vier Biome (`biome_*.webp`), Dorf, Koop und Gilden („geplant“), Plattformen (Chips `platform_pc`, `platform_mobile`, `platform_crossplay`, keine Store-Badges ohne echte Links), Ranglisten-Teaser; animierte Sprites (Spieler, Schleim, Seelenflamme) als CSS-`steps()`-Animation über die Sprite-Streifen, `image-rendering: pixelated`, `prefers-reduced-motion` beachtet.
 - [x] ~~Spielseite `/de/spiel`~~ **entfällt** (Projektmitglied 14.10.2026: die Website ist ein Teaser, keine Anleitung; die Anker der Landingpage reichen, das Spiel erklärt sich im Spiel). Keine Steuerungs-, Waffen- oder Upgrade-Tabellen auf der Website.
-- [ ] Sprites: Skript `scripts/sprites.ts` kopiert eine feste Liste aus `../soulwick/art/` nach `public/sprites/` als **verlustfreies WebP** (`sharp` nur als devDependency); die erzeugten Dateien werden versioniert, damit der Build ohne Spiel-Repo läuft.
+- [ ] Sprites: Skript `scripts/sync-sprites.ts` kopiert eine feste Liste aus `../soulwick/art/` nach `public/sprites/` als **verlustfreies WebP** (`sharp` nur als devDependency); die erzeugten Dateien werden versioniert, damit der Build ohne Spiel-Repo läuft.
 - [x] *(14.10.2026: Platzhalter und HTML-Darstellung gegen eine Test-API geprüft; echte Texte nach P10 Phase B)* Rechtsseiten lesen `GET /legal/imprint` bzw. `/legal/privacy-policy` und zeigen das HTML der Sprache; bei `status: missing` oder fehlender Sprache ein deutlicher Platzhalter („Text folgt“) statt eines Fehlers; Revalidate wie `apiGet`.
 - [x] *(14.10.2026: im Handoff-Stil, gegen eine Test-API geprüft; Nachprüfung mit echtem Seed nach P8)* Ranglisten und Gildenseiten (`/leaderboards`, `/guilds/[tag]`); API nicht erreichbar → Hinweisbox (wie bisher). `not-found` je Sprache.
-- [ ] Palette und Schrift aus `docs/design/TOKENS.md` (Pixelify Sans für Titel, DM Sans für Fließtext; Herkunft `soulwick/docs/HANDOUT.md`); Layout und Komponenten nach `docs/design/web/HANDOFF_WEB.md` (verbindlich) mit den Mockups in `docs/design/web/`; Konzept der übrigen Seiten in `docs/design/web/KONZEPT_WEB.md`; Spiel-Screens in `soulwick/docs/design/` nur als Inspiration.
+- [ ] Palette und Schrift aus `docs/design/TOKENS.md` (Pixelify Sans für Titel, DM Sans für Fließtext; Herkunft `soulwick/docs/HANDOUT.md`); Erzählung und Seitenaufbau nach `docs/design/web/KONZEPT_WEB.md` (maßgeblich seit 17.10.2026, D-173 bis D-179); `docs/design/web/HANDOFF_WEB.md` und die Mockups in `docs/design/web/` sind abgelöst und nur noch Inspiration für Layout und Pixel-Komponenten; Spiel-Screens in `soulwick/docs/design/` nur als Inspiration.
 
 **Fertig, wenn:** `bun run build` ohne laufende API durchläuft, alle Seiten in beiden Sprachen rendern, der Sprachwechsel auf jeder Seite die passende Gegenseite öffnet, die Sprites animieren, die Rechtsseiten ohne eRecht24-Schlüssel den Platzhalter zeigen und `bun run check`/`typecheck` grün sind.
 
@@ -176,7 +178,7 @@ Die offenen Punkte sind in **P9** (Seiten, zwei Sprachen), **P10** (Rechtstexte)
 
 ## P12 – Website-Grafiken (Lieferung durch das Projektmitglied)
 
-**Wer:** das Projektmitglied mit Claude Design; Briefing `soulwick/docs/SPRITES_V5.md` §8 (ersetzt `SPRITES_V3.md` §6, jetzt WebP). **Ablage:** `apps/web/public/brand/` nach der dortigen README; Dateinamen exakt übernehmen, die Website lädt nach Namen und zeigt bis dahin Platzhalter.
+**Wer:** das Projektmitglied mit Claude Design; Briefing `soulwick/docs/design/sprites/SPRITES_V5.md` §8 (ersetzt `soulwick/docs/design/sprites/SPRITES_V3.md` §6, jetzt WebP); neue Website-Grafiken (Wick, Dorf bei Tag, Teilen-Bilder): [design/web/BRIEFING_WEB.md](design/web/BRIEFING_WEB.md). **Ablage:** `apps/web/public/brand/` nach der dortigen README; Dateinamen exakt übernehmen, die Website lädt nach Namen und zeigt bis dahin Platzhalter.
 
 - [ ] `logo.webp` (512×128), `logo_square.webp` (256×256), `keyart.webp` (1920×1080), `og_image.webp` (1200×630), `biome_crypt.webp`, `biome_slime_grotto.webp`, `biome_shadow_realm.webp`, `biome_ember_forge.webp` (je 640×360).
 - [ ] `hero_player_lantern.webp` (256×256) als Hero-Fallback ohne Keyart; `platform_pc.webp`, `platform_mobile.webp`, `platform_crossplay.webp` (je 32×32) für die Plattform-Chips (keine Markenlogos).
@@ -351,9 +353,28 @@ Doku für alle Punkte fertig (14.10.2026) in [infra/DOKPLOY.md](../infra/DOKPLOY
 - [ ] Admin-Panel: Figur und Namensverlauf in den Spieler-Details zeigen (admin-dev).
 - [ ] Filter gegen anstößige Namen (Store-Pflicht; Baustein fehlt).
 
+## P23 – Kosmetik im Profil (Plattform-Teil von WK2)
+
+**Ziel:** Kosmetik (Spielfigur: Kopf, Rücken, Lichtfarbe; Wick: Hut, Flammenfarbe) reist wie das Aussehen über das Konto-Profil (`PATCH /me`, P-034), nie über Spielpakete, und ist nur Optik. Das Spiel-Paket WK2 (`soulwick/docs/ROADMAP.md`, Strang W; Konzept `soulwick/docs/KONZEPT_BEGLEITER_KOSMETIK.md` §5) braucht diesen Vertrag zuerst. Kaufbare Kosmetik und die serverseitige Besitzprüfung kommen erst mit CP6 (D-176, D-177).
+**Agent:** `api-dev`. **Dateien:** `packages/contracts/src/{common,player,guild}.ts` (`PlayerAppearance` nur ergänzen, abwärtskompatibel), `apps/api/src/routes/me.ts`, `services/profile.ts`, Test `apps/api/test/profile.test.ts`, Dev-Seed; Migration nur, falls `players.appearance` (jsonb) nicht reicht. **Wartet auf** WK0 (Plätze und Teile).
+
+- [ ] Vertrag: Kosmetik-Plätze und erlaubte Teile nach WK0; Profile ohne Kosmetik und ältere Spielversionen bleiben gültig.
+- [ ] `PATCH /me`, Anmelde-Antworten und Gildenmitglieder (`GuildMember.appearance`) tragen die Kosmetik mit.
+- [ ] Tests und Live-Prüfung gegen die lokale API (Profil-Test von WK2).
+
+## P24 – Dorf-Schnappschuss (Plattform-Teil von WK6)
+
+**Ziel:** Ein Spieler legt einen Schnappschuss seines Dorfs (Gebäudestufen, Deko mit Platz und Drehung, Zeitpunkt) auf dem Server ab; Gildenmitglieder und Freunde öffnen ihn und schauen das Dorf an, ohne etwas zu ändern. Danach baut `village-dev` die Spielseite (WK6, `soulwick/docs/ROADMAP.md`). Konzept: `soulwick/docs/KONZEPT_BEGLEITER_KOSMETIK.md` §7.
+**Agent:** `api-dev`. **Dateien:** `packages/contracts` (neuer Bereich für den Schnappschuss), `packages/db/prisma/schema.prisma` + Migration, `apps/api/src/routes/`, `services/`, Tests, Dev-Seed. **Wartet auf** WK0 (wer schauen darf, OFFEN; Vorschlag: Gilde und wer den Besuchs-Link bekommt), WK5 (Deko im Spiel) und P4 (Gilden).
+
+- [ ] Vertrag: Format mit Version und Größengrenze (Vorschlag ≤ 16 KB, TESTWERT), keine Freitexte, kein Spielstand, kein Gold.
+- [ ] Tabelle und Routen: eigenen Schnappschuss ablegen und lesen, fremden nur mit Recht lesen; Rate-Limit.
+- [ ] Melden und Ausblenden im Admin-Panel (admin-dev); Löschen mit dem Konto und Mitnehmen beim Zusammenführen.
+- [ ] Datenschutzerklärung um den Dorf-Schnappschuss ergänzen (Projektmitglied, eRecht24).
+
 ## Später
 
 - KI-Wunschbosse „Traumweber“ (Server-Teil laut `soulwick/docs/ROADMAP_KI_BOSS.md`).
 - Rate-Limit über mehrere API-Container (z. B. Redis), falls nötig.
-- Crossplay: Relay, Anmeldung, Verknüpfung und Versionen sind jetzt P13–P17; Cloud-Save (CP5) und Käufe (CP6, Geschäftsmodell OFFEN) bleiben später: `soulwick/docs/ROADMAP_CROSSPLAY.md`.
+- Crossplay: Relay, Anmeldung, Verknüpfung und Versionen sind jetzt P13–P17; Cloud-Save (CP5) und Käufe (CP6; Geschäftsmodell entschieden in D-176, serverseitige Prüfung D-177, Preise OFFEN) bleiben später: `soulwick/docs/ROADMAP_CROSSPLAY.md`.
 - Relay je Region (Raumcode mit Regions-Präfix, CP0 Frage 10, OFFEN); dedizierter Godot-Server als Container-Pool (`soulwick/docs/ROADMAP_CROSSPLAY.md` „Dedizierter Server (später)“).

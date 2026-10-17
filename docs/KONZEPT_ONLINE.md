@@ -19,8 +19,8 @@
 | Domains `play.playsoulwick.com`, `dev.`-Subdomains, zwei Umgebungen | **VORSCHLAG** | P-018, P-008 |
 | Konto-Modell (Soulwick-Konto mit verknüpften Identitäten) | **ENTSCHIEDEN** (CP0 Frage 2a, 14.10.2026) | D-121, P-014 |
 | Regel für das Zusammenführen zweier Konten | **ENTSCHIEDEN** (14.10.2026, §3.6) | D-122 |
-| Geschäftsmodell (Käufe, Werbung, Steam-Preis) | **OFFEN** (CP0 Frage 1) | D-108 |
-| Touch-Schema | **OFFEN**, der Prototyp in CP2 entscheidet | – |
+| Geschäftsmodell (Käufe, Werbung, Steam-Preis) | **ENTSCHIEDEN** als Arbeitsgrundlage (17.10.2026): Browser und Handy kostenlos, Steam kleiner Preis, nur Kosmetik und „Werbefrei“; Preise OFFEN | D-176 |
+| Touch-Schema | **ENTSCHIEDEN** (Pixel-Art-Touch-Steuerung) | D-168 |
 | Relay-Regionen | **OFFEN** (CP0 Frage 10); zuerst eine Instanz | – |
 | Konto-Profil: ein Charakter (Name + Aussehen) je Konto, Spielstände sind nur Welten | **ENTSCHIEDEN** (D-152, 16.10.2026), Grenzen TESTWERT | P-034, §3.4a |
 | Bug-Meldungen aus dem Spiel mit Screenshot, 90 Tage, Löschung mit dem Konto | **ENTSCHIEDEN** (Auftrag 16.10.2026), Zahlen TESTWERT | P-033, §3.7a |
@@ -304,7 +304,7 @@ Stand der Preise: 14.10.2026, vor dem Bezahlen bei den Anbietern prüfen.
 - Play Games Services v2 einrichten (OAuth-Client für den Server, §3.3).
 - Testspuren intern → geschlossen → offen → Produktion.
 - Formular **„Datensicherheit“**: Spieler-ID, Name, Gilde, Run-Berichte, Relay-Verbindungsdaten; Link zur **Web-Seite für die Kontolöschung** (§3.7).
-- IARC-Fragebogen; **Zielgruppe ab 13** angeben (sonst Familien-Richtlinien; USK 6 ist nur die Freigabe, nicht die Zielgruppe).
+- IARC-Fragebogen; **Zielgruppe ab 13** angeben (sonst gelten die Familien-Richtlinien). Die Altersfreigabe ergibt sich aus dem Fragebogen (erwartet niedrig) und ist nicht die Zielgruppe (D-173).
 - Nutzergenerierte Inhalte: Spieler- und Gildennamen melden und filtern (Admin-Panel kann umbenennen und sperren).
 - Ziel-API-Level der aktuellen Anforderung von Google.
 
@@ -319,19 +319,19 @@ Stand der Preise: 14.10.2026, vor dem Bezahlen bei den Anbietern prüfen.
 
 1. **Rechte:** Vertrag mit dem Kollegen (Idee) und allen Mitwirkenden, dass WebBude veröffentlichen und verkaufen darf; Lizenzen aller Assets, Schriften, Audio-Dateien und Addons prüfen (MP10).
 2. **Konten und Kosten:** siehe §6.1; Konten auf WebBude, nicht auf Privatpersonen.
-3. **Touch und Handy:** Steuerung neu denken (virtueller Stick + Zielhilfe, CP2, OFFEN), Renderer von Forward+ auf **Mobile** für Android prüfen, Safe Areas, Auflösung (D-096 offen), Akku. App im Hintergrund = Host weg → Handy-Spieler möglichst nicht hosten lassen oder warnen.
+3. **Touch und Handy:** Steuerung entschieden (zwei Sticks, Zielhilfe nur für Fernwaffen, D-155, D-168); offen sind Gerätetests und Leistung (CP2): Renderer von Forward+ auf **Mobile** für Android prüfen, Safe Areas, Auflösung (D-096 offen), Akku. App im Hintergrund = Host weg → Handy-Spieler möglichst nicht hosten lassen oder warnen.
 4. **Eingabe-Abstraktion zuerst (MP1):** `player.gd` liest Tastatur und Maus direkt; ohne Eingabe-Objekt gibt es weder Netzwerk noch Touch noch Gamepad (Steam Deck).
 5. **Versionen:** Crossplay heißt gleiche Protokollversion auf allen Stores; Update-Sperre im Hauptmenü, wenn zu alt (§3.8).
 6. **Store-Pflichten:** Kontolöschung in der App **und** als Web-Seite (Google), Datenschutz-Angaben (Google „Datensicherheit“, Apple „App-Datenschutz“), IARC-Altersfreigabe, Melden und Filtern von Namen und Gildennamen, Zielgruppe in der Play Console **ab 13**.
 7. **Datenschutz:** Datenschutzerklärung (eRecht24, P-013) um Steam-, Google- und Apple-IDs, Relay-Verbindungsdaten (IP, Spieler-ID, Zeitpunkt, keine Inhalte) und die Bug-Meldungen aus dem Spiel (Screenshot, Notiz, Kontext, 90 Tage, §3.7a, P-033) ergänzen. AGENTS.md Regel 6 („nur Steam-ID bzw. Geräte-ID“) wird dabei mit erweitert.
 8. **Cheats:** Der Host meldet Runs; die Plausibilitätsprüfung bleibt. Ranglisten gegebenenfalls nur von PC-Hosts zählen oder später über den dedizierten Server.
 9. **Betrieb:** Relay-Traffic beobachten (Inklusivtraffic), Monitoring, Backups, Status-Anzeige im Spiel bei Server-Ausfall (Einzelspieler bleibt offline spielbar).
-10. **Geschäftsmodell (OFFEN):** bestimmt Käufe, Werbung und Steam-Preis; erst danach CP6 (Tabellen `purchases`/`entitlements`).
+10. **Geschäftsmodell (D-176, Arbeitsgrundlage):** Käufe nur Kosmetik und „Werbefrei“, am Konto serverseitig geprüft (Store-Quittungen, Steam-Ticket, D-177); Tabellen `purchases`/`entitlements` erst mit CP6. Preise OFFEN.
 
 ## 8. Offene Fragen
 
-- Geschäftsmodell (CP0 Frage 1). Konto-Modell entschieden (D-121).
-- Touch-Schema (CP2-Prototyp), Altersfreigabe (CP0 Frage 6), Ranglisten je Plattform oder gemeinsam (CP0 Frage 7).
+- Preise, Zahlungsweg im Browser und plattformübergreifende Käufe (D-176 OFFEN). Geschäftsmodell (D-176), Konto-Modell (D-121), Touch (D-168) und Store-Zielgruppe ab 13 (D-173) sind entschieden; die Altersfreigabe selbst kommt aus dem IARC-Fragebogen.
+- Ranglisten je Plattform oder gemeinsam (CP0 Frage 7).
 - Relay-Regionen (CP0 Frage 10) und ob Clients nur an den Host senden dürfen (§2.4).
 - `rejoin` (§2.5): Darf ein getrennter Spieler in denselben Raum (gleiche Spieler-ID, ggf. alte Peer-ID) zurück, im Dorf und/oder im laufenden Run?
 - Welches Godot-Plugin für Play Games Services v2 (§3.3).

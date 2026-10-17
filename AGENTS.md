@@ -1,6 +1,6 @@
 # AGENTS.md – Soulwick Platform
 
-> **Stand:** 15.10.2026 · Gilt für jeden Agenten und jeden neuen Chat in diesem Repo. Die gemeinsame
+> **Stand:** 17.10.2026 · Gilt für jeden Agenten und jeden neuen Chat in diesem Repo. Die gemeinsame
 > Arbeitsweise (Rollen Orchestrator/Fach-Agent/Integrator, Pakete mit Besitzliste, Berichte) steht in
 > `../soulwick/AGENTS.md` und gilt hier genauso. Diese Datei ergänzt nur, was für die Plattform
 > besonders ist.
@@ -8,16 +8,22 @@
 ## 1. Erst lesen
 
 1. [README.md](README.md): was das Repo ist, Aufbau, Schnellstart.
-2. `../soulwick/docs/PRODUKT.md`: Produktüberblick und Begriffe für beide Repos.
+2. `../soulwick/docs/PRODUKT.md`: Produktkontext für beide Repos (Zielgruppe, Ton, Maskottchen Wick,
+   Geschäftsmodell, Open Source); Begriffe in `../soulwick/docs/GLOSSAR.md`.
 3. [docs/PRD.md](docs/PRD.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md),
    [docs/TECHSTACK.md](docs/TECHSTACK.md), [docs/ROADMAP.md](docs/ROADMAP.md),
    [docs/DECISIONS.md](docs/DECISIONS.md).
 4. Je nach Aufgabe: [docs/KONZEPT_ONLINE.md](docs/KONZEPT_ONLINE.md) (Relay, Anmeldung, Versionen),
    [infra/DOKPLOY.md](infra/DOKPLOY.md) (Server), [docs/design/README.md](docs/design/README.md) (UI;
-   `web-dev`/`admin-dev` zusätzlich [docs/design/TOKENS.md](docs/design/TOKENS.md) und den Handoff ihrer App).
+   `web-dev`/`admin-dev` zusätzlich [docs/design/TOKENS.md](docs/design/TOKENS.md); `web-dev` liest
+   [docs/design/web/KONZEPT_WEB.md](docs/design/web/KONZEPT_WEB.md) statt des abgelösten Handoffs und
+   [docs/design/web/BRIEFING_WEB.md](docs/design/web/BRIEFING_WEB.md), `admin-dev`
+   [docs/design/admin/README.md](docs/design/admin/README.md)).
 5. Die README des Ordners, in dem gearbeitet wird (`apps/*/README.md`, `packages/contracts/README.md`).
 6. Produkt-Entscheidungen im Spiel-Repo `../soulwick/docs/DECISIONS.md` (v. a. D-080 bis D-085, D-093,
-   D-108, D-119, D-121, D-122) und dessen `docs/ROADMAP_MULTIPLAYER.md` (MP7–MP9).
+   D-108, D-119, D-121, D-122 und D-173 bis D-179: Zielgruppe, Ton, Wick, Geschäftsmodell, Code offen
+   und Inhalte geschützt, Doku-Regel, Reihenfolge), die Phasen-Übersicht `../soulwick/docs/ROADMAP.md`
+   und `../soulwick/docs/ROADMAP_MULTIPLAYER.md` (MP7–MP9).
 
 ## 2. Regeln
 

@@ -1,5 +1,7 @@
 # Soulwick Website – HANDOFF (Landingpage)
 
+> **Abgelöst (17.10.2026):** Positionierung, Seitenaufbau und Tagline dieses Handoffs gelten nicht mehr. Seit D-173 und D-174 (`soulwick/docs/DECISIONS.md`) erzählt die Startseite „Schnapp dir deine Freunde. Bring Licht ins Dunkel.“ statt „Das letzte Licht im endlosen Dunkel“ (Absicht und Aufbau: [KONZEPT_WEB.md](KONZEPT_WEB.md)). Layout, Pixel-Komponenten, Sprite-Animation und Barrierefreiheit unten bleiben Inspiration; neue Farben und Komponenten stehen in [../TOKENS.md](../TOKENS.md).
+
 Stand 14.10.2026. Dieses Dokument übergibt das Design der Landingpage an `apps/web`. Es ergänzt `PRD.md` §3.4 (zweisprachig, WebP, Graceful Degradation) und `docs/HANDOUT.md` (Palette, Sprite-Regeln).
 
 Referenz-Mockups: `docs/design/web/landing_desktop_de.png` (1280 px), `landing_desktop_en.png`, `landing_mobile_de.png` (390 px). Der interaktive Prototyp ist `Soulwick-Landing.dc.html` (Sprache per Tweak, Hover-Effekte, Ranglisten-Tabs).
