@@ -1,0 +1,78 @@
+name: Bug report
+description: Something on the website, in the API, the co-op relay or the admin panel is broken.
+title: "[Bug]: "
+labels: ["bug", "platform"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping! English or German is fine.
+        **Bugs in the game itself** (gameplay, menus, controls, crashes) belong in the [game repo](https://github.com/WebBude-de/soulwick/issues/new/choose).
+        Security problems: [report privately](https://github.com/WebBude-de/soulwick-platform/security/advisories/new), not here.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where?
+      options:
+        - Website (playsoulwick.com)
+        - Online features in the game (sign-in, guilds, leaderboards, co-op room codes)
+        - Admin panel
+        - Local setup or tooling
+        - Not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - playsoulwick.com (live)
+        - dev.playsoulwick.com or a test build (test servers)
+        - Local (bun dev)
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Describe the bug. Screenshots help a lot (drag them in here).
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: false
+  - type: textarea
+    id: steps
+    attributes:
+      label: How can we see it ourselves?
+      description: Steps to reproduce, the page URL or API route, the game version if the game was involved.
+    validations:
+      required: false
+  - type: input
+    id: client
+    attributes:
+      label: Browser and system
+      placeholder: Firefox 140 on Windows 11 / Chrome on Android
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or error messages
+      description: Please remove tokens, passwords and other secrets first.
+      render: text
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you send
+      options:
+        - label: I searched the existing issues and did not find this bug.
+          required: true
+        - label: The logs and screenshots above contain no tokens, passwords or personal data.
+          required: true

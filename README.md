@@ -1,111 +1,140 @@
+<div align="center">
+
+<a href="https://playsoulwick.com"><img src=".github/assets/banner.webp" alt="Soulwick Platform – website, API and co-op relay" width="100%"></a>
+
 # Soulwick Platform
 
-Online-Teil von **Soulwick**, einem 2D-Dungeon-Roguelite in Godot. Das Spiel selbst liegt im
-Nachbar-Repo `../soulwick` und bleibt ohne diesen Server spielbar. Hier liegt alles, was einen Server
-braucht:
+**Grab your friends. Light the dark.**
 
-- **Website** [playsoulwick.com](https://playsoulwick.com): Startseite, Ranglisten, Gildenseiten,
-  Kontolöschung, Rechtstexte (Englisch und Deutsch).
-- **Spieler-API**: Anmeldung (Gast je Gerät, Steam, Google Play), Konten verknüpfen, Gilden,
-  Run-Berichte, Ranglisten.
-- **Relay** für Koop: Räume mit Raumcode, leitet Spielpakete weiter, ohne sie zu lesen.
-- **Admin-Panel**: Spieler sperren, Gilden und Runs moderieren, Live-Räume, Protokolle.
+Everything online behind [Soulwick](https://github.com/WebBude-de/soulwick), the pixel roguelite you
+jump into with your friends: website, player API, co-op relay and admin panel.
 
-## Aufbau
+[![Code: GPL-3.0-or-later](https://img.shields.io/badge/code-GPL--3.0--or--later-blue)](LICENSE)
+[![Content: all rights reserved](https://img.shields.io/badge/content-all%20rights%20reserved-lightgrey)](LICENSE-ASSETS.md)
+[![Bun 1.3](https://img.shields.io/badge/Bun-1.3-000000?logo=bun&logoColor=white)](https://bun.sh)
+[![Next.js 16](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org)
+[![Hono 4](https://img.shields.io/badge/Hono-4-E36002?logo=hono&logoColor=white)](https://hono.dev)
+[![Prisma 7](https://img.shields.io/badge/Prisma-7-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Website](https://img.shields.io/badge/website-playsoulwick.com-f3c85c)](https://playsoulwick.com)
 
-Bun-Workspaces mit Turborepo, Datenbank über Prisma, Lint und Format mit Biome (Ultracite-Presets),
-Git-Hooks mit Husky. Details: [docs/TECHSTACK.md](docs/TECHSTACK.md).
+**[Website](https://playsoulwick.com)** ·
+**[Play in your browser](https://game.playsoulwick.com)** (from release) ·
+[Leaderboards](https://playsoulwick.com/leaderboards) (from release) ·
+[Game repo](https://github.com/WebBude-de/soulwick) ·
+[Downloads](https://github.com/WebBude-de/soulwick/releases) ·
+[Docs (German)](docs/)
 
-| Ordner | Paket | Inhalt | Port lokal |
+</div>
+
+> 🇩🇪 Die Projektdokumentation ist auf Deutsch: [docs/](docs/) und im Spiel-Repo
+> [docs/README.md](https://github.com/WebBude-de/soulwick/blob/main/docs/README.md). Issues and pull
+> requests are welcome in English or German.
+
+## What is this?
+
+The game itself lives in [WebBude-de/soulwick](https://github.com/WebBude-de/soulwick) and stays
+playable without any server. This repository holds everything that needs one:
+
+- **Website** – [playsoulwick.com](https://playsoulwick.com) (English and German): landing page, news,
+  account deletion and legal pages; leaderboards and guild pages once the live features are switched
+  on (`LIVE_FEATURES`).
+- **Player API** – sign-in without e-mail or password (guest per device, Steam, Google Play), linked
+  accounts, guilds, run reports, leaderboards, bug reports from the game.
+- **Co-op relay** – rooms with a room code; forwards game packets without reading them.
+- **Admin panel** – moderation of players, guilds and runs, live rooms, audit log.
+
+## Stack
+
+Bun workspaces with Turborepo, Next.js and Tailwind for the two web apps, Hono on Bun for the API,
+a Bun WebSocket server for the relay, PostgreSQL via Prisma, zod contracts shared by every app (and
+mirrored by the game's GDScript client), Biome with the Ultracite presets, Husky hooks. Details:
+[docs/TECHSTACK.md](docs/TECHSTACK.md).
+
+| Folder | Package | What | Local port |
 | --- | --- | --- | --- |
-| `apps/web` | `@soulwick/web` | Website (Next.js, DE/EN) | 3000 |
-| `apps/admin` | `@soulwick/admin` | Admin-Panel (Next.js) | 3001 |
-| `apps/api` | `@soulwick/api` | Spieler- und Admin-API (Hono auf Bun) | 8787 |
-| `apps/relay` | `@soulwick/relay` | WebSocket-Relay für Koop (Bun) | 8790 |
-| `packages/contracts` | `@soulwick/contracts` | API- und Relay-Verträge (zod), Quelle der Wahrheit für alle Apps und den GDScript-Client | – |
-| `packages/db` | `@soulwick/db` | Prisma-Schema, Migrationen, Client (nur die API nutzt es) | – |
-| `packages/config` | `@soulwick/config` | gemeinsame TypeScript-Konfiguration | – |
-| `infra/` | – | nur **lokale** Dienste (`docker-compose.yml`: Postgres) und die Server-Anleitung `DOKPLOY.md` | 5432 |
+| `apps/web` | `@soulwick/web` | website (Next.js, EN/DE) | 3000 |
+| `apps/admin` | `@soulwick/admin` | admin panel (Next.js) | 3001 |
+| `apps/api` | `@soulwick/api` | player and admin API (Hono on Bun) | 8787 |
+| `apps/relay` | `@soulwick/relay` | WebSocket relay for co-op (Bun) | 8790 |
+| `packages/contracts` | `@soulwick/contracts` | API and relay contracts (zod), the single source of truth | – |
+| `packages/db` | `@soulwick/db` | Prisma schema, migrations, client | – |
+| `packages/config` | `@soulwick/config` | shared TypeScript config | – |
+| `infra/` | – | local services only (`docker-compose.yml`: Postgres) and the server guide | 5432 |
 
-## Schnellstart lokal
+## Quick start
 
-Voraussetzungen: [Bun](https://bun.sh) 1.3, Node 24 (Next.js läuft darauf), Docker.
+You need [Bun](https://bun.sh) 1.3, Node 24 (Next.js runs on it) and Docker.
 
 ```bash
-bun install                                    # Abhängigkeiten, richtet auch die Husky-Hooks ein
-cp .env.example .env.local                     # gemeinsame Werte: BETTER_AUTH_SECRET, RELAY_INTERNAL_KEY, DEV_AUTH_KEY eintragen
-cp apps/api/.env.example apps/api/.env.local
-cp apps/relay/.env.example apps/relay/.env.local
-cp apps/web/.env.example apps/web/.env.local
-cp apps/admin/.env.example apps/admin/.env.local
-cp infra/.env.example infra/.env.local         # Port und Passwort des lokalen Postgres
-bun run services:up                            # nur Postgres (Container soulwick-postgres, Port 5432)
-bun run db:deploy                              # Migrationen einspielen
-bun run db:seed:dev                            # Testdaten: Admins, Spieler, Gilde, Runs, Sperre, Löschprotokoll
-bun dev                                        # Web 3000, Admin 3001, API 8787, Relay 8790
+bun install                      # dependencies and Husky hooks
+cp .env.example .env.local       # then fill in BETTER_AUTH_SECRET, RELAY_INTERNAL_KEY, DEV_AUTH_KEY
+for app in api relay web admin; do cp apps/$app/.env.example apps/$app/.env.local; done
+cp infra/.env.example infra/.env.local
+bun run services:up              # local Postgres (container soulwick-postgres, port 5432)
+bun run db:deploy                # apply migrations
+bun run db:seed:dev              # test data: admins, players, a guild, runs
+bun dev                          # web 3000, admin 3001, API 8787, relay 8790
 ```
 
-Stoppen: `bun run services:down` (die Daten bleiben im Docker-Volume). Einzeln starten:
-`bun run dev:api`, `dev:web`, `dev:admin`, `dev:relay`. Ist Port 5432 belegt, in `infra/.env.local`
-`DB_PORT` ändern und `DATABASE_URL` in der Root-`.env.local` anpassen.
+Generate secrets with e.g. `openssl rand -base64 48`. Only the `.env.example` files are committed;
+every other `.env*` file is ignored by git. Stop the database with `bun run services:down` (data stays
+in the Docker volume).
 
-**Aufbau der `.env`-Dateien** (alle außer `.env.example` sind gitignored):
+**Local logins after the seed** (local test data only): admin `admin@soulwick.local`, moderator
+`moderator@soulwick.local`, password `soulwick-admin-local`. A test player signs in with
+`POST /auth/device` and `{ "deviceId": "<UUID>", "name": "Lumen" }`. The game started from the Godot
+editor talks to `localhost:8787` (API) and `localhost:8790` (relay) automatically.
 
-| Ort | `.env.example` | `.env.local` | `.env.dev` / `.env.prod` |
-| --- | --- | --- | --- |
-| Wurzel | Vorlage | gemeinsame Werte lokal (URLs, Datenbank, Geheimnisse, Versionen) | Dokploy: Variablen der Umgebung `development` / `production` |
-| `apps/<app>/` | Vorlage | Werte der App lokal, gewinnt über die Wurzel | Dokploy: **Environment** des Services (mit `${{environment.NAME}}`) |
-| `infra/` | Vorlage | lokaler Postgres-Container | – (auf den Servern nicht genutzt) |
+## Checks
 
-API, Relay und Prisma laden erst die Wurzel-`.env.local`, dann die eigene darüber. Geheimnisse erzeugen z. B. mit
-`openssl rand -base64 48`.
-
-**Zugänge nach dem Seed:** Admin `admin@soulwick.local`, Moderator `moderator@soulwick.local`, Passwort
-`soulwick-admin-local` (oder `DEFAULT_ADMIN_PASSWORD`). Spieler-Login für Tests:
-`POST /auth/device` mit `{ "deviceId": "<UUID>", "name": "Lumen" }` (Gast, ohne Schlüssel) oder
-`POST /auth/dev` mit Header `x-dev-auth-key: <DEV_AUTH_KEY>` und
-`{ "name": "Lumen", "deviceId": "dev-device-00000001" }` (Seed-Spieler). Ersten echten Admin anlegen:
-`DEFAULT_ADMIN_EMAIL` und `DEFAULT_ADMIN_PASSWORD` in `apps/api/.env.local` setzen, dann `bun run db:seed`
-(legt ihn nur an, wenn es die Adresse noch nicht gibt; im API-Image läuft das bei jedem Start). Das eigene
-Passwort und die E-Mail ändert man im Admin-Panel unter „Mein Konto“.
-
-Das Spiel im Godot-Editor spricht automatisch mit `localhost:8787` (API) und `localhost:8790` (Relay).
-
-## Prüfen
-
-| Was | Befehl |
+| What | Command |
 | --- | --- |
-| Formatieren und Lint-Fixes | `bun run fix` |
-| Lint und Format prüfen (Biome) | `bun run check` |
-| Typen | `bun run typecheck` |
-| Tests (API und Relay; API gegen den lokalen Postgres mit Wegwerf-Datenbank je Lauf) | `bun test` (braucht `bun run services:up`) |
-| Bauen | `bun run build` |
-| Migrationen gegen das Schema prüfen | `bun run db:verify` |
-| Zustand der lokalen Datenbank | `bun run db:status` |
-| Ein Image wie auf dem Server bauen | `docker build -f apps/<app>/Dockerfile .` |
+| Lint and format (Biome) | `bun run check` (fix: `bun run fix`) |
+| Types | `bun run typecheck` |
+| Tests (API and relay, against a throwaway database) | `bun run test` (needs `bun run services:up`) |
+| Build | `bun run build` |
+| Migrations match the schema | `bun run db:verify` |
 
-Neue Migration: Schema in `packages/db/prisma/schema.prisma` ändern, dann
-`bun run db:migrate --name <name>`. Husky formatiert beim Commit die gestagten Dateien und prüft vor dem
-Push die Migrationen, wenn Schema oder Migrationen geändert wurden.
+New migration: change `packages/db/prisma/schema.prisma`, then `bun run db:migrate --name <name>`.
 
 ## Deployment
 
-Jede App läuft auf Dokploy als eigene Application aus ihrem Dockerfile, dazu eine Postgres-Datenbank je
-Umgebung. Zwei Umgebungen mit je eigener Datenbank, eigenen Geheimnissen und eigenem Relay:
-`development` unter `dev.playsoulwick.com`, `api.dev.…`, `admin.dev.…`, `play.dev.…` und `production`
-ohne Präfix. Schritt-für-Schritt-Anleitung: [infra/DOKPLOY.md](infra/DOKPLOY.md).
+Each app runs on [Dokploy](https://dokploy.com) from its own Dockerfile, with one Postgres database per
+environment: `development` on `dev.playsoulwick.com` (plus `api-dev.`, `admin-dev.`, `play-dev.`) and
+`production` without a prefix. Step by step (German): [infra/DOKPLOY.md](infra/DOKPLOY.md).
 
-## Doku
+## Docs (German)
 
-| Datei | Wofür |
+| File | What |
 | --- | --- |
-| [../soulwick/docs/PRODUKT.md](../soulwick/docs/PRODUKT.md) | Produktüberblick für **beide** Repos: Pitch, Säulen, Begriffe (im Spiel-Repo) |
-| [docs/PRD.md](docs/PRD.md) | Was die Plattform leisten muss, für wen, was nicht |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Aufbau, Datenmodell, Abläufe |
-| [docs/TECHSTACK.md](docs/TECHSTACK.md) | Werkzeuge, Richtlinien, alle Befehle und Variablen |
-| [docs/KONZEPT_ONLINE.md](docs/KONZEPT_ONLINE.md) | Relay-Protokoll, Anmeldung über die Stores, Versionen, lokales Testen |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | Pakete und Stand |
-| [docs/DECISIONS.md](docs/DECISIONS.md) | technische Entscheidungen (P-Nummern); Produkt-Entscheidungen (D-Nummern) stehen in `../soulwick/docs/DECISIONS.md` |
-| [docs/design/README.md](docs/design/README.md) | Design-Tokens, Handoffs und Mockups je App |
-| [infra/DOKPLOY.md](infra/DOKPLOY.md) | Betrieb auf dem Server, Test-Build für Freunde |
-| [AGENTS.md](AGENTS.md) | Zusammenarbeit mit KI-Agenten |
+| [soulwick/docs/PRODUKT.md](https://github.com/WebBude-de/soulwick/blob/main/docs/PRODUKT.md) | product overview for **both** repositories |
+| [docs/PRD.md](docs/PRD.md) | what the platform has to do, for whom, and what not |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | structure, data model, flows |
+| [docs/TECHSTACK.md](docs/TECHSTACK.md) | tools, guidelines, all commands and variables |
+| [docs/KONZEPT_ONLINE.md](docs/KONZEPT_ONLINE.md) | relay protocol, sign-in via the stores, versions |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | packages and status |
+| [docs/DECISIONS.md](docs/DECISIONS.md) | technical decisions (P numbers); product decisions (D numbers) live in the [game repo](https://github.com/WebBude-de/soulwick/blob/main/docs/DECISIONS.md) |
+| [docs/design/README.md](docs/design/README.md) | design tokens, concepts, art briefings and mockups per app |
+| [AGENTS.md](AGENTS.md) | working with AI agents |
+
+## Contributing
+
+Bug reports, ideas and pull requests are welcome – read [CONTRIBUTING.md](CONTRIBUTING.md) first.
+Bugs in the game itself belong in the [game repo](https://github.com/WebBude-de/soulwick/issues). We
+follow the [Code of Conduct](CODE_OF_CONDUCT.md). Security issues go through
+[SECURITY.md](SECURITY.md), not public issues.
+
+## License
+
+- **Code:** GPL-3.0-or-later, see [LICENSE](LICENSE).
+- **Content:** artwork, music and sound in `apps/*/public/`, the logo, the name "Soulwick" and the
+  characters (Wick, the chicken) are © WebBude, all rights reserved – see
+  [LICENSE-ASSETS.md](LICENSE-ASSETS.md).
+- Third-party parts (npm packages, fonts): [THIRD_PARTY.md](THIRD_PARTY.md).
+
+<div align="center">
+
+Made with ♥ by [WebBude](https://web-bude.de)
+
+</div>

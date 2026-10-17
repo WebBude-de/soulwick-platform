@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Bug or idea for the game itself
+    url: https://github.com/WebBude-de/soulwick/issues/new/choose
+    about: Gameplay, menus, controls and crashes belong in the game repo. In a test build you can also press Ctrl + B (Cmd + B on macOS; F9 or # also work).
+  - name: Play Soulwick
+    url: https://playsoulwick.com
+    about: Website with the game, the browser version and the leaderboards.
+  - name: Security vulnerability
+    url: https://github.com/WebBude-de/soulwick-platform/security/advisories/new
+    about: Please report security problems privately, never as a public issue.

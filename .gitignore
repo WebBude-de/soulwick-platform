@@ -17,3 +17,6 @@ next-env.d.ts
 
 # Agent rules that `next dev` writes into each Next app (the repo-wide AGENTS.md is the real one)
 apps/*/AGENTS.md
+
+# Graphify knowledge graph (local, rebuild with: graphify update .)
+graphify-out/

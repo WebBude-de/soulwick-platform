@@ -1,0 +1,44 @@
+name: Idea
+description: Suggest something for the website, the leaderboards, guild pages or the online features.
+title: "[Idea]: "
+labels: ["idea", "platform"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We love ideas! English or German is fine.
+        Ideas for the game itself (gameplay, bosses, mini-games, village) belong in the [game repo](https://github.com/WebBude-de/soulwick/issues/new/choose).
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why would it be better?
+      description: Who would use it, and when?
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Website
+        - Leaderboards and guild pages
+        - Accounts and sign-in
+        - Co-op relay
+        - Admin panel and moderation
+        - Developer experience
+        - Something else
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you send
+      options:
+        - label: I searched the existing issues and did not find this idea.
+          required: true
