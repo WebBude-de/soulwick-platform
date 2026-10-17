@@ -1,6 +1,6 @@
 # ARCHITECTURE – Soulwick Platform
 
-> **Stand:** 15.10.2026 (Bun/Turbo/Prisma nach ROADMAP P7/P8, Relay P13, Better Auth P19/P-027) · Gegenstück zu `soulwick/docs/ARCHITECTURE.md` (Spiel). Hier: Server, Website, Admin-Panel. Anforderungen: [PRD.md](PRD.md) · Technik: [TECHSTACK.md](TECHSTACK.md) · Entscheidungen: [DECISIONS.md](DECISIONS.md).
+> **Stand:** 17.10.2026 (Bun/Turbo/Prisma nach ROADMAP P7/P8, Relay P13, Better Auth P19/P-027; Website-Seiten unter `[locale]`, statische Neuigkeiten) · Gegenstück zu `soulwick/docs/ARCHITECTURE.md` (Spiel). Hier: Server, Website, Admin-Panel. Anforderungen: [PRD.md](PRD.md) · Technik: [TECHSTACK.md](TECHSTACK.md) · Entscheidungen: [DECISIONS.md](DECISIONS.md).
 
 ## 1. Systemgrenzen
 
@@ -18,7 +18,7 @@ Spiel (Godot, Host-Modell)          Browser                              eRecht2
 │soulwick-postgres │   │  soulwick-relay  │  Bun + WebSocket (P-016): Räume mit Raumcode,
 │ PostgreSQL 17    │   │  play.<domain>   │  leitet Spielpakete weiter, prüft das Spieler-JWT (JWKS der API, P-027)
 └──────────────────┘   └────────▲─────────┘
-                                │ WSS (Host-Spieler und Clients: PC, Android, später iOS)
+                                │ WSS (Host-Spieler und Clients: PC, Browser, Android, iOS; alle zum Release, D-179)
                            Spiel (Godot)
 ```
 
@@ -45,7 +45,8 @@ Spiel (Godot, Host-Modell)          Browser                              eRecht2
 | `apps/api/src/lib/` | Querschnitt: Fehler (`ApiError`), Logger, Rate-Limit, `tokens.ts` (nur noch das Bestätigungstoken der Website-Löschung, HS256), `secrets.ts` (HMAC-Schlüssel aus `BETTER_AUTH_SECRET` abgeleitet), Einladungscodes, Client-IP, `erecht24/` (HTTP-Client für die Rechtstexte-API v2 über `Deps.fetch`, Datums- und HTML-Hilfen, `sanitize.ts` bereinigt das HTML nach Allowlist mit Bun-`HTMLRewriter`). |
 | `apps/api/src/scripts/` | `seed.ts` (Basis-Seed für jede Umgebung: Start-Admin aus `DEFAULT_ADMIN_EMAIL`/`DEFAULT_ADMIN_PASSWORD`, nur wenn die Adresse fehlt, nie überschrieben; läuft bei jedem Start des API-Images), `seed-dev.ts` (Testdaten für lokal und Dokploy-`development`; idempotent, verweigert `NODE_ENV=production`). Migrationen laufen über die Prisma CLI in `packages/db`. |
 | `apps/api/test/` | `bun test` gegen den Docker-Postgres: Wegwerf-Datenbank je Lauf, `prisma migrate deploy`, `Deps` mit festem `now` und gemocktem `fetch`. |
-| `apps/web/src/app/` | Seiten mit englischen Pfaden für beide Sprachen: `/`, `news`, `leaderboards`, `guilds/[tag]`, `delete-account`, `open-source`, `imprint`, `privacy`; Sprache per Cookie `NEXT_LOCALE` (P-012). |
+| `apps/web/src/app/[locale]/` | Seiten unter dem versteckten Sprachsegment `[locale]` (die Adressen bleiben ohne Sprache, `src/proxy.ts` schreibt um, P-012): `/`, `news`, `news/[slug]`, `leaderboards`, `guilds/[tag]`, `delete-account`, `open-source`, `imprint`, `privacy`, dazu `not-found.tsx` und `[...rest]` (404 in der Seitensprache). Die Neuigkeiten sind statisch (je Sprache und Beitrag vorab gebaut, `revalidate` 300 s), alle anderen Seiten rendern pro Anfrage. Daneben in `src/app/`: `robots.ts`, `sitemap.ts`, `global-not-found.tsx`, `globals.css`. |
+| `apps/web/content/` | Versionierte Inhalte ohne API: `news/` (ein Ordner je Beitrag mit `de.md`/`en.md`), `stores.json` (Store-Seiten `steam`, `google_play`, `app_store`), `social.json` (Social-Media-Links; nur ausgefüllte erscheinen), `legal/` (Rückfall für Impressum und Datenschutz, falls eRecht24 nichts liefert). |
 | `apps/web/messages/{de,en}/*.json` | Alle Texte der Website je Sprache (`common`, `landing`, `news`, `leaderboards`, `guilds`, `legal`, `deletion`, `opensource`). |
 | `apps/web/public/brand/` | Website-Grafiken vom Projektmitglied (WebP; Liste in der dortigen README, Briefings [design/web/BRIEFING_WEB.md](design/web/BRIEFING_WEB.md) und `soulwick/docs/design/sprites/SPRITES_V5.md` §8); fehlt eine Datei, zeigt die Seite einen Platzhalter. |
 | `apps/web/public/sprites/` | Spiel-Sprites als verlustfreies WebP, erzeugt von `apps/web/scripts/sync-sprites.ts` aus `../soulwick/art/`; versioniert, damit der Build ohne Spiel-Repo läuft. |
@@ -107,9 +108,9 @@ Regeln: Eindeutigkeit von Gildenname und Kürzel gilt nur für aktive Gilden (P-
 4. Keine Push-Clients, keine Tabelle, keine Admin-Funktionen (P-025). Neue Texte erscheinen spätestens nach 24 h (bzw. nach einem Neustart der API).
 5. *Website:* `/imprint` und `/privacy` rendern `html[locale]` aus der API-Antwort. Bei `missing`, fehlender Sprache oder nicht erreichbarer API erscheint ein deutlicher Platzhalter („Text folgt“) statt eines Fehlers; die Seite baut ohne API.
 
-**Website i18n (P-012):** `next-intl` ohne i18n-Routing. `src/i18n/request.ts` liest die Sprache aus dem Cookie `NEXT_LOCALE`, sonst aus `Accept-Language` (Deutsch → `de`), sonst `en`. Der Sprachumschalter setzt Cookie und `localStorage` und lädt die Seite neu; `src/proxy.ts` leitet nur alte `/de/...`- und `/en/...`-Links auf die Pfade ohne Präfix um. Texte in `messages/{de,en}/*.json`.
+**Website i18n (P-012):** `next-intl` ohne dessen i18n-Routing; die Adressen tragen keine Sprache. `src/proxy.ts` schreibt jede Seitenanfrage intern auf das versteckte Segment `/<locale>/<pfad>` um (Cookie `NEXT_LOCALE`, sonst `Accept-Language` mit Deutsch → `de`, sonst `en`; Antwort mit `Vary: Cookie, Accept-Language`) und leitet alte `/de/...`- und `/en/...`-Links dauerhaft auf die Pfade ohne Präfix um. `src/i18n/request.ts` nimmt die Sprache aus dem Segment, ohne Segment (Server Actions) aus Cookie bzw. `Accept-Language`. Der Sprachumschalter setzt Cookie und `localStorage` und lädt die Seite neu. Texte in `messages/{de,en}/*.json`.
 
-**Website allgemein:** Server-Rendering mit `apiGet`; schlägt die API fehl (`unreachable` oder Fehlerstatus), rendert die Seite eine Hinweisbox statt eines Fehlers. Build braucht keine laufende API (dynamische Seiten). Bilder ausschließlich WebP (P-015), Pixel-Art mit `image-rendering: pixelated`; Sprite-Animationen als CSS-`steps()` über die Streifen aus `public/sprites/`.
+**Website allgemein:** Server-Rendering mit `apiGet`; schlägt die API fehl (`unreachable` oder Fehlerstatus), rendert die Seite eine Hinweisbox statt eines Fehlers. Build braucht keine laufende API: Seiten mit API- oder Laufzeitdaten rendern pro Anfrage (`force-dynamic`); nur die Neuigkeiten (`/news`, `/news/[slug]`) werden je Sprache vorab gebaut (aus `content/news/`, ohne API) und spätestens nach 5 Minuten im Hintergrund neu gerendert (`revalidate` 300 s), damit ihre Kopfzeile dem Schalter `LIVE_FEATURES` folgt; Docker baut sie mit `LIVE_FEATURES=false` ([infra/DOKPLOY.md](../infra/DOKPLOY.md) §4). Bilder ausschließlich WebP (P-015), Pixel-Art mit `image-rendering: pixelated`; Sprite-Animationen als CSS-`steps()` über die Streifen aus `public/sprites/`.
 
 ## 5. Betrieb
 

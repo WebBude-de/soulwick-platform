@@ -1,6 +1,6 @@
 # ROADMAP – Soulwick Platform
 
-> **Stand:** 17.10.2026 · **Fokus jetzt: Website zuerst**, davor die Umstellung auf Bun/Turbo/Prisma (P7, P8). Die Pakete P1–P6 entsprechen MP7, MP7b, MP8 und MP9 aus `soulwick/docs/ROADMAP_MULTIPLAYER.md`, hier nur der **Plattform-Teil**. Spielseitige Punkte (GDScript-Client, Gildengebäude, Anzeige im Spiel) bleiben in der Spiel-Roadmap. Das Zielbild Crossplay (Steam, Google Play, App Store) steht in `soulwick/docs/ROADMAP_CROSSPLAY.md` (D-108); die Architektur (Host + eigener Relay, Steam → Android → iOS, Publisher WebBude) ist mit **D-119** entschieden (14.10.2026). Konzept für die Online-Pakete P13–P17: [KONZEPT_ONLINE.md](KONZEPT_ONLINE.md).
+> **Stand:** 17.10.2026 · **Fokus jetzt: Website zuerst**, davor die Umstellung auf Bun/Turbo/Prisma (P7, P8). Die Pakete P1–P6 entsprechen MP7, MP7b, MP8 und MP9 aus `soulwick/docs/ROADMAP_MULTIPLAYER.md`, hier nur der **Plattform-Teil**. Spielseitige Punkte (GDScript-Client, Gildengebäude, Anzeige im Spiel) bleiben in der Spiel-Roadmap. Das Zielbild Crossplay (Steam, Google Play, App Store) steht in `soulwick/docs/ROADMAP_CROSSPLAY.md` (D-108); die Architektur (Host + eigener Relay, Publisher WebBude) ist mit **D-119** entschieden (14.10.2026); released wird gemeinsam auf allen Versionen – Browser, Steam, Android und iOS (D-179, ersetzt die Reihenfolge Steam → Android → iOS aus D-119). Konzept für die Online-Pakete P13–P17: [KONZEPT_ONLINE.md](KONZEPT_ONLINE.md).
 > **Abhaken** nur mit Nachweis (Prüfbefehle grün, Datum). Jedes Paket ist für **einen Agenten** geschnitten und nennt seine Dateien; der Koordinator hakt nach Prüfung ab.
 
 ## Überblick und Reihenfolge
@@ -15,7 +15,7 @@
 | **P11** | Konten für Crossplay: Datenbank-Grundlage jetzt, Routen später | **Grundlage fertig (14.10.2026)**, Routen nach CP0/CP1 | P8; Routen erst nach CP0/CP1 |
 | **P12** | Website-Grafiken (Lieferung durch das Projektmitglied) | geplant | – (jederzeit) |
 | **P13** | Relay-Dienst `apps/relay` (Raumcodes, Paket-Weiterleitung) | **fertig (14.10.2026)**, 145/145 Tests | Vertrag `packages/contracts/src/lobby.ts` (zuerst); P8 (Token-Format) |
-| **P14** | Plattform-Anmeldung: Steam echt, Google Play; Game Center später | **API fertig (14.10.2026)**, Tests mit Fake-`fetch`; offen: echter Steam-Login mit eigener AppID (MP10), Google-Login aus „Interner Test“ (CP7), Game Center (iOS) | Vertrag `identity.ts`; eigene Steam-AppID (MP10), Play-Console-Konto (CP7) |
+| **P14** | Plattform-Anmeldung: Steam echt, Google Play; Game Center mit iOS (zum Release, D-179) | **API fertig (14.10.2026)**, Tests mit Fake-`fetch`; offen: echter Steam-Login mit eigener AppID (MP10), Google-Login aus „Interner Test“ (CP7), Game Center (iOS) | Vertrag `identity.ts`; eigene Steam-AppID (MP10), Play-Console-Konto (CP7) |
 | **P15** | Konto verknüpfen und Kontolöschung | Verknüpfen fertig (14.10.2026); **Löschung vollautomatisch (P-026): API fertig (15.10.2026)**, Admin „Löschprotokoll“ fertig (15.10.2026); offen: Website zweistufig (web-dev), `SUPPORT_EMAIL` in Dokploy, Konto-Panel im Spiel (CP1) | P14 (Vertrag `identity.ts`); Regel zum Zusammenführen entschieden (D-122) |
 | **P16** | Versionen und Umgebungen (`minGameVersion`, `protocolVersion`, Umgebungen, URLs im Build) | **API fertig (14.10.2026)** (`/health`, `/public/config`); offen: Dokploy-Doku (Integrator), Haken im Spiel (CP7) | – (vor P13-Abnahme) |
 | **P17** | Relay auf Dokploy (`play.`-Domain, WebSocket über Traefik, Monitoring) | geplant | P13, P2 |
@@ -205,7 +205,7 @@ Die offenen Punkte sind in **P9** (Seiten, zwei Sprachen), **P10** (Rechtstexte)
 
 **Fertig, wenn:** `bun test` für den Relay grün ist, zwei WebSocket-Testclients über einen Raum Rahmen austauschen, das Image baut und `/health` antwortet, `bun run check`, `typecheck` und `build` grün sind und der Vertrag in `lobby.ts` vor dem Code stand.
 
-## P14 – Plattform-Anmeldung (Steam echt, Google Play; Game Center später)
+## P14 – Plattform-Anmeldung (Steam echt, Google Play; Game Center mit iOS zum Release)
 
 **Ziel:** Echte Anmeldung je Store, alle mit demselben Spieler-JWT und über `player_identities` (P-014). Abläufe: [KONZEPT_ONLINE.md](KONZEPT_ONLINE.md) §3.2–§3.4. Übernimmt den Rest von P6.
 
@@ -214,7 +214,7 @@ Die offenen Punkte sind in **P9** (Seiten, zwei Sprachen), **P10** (Rechtstexte)
 - [x] *(14.10.2026; Game Center antwortet bis iOS `501 not_implemented`, unkonfigurierte Provider `501 provider_not_configured` statt bisher `not_implemented` bei Steam)* Vertrag `identity.ts`: `POST /auth/google-play` (`serverAuthCode`), später `POST /auth/game-center` (`publicKeyUrl`, `signature`, `salt`, `timestamp`, `playerId`, `bundleId`); Antwort wie `/auth/dev` und `/auth/steam` (Felder nur ergänzen, nichts umbenennen).
 - [x] *(14.10.2026, mit Fake-`fetch` geprüft; `publisherbanned`/`vacbanned` → `403 steam_banned`, Zeitlimit `EXTERNAL_AUTH_TIMEOUT_MS`; Standard `STEAM_TICKET_IDENTITY` jetzt `soulwick` wie im Konzept; echter Test mit eigener AppID offen, MP10)* Steam echt: `AuthenticateUserTicket` mit `STEAM_WEB_API_KEY`, `STEAM_APP_ID`, `STEAM_TICKET_IDENTITY`; `steamid` (bei Familienfreigabe `ownersteamid` beachten) → Identität `steam`; Fehler ohne Details nach außen.
 - [x] *(14.10.2026, mit Fake-`fetch` geprüft; Fehler `401 invalid_google_play_code`, `502 google_play_unavailable`; echter Test aus „Interner Test“ offen, CP7)* Google Play: Server-Auth-Code bei `oauth2.googleapis.com/token` eintauschen (`GOOGLE_PLAY_CLIENT_ID`, `GOOGLE_PLAY_CLIENT_SECRET`, Namen Vorschlag), dann `games/v1/players/me` → `playerId` → Identität `google_play`. **Nie** eine ID vom Gerät übernehmen.
-- [ ] Game Center erst mit iOS (später): Zertifikat nur von Apple-Domains, Signaturprüfung, Zeitfenster für `timestamp`.
+- [ ] Game Center mit der iOS-Version (iOS gehört zum Release, D-179): Zertifikat nur von Apple-Domains, Signaturprüfung, Zeitfenster für `timestamp`.
 - [x] *(14.10.2026: `apps/api/test/platform-auth.test.ts`, 14 Tests; `bun test` gesamt 178/178)* Tests mit injiziertem `fetch` (Erfolg, ungültiges Ticket/Code, Google nicht erreichbar, gesperrter Spieler, bestehende Identität → gleicher Spieler).
 
 **Fertig, wenn:** die Tests grün sind und mit der eigenen AppID (MP10) ein Steam-Login sowie aus der Play-Spur „Interner Test“ ein Google-Login in `development` einen Spieler anlegen bzw. wiederfinden.

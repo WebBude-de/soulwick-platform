@@ -1,6 +1,6 @@
 # KONZEPT Online – Relay, Anmeldung, Deployment und Stores
 
-> **Stand:** 16.10.2026 · **Status:** Architektur **entschieden** (Spiel-Repo D-119, Projektmitglied 14.10.2026), alles Weitere ist **Vorschlag** von Claude oder **OFFEN**. Die Plattform-Seite ist gebaut (Relay P13, Anmeldung P14, Konten P15, Versionen P16, Gast P20); der Betrieb auf dem Server steht noch aus (P2, P17, [../infra/DOKPLOY.md](../infra/DOKPLOY.md)).
+> **Stand:** 17.10.2026 · **Status:** Architektur **entschieden** (Spiel-Repo D-119, Projektmitglied 14.10.2026), alles Weitere ist **Vorschlag** von Claude oder **OFFEN**. Die Plattform-Seite ist gebaut (Relay P13, Anmeldung P14, Konten P15, Versionen P16, Gast P20); der Betrieb auf dem Server steht noch aus (P2, P17, [../infra/DOKPLOY.md](../infra/DOKPLOY.md)).
 > **Für wen:** Entwickler und Agenten, die Relay, Anmeldung, Deployment und Store-Anbindung bauen. Umsetzung als Pakete: [ROADMAP.md](ROADMAP.md) P13–P17 (Plattform), `soulwick/docs/ROADMAP_CROSSPLAY.md` CP1, CP3, CP7 und `soulwick/docs/ROADMAP_MULTIPLAYER.md` MP2–MP6 (Spiel).
 > **Entscheidungen:** Spiel-Repo D-083, D-084, D-085, D-108, **D-119**; hier [DECISIONS.md](DECISIONS.md) P-008, P-014, **P-016 bis P-018**, **P-027** (Better Auth, Relay-JWT über JWKS, 15.10.2026), **P-031**/**P-032** (mehrere Gilden je Spieler, Gilden-Raum nur für Mitglieder, Gildenkasse nach Gilden-Run; D-147). Bei Widerspruch gilt das Spiel-Repo.
 > **Kennzeichnung:** **ENTSCHIEDEN** = Projektmitglied hat entschieden · **VORSCHLAG** = von Claude ausgearbeitet, vom Team zu bestätigen · **OFFEN** = noch nicht entschieden, nicht still festlegen · **TESTWERT** = Zahl zum Nachjustieren.
@@ -12,8 +12,8 @@
 | Netzwerk: Host-Modell (ein Spieler rechnet) plus eigener Relay | **ENTSCHIEDEN** 14.10.2026 | D-119 (CP0 Frage 3a) |
 | Transport Phase 1: WebSocket-Relay über `online/relay_peer.gd` (`MultiplayerPeerExtension` auf `WebSocketPeer`) | **ENTSCHIEDEN** 14.10.2026 | D-119 |
 | WebRTC-Direktverbindung, dedizierter Godot-Server | später, als austauschbare Aufrüstung | D-119 |
-| Reihenfolge Steam → Android → iOS, iOS später (kein Mac) | **ENTSCHIEDEN** 14.10.2026 | D-119 (CP0 Frage 4) |
-| Publisher WebBude (Firmenkonten Steam, Google, später Apple) | **ENTSCHIEDEN** 14.10.2026 | D-119 |
+| Release gemeinsam auf allen Versionen: Browser, Steam, Android, iOS (ersetzt die Reihenfolge Steam → Android → iOS, iOS später) | **ENTSCHIEDEN** 17.10.2026 | D-179 (CP0 Frage 4, vorher D-119) |
+| Publisher WebBude (Firmenkonten Steam, Google und Apple; Apple wegen D-179 schon vor dem Release) | **ENTSCHIEDEN** 14.10.2026 | D-119, D-179 |
 | Relay als eigener Bun-Dienst `apps/relay` | Grundsatz entschieden, Umsetzung **VORSCHLAG** | P-016 |
 | Steam nur Zusatz (kein Steam-Relay als Hauptweg) | **VORSCHLAG** (folgt aus D-119) | P-017 |
 | Domains `play.playsoulwick.com`, `dev.`-Subdomains, zwei Umgebungen | **VORSCHLAG** | P-018, P-008 |
@@ -29,8 +29,9 @@
 
 ```text
 Steam-PC ─┐                       ┌─ soulwick-api      (Hono/Bun: Konto, Identitäten, Gilden, Runs, Ranglisten)
-Android  ─┼─ HTTPS ───────────────┤
-iOS      ─┘ (später)              └─ soulwick-postgres
+Android  ─┤                       │
+iOS      ─┼─ HTTPS ───────────────┤
+Browser  ─┘                       └─ soulwick-postgres
    │
    └─ WSS ── soulwick-relay (Bun, neu): Lobby, Raumcodes, Paket-Weiterleitung, prüft das Spieler-JWT
              Der Host-Spieler entscheidet alles (Spiellogik nur im Spiel), der Relay leitet nur weiter.
@@ -150,7 +151,7 @@ Alle Anmeldewege liefern **dieselbe Antwort** `{token, expiresAt, player}`; `tok
 | `device` | `POST /auth/device` (Gast, P-028) | Test-Builds und Spieler ohne Steam/Google, jede Umgebung (Schalter `GUEST_AUTH_ENABLED`) | kein Schlüssel; nur Format der Geräte-ID und Rate-Limits je IP |
 | `steam` | `POST /auth/steam` (P14; echter Test mit eigener AppID offen) | ab eigener AppID (MP10) | Ticket bei Steam (`AuthenticateUserTicket`) |
 | `google_play` | `POST /auth/google-play` (P14) | ab Android-Build | Server-Auth-Code bei Google eintauschen |
-| `game_center` | `POST /auth/game-center` (später) | mit iOS | Signatur von Apple |
+| `game_center` | `POST /auth/game-center` (noch nicht gebaut) | mit der iOS-Version (zum Release, D-179) | Signatur von Apple |
 
 ### 3.1 Entwicklung (Geräte-ID)
 
@@ -176,7 +177,7 @@ Wie die Gastkonten bei Among Us: Das Spiel erzeugt beim ersten Start eine zufäl
 4. API ruft `https://games.googleapis.com/games/v1/players/me` → `playerId` → Identität `google_play` → Session (P-027).
 5. **Nie** eine Spieler-ID vom Gerät übernehmen; nur die serverseitig ermittelte ID zählt.
 
-### 3.4 Game Center (später, mit iOS)
+### 3.4 Game Center (mit der iOS-Version)
 
 1. Spiel: `fetchItems(forIdentityVerificationSignature:)` → `publicKeyURL`, `signature`, `salt`, `timestamp`; dazu `teamPlayerID` und die Bundle-ID.
 2. `POST /auth/game-center` mit diesen Werten.
@@ -253,7 +254,7 @@ Das Feedback-Werkzeug (heute F9, nur lokal) wird für alle Spieler zur **Bug-Mel
 | Datenbank `soulwick-postgres` | Dokploy, nur intern | – | – |
 | **Relay `soulwick-relay`** (neu) | Dokploy, eigene Application aus `apps/relay/Dockerfile`, Traefik leitet WebSockets durch | `play.playsoulwick.com` | `play-dev.playsoulwick.com` |
 | Dedizierter Godot-Server (später) | erst Dokploy-Container-Pool, bei Bedarf Anbieter mit Regionen | – | – |
-| Spiel-Builds | Steam (SteamPipe), Google Play Console, später App Store Connect | Standard-Branch / Produktion | Steam-Beta-Branch / Play „Interner Test“ |
+| Spiel-Builds | Steam (SteamPipe), Google Play Console, App Store Connect (alle zum Release, D-179); Browser auf Dokploy | Standard-Branch / Produktion | Steam-Beta-Branch / Play „Interner Test“ / TestFlight |
 
 Domains sind ein **VORSCHLAG** (P-018) im Muster von P-008; Einrichtung Schritt für Schritt in [../infra/DOKPLOY.md](../infra/DOKPLOY.md). Jede Umgebung hat ihren eigenen Relay.
 
@@ -262,7 +263,7 @@ Domains sind ein **VORSCHLAG** (P-018) im Muster von P-008; Einrichtung Schritt 
 - **Spiel-Builds** bekommen ihre Umgebung **beim Export** (Feature-Tag `env_development`/`env_production` oder `online/environment.cfg`, gesetzt von `tools/export_build.ps1 -Env …` im Spiel-Repo); daraus folgt die API-URL. Die Relay-URL ist nicht fest im Spiel: Es nimmt `relayUrl` aus `GET /public/config` (`RELAY_PUBLIC_URL` der API), nur als Rückfall den Standard der Umgebung. Der Editor nutzt immer `localhost`; Argumente (`-- env=…`, `-- api=…`, `-- relay=…`) überschreiben alles. Das Hauptmenü zeigt die Version mit „dev“ in `development`. Details: [../infra/DOKPLOY.md](../infra/DOKPLOY.md) §1.
 - **Traffic:** Der Relay schickt jedes Paket weiter (Host → Relay → Clients). Inklusivtraffic des VPS (Hetzner) beobachten; Metriken aus §2.6.
 
-**Build-CI (Spiel-Repo, CP7):** GitLab-CI mit Godot-Headless-Export für Windows, Linux, Android und Dedicated Server; Steam-Upload per `steamcmd`, Play-Upload per Gradle Play Publisher oder fastlane. iOS später über einen Cloud-Mac (Codemagic oder GitHub-Actions-macOS). Signaturschlüssel (Android-Keystore, Steam-Login, Play-Dienstkonto) nur als geschützte CI-Variablen.
+**Build-CI (Spiel-Repo, CP7, D-148):** GitHub Actions (`.github/workflows/release.yml`): Ein Tag `v<version>` baut Windows, Linux, macOS und Android als GitHub-Release. Mit den jeweiligen Secrets kommen dazu: Steam-Upload per `steamcmd` in einen Beta-Branch (`tools/steam/steam_upload.sh`), Google-Play-Bundle mit Upload in „Interner Test“ (`tools/ci/play_upload.sh`), iOS als signierte IPA mit TestFlight-Upload (`tools/ci/ios_build.sh`) und macOS signiert und notarisiert (`tools/ci/macos_sign.sh`); beides läuft auf dem macOS-Läufer der CI, ohne eigenen Mac. iOS gehört zum Release (D-179). Die Browser-Version baut Dokploy (`soulwick/docs/WEB_BUILD.md`); ein Export „Dedicated Server“ kommt erst mit dem dedizierten Server (später). Signaturschlüssel (Android-Keystore, Apple-Zertifikate, Steam-Login, Play-Dienstkonto) nur als GitHub-Secrets. Details: `soulwick/docs/RELEASE.md`, `soulwick/docs/STORES.md`.
 
 ## 5. Lokal testen (ohne Stores)
 
@@ -285,12 +286,12 @@ Domains sind ein **VORSCHLAG** (P-018) im Muster von P-008; Einrichtung Schritt 
 | --- | --- | --- |
 | Steam (Steam Direct) | 100 USD je App | 30 Tage Wartezeit nach der Zahlung; Store-Seite mindestens 2 Wochen „Demnächst“ vor dem Release; Steuer- und Bankdaten von WebBude |
 | Google Play Console | 25 USD einmalig | **Organisationskonto** (D-U-N-S-Nummer nötig); erspart die Testpflicht neuer Privatkonten (12 Tester über 14 Tage) |
-| Apple Developer Program | 99 USD pro Jahr | später; dazu ein Cloud-Mac für die CI |
+| Apple Developer Program | 99 USD pro Jahr | vor dem Release nötig (D-179; D-U-N-S-Nummer, Vorlauf Tage bis Wochen); signiert und notarisiert auf dem macOS-Läufer der CI |
 | Server | VPS mit Dokploy (vorhanden) | Relay-Traffic beobachten |
 
 Stand der Preise: 14.10.2026, vor dem Bezahlen bei den Anbietern prüfen.
 
-### 6.2 Steam (zuerst)
+### 6.2 Steam
 
 - Steamworks-Konto für WebBude, Steam Direct bezahlen, eigene AppID; Steuer- und Bankdaten.
 - `STEAM_WEB_API_KEY` (Publisher-Schlüssel) und `STEAM_APP_ID` nur in Dokploy `production` bzw. für Tests in `development`.
@@ -298,7 +299,7 @@ Stand der Preise: 14.10.2026, vor dem Bezahlen bei den Anbietern prüfen.
 - Store-Seite (DE/EN), Screenshots, Trailer, Altersfragebogen; Rich Presence für „Beitreten“.
 - Optional Achievements; Steam Cloud **aus**, falls der Soulwick-Cloud-Save (CP5) kommt.
 
-### 6.3 Google Play (zweitens)
+### 6.3 Google Play
 
 - Organisationskonto, App anlegen, Play App Signing, Upload-Schlüssel nur in der CI.
 - Play Games Services v2 einrichten (OAuth-Client für den Server, §3.3).
@@ -308,7 +309,7 @@ Stand der Preise: 14.10.2026, vor dem Bezahlen bei den Anbietern prüfen.
 - Nutzergenerierte Inhalte: Spieler- und Gildennamen melden und filtern (Admin-Panel kann umbenennen und sperren).
 - Ziel-API-Level der aktuellen Anforderung von Google.
 
-### 6.4 App Store (später)
+### 6.4 App Store
 
 - Apple Developer Program für WebBude, Zertifikate und Profile, TestFlight.
 - „App-Datenschutz“-Angaben, Altersfreigabe.

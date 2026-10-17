@@ -10,7 +10,7 @@
 
 Das Spiel läuft komplett ohne Server. Die Plattform ergänzt nur, was einen Server braucht:
 
-- **Konten** über Plattform-Identitäten (Gast je Gerät, Steam, Google Play, später Game Center), damit
+- **Konten** über Plattform-Identitäten (Gast je Gerät, Steam, Google Play, Game Center mit iOS zum Release, D-179), damit
   ein Spieler auf mehreren Geräten und Stores derselbe ist (D-121, D-122).
 - **Koop über das Internet**: ein eigener Relay mit Raumcodes, der Spielpakete nur weiterleitet (D-119).
 - **Gilden** mit Gildenkasse und Gilden-Schmiede (D-080, D-081).
@@ -36,7 +36,7 @@ Das Spiel läuft komplett ohne Server. Die Plattform ergänzt nur, was einen Ser
 - **Gast je Gerät** `POST /auth/device`: zufällige Geräte-ID je Installation, ohne Schlüssel; der Weg für
   Test-Builds und Spieler ohne Steam/Google. Ohne Verknüpfung geht das Gastkonto mit dem Gerät verloren.
 - **Steam** `POST /auth/steam` und **Google Play** `POST /auth/google-play` (serverseitig geprüft);
-  **Game Center** später mit iOS. `POST /auth/dev` nur mit Test-Schlüssel für Werkzeuge und Tests.
+  **Game Center** mit der iOS-Version (iOS gehört zum Release, D-179). `POST /auth/dev` nur mit Test-Schlüssel für Werkzeuge und Tests.
 - Alle Wege liefern dieselbe Antwort (Session-Token); für den Relay holt das Spiel ein kurzlebiges JWT.
 - **Konten verknüpfen** per Verknüpfungscode (wie Among Us); zwei Konten mit Fortschritt werden nur nach
   Bestätigung zusammengeführt (D-122).
@@ -117,8 +117,9 @@ Das Spiel läuft komplett ohne Server. Die Plattform ergänzt nur, was einen Ser
   weiter, ohne sie zu lesen, und protokolliert keine Inhalte.
 - Je Umgebung ein eigener Relay (`play-dev.playsoulwick.com`, `play.playsoulwick.com`).
 
-Zielbild Crossplay über Steam, Google Play und App Store (D-108), Architektur entschieden (D-119):
-Host-Modell plus eigener Relay, Reihenfolge Steam → Android → iOS, Publisher WebBude. Konzept für
+Zielbild Crossplay über Steam, Google Play, App Store und Browser (D-108, D-148), Architektur entschieden
+(D-119): Host-Modell plus eigener Relay, Publisher WebBude. Released wird gemeinsam auf allen Versionen –
+Browser, Steam, Android und iOS (D-179, ersetzt die Reihenfolge Steam → Android → iOS aus D-119). Konzept für
 Entwickler: [KONZEPT_ONLINE.md](KONZEPT_ONLINE.md); Spiel-Pakete:
 [`../soulwick/docs/ROADMAP_CROSSPLAY.md`](../../soulwick/docs/ROADMAP_CROSSPLAY.md); Plattform-Pakete:
 [ROADMAP.md](ROADMAP.md) P13–P20. Geschäftsmodell als Arbeitsentscheidung: Browser und Handy kostenlos, Steam mit kleinem Preis, verkauft werden nur

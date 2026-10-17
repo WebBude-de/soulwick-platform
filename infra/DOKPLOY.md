@@ -239,9 +239,10 @@ Die Dateien `.env.dev` und `.env.prod` sind deine lokale Kopie dessen, was in Do
 Variablen der Umgebung, `apps/<app>/` = Environment des Services mit `${{environment.NAME}}`. Ändert
 sich etwas in Dokploy, die Kopie mitziehen (und umgekehrt).
 
-- Alle Variablen sind **Laufzeit-Variablen**, keine Build-Args: Web und Admin lesen `API_URL` nur
-  serverseitig, nichts davon landet im Browser-Bundle. Geänderte Variablen wirken erst nach einem neuen
-  **Deploy** des Services.
+- Alle Variablen sind **Laufzeit-Variablen**: Web und Admin lesen `API_URL` nur serverseitig, nichts davon
+  landet im Browser-Bundle. Geänderte Variablen wirken erst nach einem neuen **Deploy** des Services. Einziges
+  Build-Argument ist das optionale `LIVE_FEATURES` von `soulwick-web` (Standard `false`, nur für die vorab
+  gebauten Neuigkeiten; unten bei `soulwick-web`).
 - `NODE_ENV` **nicht** setzen: Die Images setzen `production` selbst, auch in der Umgebung `development`.
 - Gemeinsame Werte stehen einmal in den **Variablen der Umgebung**; jeder Service holt sie ausdrücklich
   mit `${{environment.NAME}}` (Dokploy reicht sie nicht automatisch durch). Kennt deine Dokploy-Version
@@ -437,7 +438,13 @@ LIVE_FEATURES=<true|false>
   (404, keine Ranglisten-API, nicht in der Sitemap) und die Downloads auf `/open-source`. Die Texte
   beschreiben in beiden Modi den Release-Stand des Spiels; Navigation, `/delete-account`, Impressum und
   Datenschutz bleiben. Gelesen zur Laufzeit (kein `NEXT_PUBLIC_`): Wert ändern, Service neu starten, kein
-  Neubau. Jeder andere Wert als leer, `true`, `1`, `on`, `yes` gilt als aus.
+  Neubau; Seiten pro Anfrage folgen sofort. Ausnahme Neuigkeiten (`/news`, `/news/<slug>`): Docker baut sie
+  vorab im sicheren Vor-Release-Stand `LIVE_FEATURES=false` (Kopfzeile ohne Links auf abgeschaltete
+  Seiten); der laufende Server rendert sie frühestens 5 Minuten nach dem Bauen mit der nächsten Anfrage im
+  Hintergrund neu (`revalidate` 300 s; diese Anfrage bekommt noch die alte Seite) und übernimmt dann
+  `LIVE_FEATURES` und `GAME_URL` der Laufzeit, ebenfalls ohne Neubau. Bis dahin kann ihre Kopfzeile noch
+  den Build-Stand zeigen. Das Build-Argument `LIVE_FEATURES` ist optional (Standard `false`) und in Dokploy
+  nicht nötig. Jeder andere Wert als leer, `true`, `1`, `on`, `yes` gilt als aus.
 - **`GAME_URL`** wirkt nur mit `LIVE_FEATURES=true` (Abschnitt „Web-Spiel“ unten).
 - **Store- und Social-Media-Links** sind keine Variablen, sondern versionierte Dateien der Website:
   `apps/web/content/stores.json` (`steam`, `google_play`, `app_store`) und `apps/web/content/social.json`;
@@ -611,7 +618,8 @@ Raum.
 ### `soulwick-web` und `soulwick-admin`
 
 - Next.js standalone auf `node:24-slim`; Bun nur im Build-Stage für `bun install`. Der Build braucht
-  weder die API noch eRecht24; Seiten mit API-Daten rendern bei Aufruf.
+  weder die API noch eRecht24; Seiten mit API-Daten rendern bei Aufruf. Vorab gebaut werden nur die
+  Neuigkeiten der Website (`apps/web/src/app/[locale]/news/`, mit `LIVE_FEATURES=false`, §4).
 - Beide rufen die API **serverseitig** über die interne Adresse (`API_URL` = `API_INTERNAL_URL`) auf,
   nie aus dem Browser.
 

@@ -26,11 +26,14 @@ the `apiGet` contract) and `apps/web/README.md`. `docs/design/web/HANDOFF_WEB.md
 
 ## How to build
 
-- Pages (English paths for both languages, language from the `NEXT_LOCALE` cookie, P-012): `/`
-  (landing), `/leaderboards` (solo / group / guild, all time / season, season picker),
-  `/guilds/[tag]` (public guild page), `/delete-account` (automatic account deletion with a one-time code, P-026), `/privacy` and
-  `/imprint` (legal texts from the API via eRecht24, placeholder while missing; never invent legal
-  details or addresses).
+- Pages live under `src/app/[locale]/`, a hidden language segment: `src/proxy.ts` rewrites every
+  request to `/<locale>/<path>`, so the URLs keep English paths for both languages (language from
+  the `NEXT_LOCALE` cookie, else `Accept-Language`, P-012): `/` (landing), `/news` and `/news/[slug]`
+  (devlog from `content/news/`), `/leaderboards` (solo / group / guild, all time / season, season
+  picker), `/guilds/[tag]` (public guild page), `/delete-account` (automatic account deletion with a
+  one-time code, P-026), `/open-source`, `/privacy` and `/imprint` (legal texts from the API via
+  eRecht24, placeholder while missing; never invent legal details or addresses).
+- Store and social links are files, not env vars: `content/stores.json`, `content/social.json`.
 - All copy lives in `apps/web/messages/{de,en}/*.json`, never in components.
 - Tone (D-174): an atmospheric dungeon that may be dark but never grim, a cute, bright village, modern
   pixel art (light, glow, particles, smooth motion). Call it "modern pixel art", never "8-bit" or
@@ -46,7 +49,10 @@ the `apiGet` contract) and `apps/web/README.md`. `docs/design/web/HANDOFF_WEB.md
 - English and German copy (German in du-form), no emojis as decoration. Responsive down to 360 px,
   visible focus states, semantic elements (Biome's a11y rules are on). Images only as WebP (P-015).
 - Server Components by default; the build must work without a running API (dynamic pages render on
-  request). Only technically necessary cookies, no trackers.
+  request). The news pages are the only static ones (built per language and post, `revalidate = 300`;
+  the Docker build uses `LIVE_FEATURES=false`, the running server picks up its own value within five
+  minutes), so they must not call the API or read per-request data. Only technically necessary
+  cookies, no trackers.
 
 ## Verify before reporting
 
