@@ -66,6 +66,14 @@ enum BugReportStatus {
   @@map("bug_report_status")
 }
 
+/// Bug report or idea from the game's feedback tool (17.10.2026); older builds send bugs only.
+enum BugReportKind {
+  bug
+  idea
+
+  @@map("bug_report_kind")
+}
+
 // ---------------------------------------------------------------------------
 // Players and identities
 // ---------------------------------------------------------------------------
@@ -463,6 +471,7 @@ model BugReport {
   playerId    String          @map("player_id") @db.Uuid
   createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
   status      BugReportStatus @default(new)
+  kind        BugReportKind   @default(bug)
   note        String          @default("")
   categories  String[]        @default([])
   /// [{x, y, w, h, note}], relative 0..1.

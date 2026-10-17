@@ -21,6 +21,8 @@ import {
 import { api, getMe, isAdmin } from "@/lib/api";
 import {
   BUG_CATEGORY_LABEL,
+  BUG_KIND_LABEL,
+  BUG_KIND_TONE,
   BUG_STATUS_LABEL,
   BUG_STATUS_TONE,
   formatBytes,
@@ -175,7 +177,10 @@ export default async function BugReportPage({ params, searchParams }: Props) {
           </>
         }
       >
-        Bug-Meldung
+        {r.kind === "idea" ? "Idee" : "Bug-Meldung"}
+        <Chip tone={BUG_KIND_TONE[r.kind] ?? "danger"}>
+          {BUG_KIND_LABEL[r.kind] ?? "Fehler"}
+        </Chip>
         <Chip tone={BUG_STATUS_TONE[r.status] ?? "muted"}>
           {BUG_STATUS_LABEL[r.status] ?? r.status}
         </Chip>

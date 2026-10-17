@@ -89,11 +89,13 @@ describe("bug reports", () => {
     expect(list.total).toBe(1);
     expect(list.nextCursor).toBeNull();
     expect(list.counts).toEqual({ new: 1, seen: 0, done: 0, wont_fix: 0 });
+    expect(list.kindCounts).toEqual({ bug: 1, idea: 0 });
     expect(list.items[0]).toMatchObject({
       id,
       playerId: p.id,
       playerName: "Fackelfinder",
       status: "new",
+      kind: "bug",
       categories: ["light", "graphics"],
       notePreview: "Die Fackel links flackert durch die Wand.",
       markCount: 1,
@@ -236,6 +238,8 @@ describe("bug reports", () => {
       { strokes: [[]] },
       { note: "n".repeat(2001) },
       { categories: ["sound"] },
+      { kind: "feature" },
+      { kind: "" },
       { platform: "playstation" },
       { context: { blob: "c".repeat(17 * 1024) } },
       { context: "not an object" },
@@ -361,7 +365,12 @@ describe("bug reports", () => {
     expect(audit.json.items[0]).toMatchObject({
       adminId: admin.id,
       targetType: "bug_report",
-      details: { playerId: p.id, status: "new", platform: "windows" },
+      details: {
+        playerId: p.id,
+        status: "new",
+        kind: "bug",
+        platform: "windows",
+      },
     });
   });
 
@@ -408,6 +417,78 @@ describe("bug reports", () => {
     });
     expect(badCursor.status).toBe(400);
     expect(badCursor.json.error).toBe("validation_error");
+  });
+
+  it("kind: bug by default, ideas without categories, filter and counts", async () => {
+    const p = await ctx.login();
+    const mod = await ctx.createAdmin("moderator");
+    // An older build sends no `kind`; new builds send it and no categories.
+    const legacy = (await send(p.token)).json.id as string;
+    const bug = (await send(p.token, { kind: "bug", categories: [] })).json
+      .id as string;
+    const ideaRes = await send(p.token, {
+      kind: "idea",
+      categories: undefined,
+      note: "Eine Truhe im Dorf für die Lieblingswaffe.",
+    });
+    expect(ideaRes.status).toBe(201);
+    const idea = ideaRes.json.id as string;
+    await ctx.req("PATCH", `/admin/bug-reports/${bug}`, {
+      token: mod.token,
+      body: { status: "done" },
+    });
+
+    const get = async (query: string) =>
+      AdminBugReportList.parse(
+        (
+          await ctx.req("GET", `/admin/bug-reports?playerId=${p.id}&${query}`, {
+            token: mod.token,
+          })
+        ).json
+      );
+
+    const all = await get("limit=50");
+    expect(all.total).toBe(3);
+    expect(all.kindCounts).toEqual({ bug: 2, idea: 1 });
+    expect(Object.fromEntries(all.items.map((i) => [i.id, i.kind]))).toEqual({
+      [legacy]: "bug",
+      [bug]: "bug",
+      [idea]: "idea",
+    });
+
+    const ideas = await get("kind=idea");
+    expect(ideas.items.map((i) => i.id)).toEqual([idea]);
+    expect(ideas.items[0]?.categories).toEqual([]);
+    // Status counts respect the kind filter, kind counts ignore it.
+    expect(ideas.counts).toEqual({ new: 1, seen: 0, done: 0, wont_fix: 0 });
+    expect(ideas.kindCounts).toEqual({ bug: 2, idea: 1 });
+
+    const bugs = await get("kind=bug");
+    expect(bugs.items.map((i) => i.id)).toEqual([bug, legacy]);
+    expect(bugs.counts).toEqual({ new: 1, seen: 0, done: 1, wont_fix: 0 });
+
+    // Kind counts respect the status filter.
+    const fresh = await get("status=new");
+    expect(fresh.kindCounts).toEqual({ bug: 1, idea: 1 });
+    expect((await get("status=new&kind=bug")).items.map((i) => i.id)).toEqual([
+      legacy,
+    ]);
+
+    const detail = AdminBugReportDetail.parse(
+      (await ctx.req("GET", `/admin/bug-reports/${idea}`, { token: mod.token }))
+        .json
+    );
+    expect(detail).toMatchObject({
+      kind: "idea",
+      categories: [],
+      note: "Eine Truhe im Dorf für die Lieblingswaffe.",
+    });
+
+    const badKind = await ctx.req("GET", "/admin/bug-reports?kind=feature", {
+      token: mod.token,
+    });
+    expect(badKind.status).toBe(400);
+    expect(badKind.json.error).toBe("validation_error");
   });
 
   it("stats count new reports; the deletion preview counts them; they go with the account", async () => {

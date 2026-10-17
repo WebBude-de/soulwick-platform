@@ -313,6 +313,18 @@ export const BUG_STATUS_TONE: Record<
   wont_fix: "muted",
 };
 
+/** Kind of a report from the feedback tool: bug (default, older builds) or idea. */
+export const BUG_KIND_LABEL: Record<string, string> = {
+  bug: "Fehler",
+  idea: "Idee",
+};
+
+/** Chip tone per kind: bugs red, ideas green. */
+export const BUG_KIND_TONE: Record<string, "active" | "danger"> = {
+  bug: "danger",
+  idea: "active",
+};
+
 export const BUG_CATEGORY_LABEL: Record<string, string> = {
   ui: "Oberfläche",
   graphics: "Grafik",

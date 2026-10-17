@@ -17,7 +17,8 @@ Kontolöschung mit Einmal-Löschcode (P14, P15, P-026); das Löschprotokoll für
 Das Konto-Profil (ein Charakter je Konto, P-034) steht in `src/common.ts` (`PlayerAppearance`,
 `PlayerCharacter`) und `src/player.ts` (`UpdateProfileRequest` für `PATCH /me`).
 `src/bug-report.ts` enthält die Bug-Meldungen aus dem Spiel (`POST /bug-reports` mit Screenshot,
-Markierungen und Kategorien) und ihre Admin-Routen samt Grenzen (`BUG_REPORT_MAX_*`, P-033).
+Markierungen und Kategorien; `kind` unterscheidet „bug“ (Standard) und „idea“) und ihre Admin-Routen
+samt Grenzen (`BUG_REPORT_MAX_*`, P-033; Filter `?kind=bug|idea`).
 `PublicConfig` und die Felder `minGameVersion`/`protocolVersion` in `HealthResponse` (`src/common.ts`)
 melden die Umgebung an Spiel-Builds (P16); `PublicConfig.supportEmail` ist die Support-Adresse der
 Website (P-026).

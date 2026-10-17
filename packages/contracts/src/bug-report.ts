@@ -3,7 +3,9 @@ import { IsoDateTime, Uuid } from "./common.ts";
 
 /**
  * Bug reports from the game (P-033): the in-game feedback tool (F9) uploads a screenshot with
- * marked areas, notes and categories; admins and moderators read them in the admin panel.
+ * marked areas, notes and categories; admins and moderators read them in the admin panel. Since
+ * 17.10.2026 the tool has two tabs, "report a bug" and "submit an idea" (`kind`); the game no
+ * longer shows categories, but older builds still send them.
  */
 
 // --- limits -------------------------------------------------------------------------------------
@@ -36,7 +38,14 @@ export const BUG_REPORT_RETENTION_DAYS_DEFAULT = 90;
 
 // --- enums --------------------------------------------------------------------------------------
 
-/** What the report is about; the player may pick several (or none). */
+/** Whether the player reports a bug or submits an idea; reports without `kind` are bugs. */
+export const BugReportKind = z.enum(["bug", "idea"]);
+export type BugReportKind = z.infer<typeof BugReportKind>;
+
+/**
+ * What the report is about; the player may pick several (or none). Builds since 17.10.2026 send
+ * none; the field stays for older builds.
+ */
 export const BugReportCategory = z.enum([
   "ui",
   "graphics",
@@ -138,6 +147,8 @@ export type BugReportContext = z.infer<typeof BugReportContext>;
  * - Reports are kept BUG_REPORT_RETENTION_DAYS_DEFAULT days (TESTWERT) and deleted with the account.
  */
 export const CreateBugReportRequest = z.object({
+  /** "bug" (default, also for older builds without the field) or "idea". */
+  kind: BugReportKind.default("bug"),
   /** What happened, in the player's words; may be empty when the marks say it all. */
   note: z.string().trim().max(BUG_REPORT_MAX_NOTE).default(""),
   /** Duplicates are removed. */
@@ -171,6 +182,7 @@ export const BUG_REPORT_NOTE_PREVIEW = 140;
  */
 export const AdminBugReportQuery = z.object({
   status: BugReportStatus.optional(),
+  kind: BugReportKind.optional(),
   platform: BugReportPlatform.optional(),
   category: BugReportCategory.optional(),
   playerId: Uuid.optional(),
@@ -187,6 +199,12 @@ export const BugReportStatusCounts = z.object({
 });
 export type BugReportStatusCounts = z.infer<typeof BugReportStatusCounts>;
 
+export const BugReportKindCounts = z.object({
+  bug: z.number().int().min(0),
+  idea: z.number().int().min(0),
+});
+export type BugReportKindCounts = z.infer<typeof BugReportKindCounts>;
+
 /** One row of the list; no image, no full note. */
 export const AdminBugReportListItem = z.object({
   id: Uuid,
@@ -194,6 +212,7 @@ export const AdminBugReportListItem = z.object({
   playerName: z.string(),
   createdAt: IsoDateTime,
   status: BugReportStatus,
+  kind: BugReportKind,
   categories: z.array(BugReportCategory),
   /** The first BUG_REPORT_NOTE_PREVIEW characters of the note ("…" appended when cut). */
   notePreview: z.string(),
@@ -211,7 +230,8 @@ export type AdminBugReportListItem = z.infer<typeof AdminBugReportListItem>;
 
 /**
  * 200 of GET /admin/bug-reports. `total` matches all filters; `counts` per status respect every
- * filter except `status`, so the panel can show all four numbers as tabs.
+ * filter except `status`, so the panel can show all four numbers as tabs; `kindCounts` respect
+ * every filter except `kind` (for the "Fehler / Ideen / Alle" switch).
  */
 export const AdminBugReportList = z.object({
   items: z.array(AdminBugReportListItem),
@@ -219,6 +239,7 @@ export const AdminBugReportList = z.object({
   nextCursor: z.string().nullable(),
   total: z.number().int().min(0),
   counts: BugReportStatusCounts,
+  kindCounts: BugReportKindCounts,
 });
 export type AdminBugReportList = z.infer<typeof AdminBugReportList>;
 

@@ -73,7 +73,7 @@ Admin-Bereich lokal zum Anzeigen brauchen:
 | Runs | 20 Runs (`solo`, `quick`, `guild`) über die aktuelle und die vorige Saison, Seeds `dev-seed-01` … `dev-seed-20`; einer ist markiert (`too_fast`), zwei Spieler teilen sich einen Rang; dazu 15 Runs über die letzten zwei Wochen (`dev-seed-21` … `dev-seed-35`, davon ein Gilden-Run der „Aschenrunde“) für die Admin-Statistik |
 | Notiz | eine Moderations-Notiz des Moderators zu „Sternasche“ (P-023) |
 | Aussehen | Spieler 1–8 bekommen eine feste Figur mit Farben (`appearance`, P-034), 9 und 10 behalten die Standardfigur (`null`); gesetzt wird nur, solange kein Aussehen gespeichert ist |
-| Bug-Meldungen | 3 Meldungen (P-033) von Lumen, Glutfunke und Wachsherz mit Platzhalter-Screenshots (PNG-Verläufe 480×270, kein echtes Bild), Markierungen, Strichen und Ort; zwei `new`, eine `seen` (vom Moderator) |
+| Bug-Meldungen | 4 Meldungen (P-033) von Lumen, Glutfunke, Wachsherz und Aschkralle mit Platzhalter-Screenshots (PNG-Verläufe 480×270, kein echtes Bild), Markierungen, Strichen und Ort; drei Fehler (zwei `new`, eine `seen` vom Moderator) und eine Idee (`kind: idea`, `new`) |
 | Löschprotokoll | 4 Einträge (Website, im Spiel, Admin; zwei davon „war gesperrt“) über die letzten zwei Wochen, ohne Namen (P-026) |
 | Sperre | Spieler „Sternasche“ für 7 Tage gesperrt (durch den Moderator); seine Runs fehlen in den Ranglisten, seine Anmeldung liefert `403 banned` |
 | Protokoll | Einträge `admin.create`, `player.ban` und `player.note_add`, damit die Protokoll-Seite gefüllt ist |
@@ -263,12 +263,14 @@ Konto keinen Namen mehr. Schemas `PlayerAppearance`, `PlayerCharacter` (`common.
 
 Das Feedback-Werkzeug im Spiel (F9) lädt Screenshot, Markierungen, Notiz und Kategorien hoch; Admins
 und Moderatoren werten sie im Admin-Panel aus. Schemas und Grenzen in
-`packages/contracts/src/bug-report.ts`.
+`packages/contracts/src/bug-report.ts`. Seit 17.10.2026 hat das Werkzeug zwei Reiter, „Fehler melden“
+und „Idee einreichen“: Das Feld `kind` (`bug` | `idea`) ist optional, ohne Feld gilt `bug` (ältere
+Spielstände). Neue Builds schicken keine Kategorien mehr; `categories` bleibt für alte Builds erlaubt.
 
 | Route | Rolle | Antwort / Fehler |
 | --- | --- | --- |
 | `POST /bug-reports` `CreateBugReportRequest` | Spieler (auch Gast) | `201 {id}`; `400 validation_error`, `400 invalid_json`, `400 invalid_image` (kein Base64, kein WebP/JPEG/PNG), `413 payload_too_large` (Body > 2,25 MiB oder Bild > 1,5 MiB), `401`, `403 banned`, `429 rate_limited` (`Retry-After`) |
-| `GET /admin/bug-reports?status=&platform=&category=&playerId=&cursor=&limit=50` | Moderator | `AdminBugReportList`: `items[]` ohne Bild (`notePreview`, `markCount`, `strokeCount`, `location` aus `context.location`), `nextCursor` (null = letzte Seite), `total`, `counts` je Status (ohne den Status-Filter) |
+| `GET /admin/bug-reports?status=&kind=&platform=&category=&playerId=&cursor=&limit=50` | Moderator | `AdminBugReportList`: `items[]` ohne Bild (`kind`, `notePreview`, `markCount`, `strokeCount`, `location` aus `context.location`), `nextCursor` (null = letzte Seite), `total`, `counts` je Status (ohne den Status-Filter), `kindCounts` je Art (ohne den `kind`-Filter) |
 | `GET /admin/bug-reports/:id` | Moderator | `AdminBugReportDetail`: alles außer den Bild-Bytes, dazu `imageMime`, `imageBytes`, `imageUrl`, `expiresAt`; `404 bug_report_not_found` |
 | `GET /admin/bug-reports/:id/image` | Moderator | Bild-Bytes mit gespeichertem `Content-Type`, `Cache-Control: private, max-age=300` |
 | `PATCH /admin/bug-reports/:id` `{ status }` | Moderator | `AdminBugReportDetail`; `new` \| `seen` \| `done` \| `wont_fix`; Protokoll `bug_report.status` (`from`/`to`) |

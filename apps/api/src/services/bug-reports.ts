@@ -6,6 +6,8 @@ import {
   BUG_REPORT_NOTE_PREVIEW,
   type BugReportCategory,
   type BugReportImageMime,
+  type BugReportKind,
+  type BugReportKindCounts,
   type BugReportMark,
   type BugReportPlatform,
   type BugReportStatus,
@@ -38,6 +40,7 @@ const DETAIL_SELECT = {
   playerId: true,
   createdAt: true,
   status: true,
+  kind: true,
   note: true,
   categories: true,
   marks: true,
@@ -69,6 +72,7 @@ export async function createBugReport(
     data: {
       playerId: input.playerId,
       createdAt: input.now,
+      kind: body.kind,
       note: body.note,
       categories: body.categories,
       marks: body.marks as Prisma.InputJsonArray,
@@ -144,6 +148,7 @@ function toListItem(row: DetailRow): AdminBugReportListItem {
     playerName: row.player.name,
     createdAt: iso(row.createdAt),
     status: row.status,
+    kind: row.kind,
     categories: row.categories as BugReportCategory[],
     notePreview: notePreview(row.note),
     markCount: asArray(row.marks).length,
@@ -185,14 +190,17 @@ export async function listBugReports(
   db: DbOrTx,
   q: AdminBugReportQuery
 ): Promise<AdminBugReportList> {
-  const base: Prisma.BugReportWhereInput = {
+  const shared: Prisma.BugReportWhereInput = {
     ...(q.platform ? { platform: q.platform } : {}),
     ...(q.category ? { categories: { has: q.category } } : {}),
     ...(q.playerId ? { playerId: q.playerId } : {}),
   };
+  const byStatus = q.status ? { status: q.status } : {};
+  const byKind = q.kind ? { kind: q.kind } : {};
   const where: Prisma.BugReportWhereInput = {
-    ...base,
-    ...(q.status ? { status: q.status } : {}),
+    ...shared,
+    ...byStatus,
+    ...byKind,
   };
   const after = q.cursor ? decodeCursor(q.cursor) : null;
   const page: Prisma.BugReportWhereInput = after
@@ -209,7 +217,7 @@ export async function listBugReports(
       }
     : where;
 
-  const [rows, total, grouped] = await Promise.all([
+  const [rows, total, grouped, groupedKinds] = await Promise.all([
     db.bugReport.findMany({
       where: page,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -217,7 +225,16 @@ export async function listBugReports(
       select: DETAIL_SELECT,
     }),
     db.bugReport.count({ where }),
-    db.bugReport.groupBy({ by: ["status"], where: base, _count: true }),
+    db.bugReport.groupBy({
+      by: ["status"],
+      where: { ...shared, ...byKind },
+      _count: true,
+    }),
+    db.bugReport.groupBy({
+      by: ["kind"],
+      where: { ...shared, ...byStatus },
+      _count: true,
+    }),
   ]);
   const counts: BugReportStatusCounts = {
     new: 0,
@@ -228,6 +245,10 @@ export async function listBugReports(
   for (const row of grouped) {
     counts[row.status] = row._count;
   }
+  const kindCounts: BugReportKindCounts = { bug: 0, idea: 0 };
+  for (const row of groupedKinds) {
+    kindCounts[row.kind] = row._count;
+  }
   const hasMore = rows.length > q.limit;
   const items = rows.slice(0, q.limit);
   const last = items.at(-1);
@@ -236,6 +257,7 @@ export async function listBugReports(
     nextCursor: hasMore && last ? encodeCursor(last.createdAt, last.id) : null,
     total,
     counts,
+    kindCounts,
   };
 }
 
@@ -329,6 +351,7 @@ export async function deleteBugReport(
     let row: {
       playerId: string;
       status: BugReportStatus;
+      kind: BugReportKind;
       categories: string[];
       platform: string;
       gameVersion: string;
@@ -340,6 +363,7 @@ export async function deleteBugReport(
         select: {
           playerId: true,
           status: true,
+          kind: true,
           categories: true,
           platform: true,
           gameVersion: true,
@@ -360,6 +384,7 @@ export async function deleteBugReport(
       details: {
         playerId: row.playerId,
         status: row.status,
+        kind: row.kind,
         categories: row.categories,
         platform: row.platform,
         gameVersion: row.gameVersion,

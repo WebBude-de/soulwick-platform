@@ -1,6 +1,7 @@
 import type {
   AdminBugReportList,
   AdminBugReportListItem,
+  BugReportKind,
   BugReportStatus,
 } from "@soulwick/contracts";
 import type { Metadata } from "next";
@@ -20,6 +21,8 @@ import {
 import { api } from "@/lib/api";
 import {
   BUG_CATEGORY_LABEL,
+  BUG_KIND_LABEL,
+  BUG_KIND_TONE,
   BUG_STATUS_LABEL,
   BUG_STATUS_TONE,
   PLATFORM_LABEL,
@@ -40,15 +43,28 @@ const TABS: { slug: string; status: BugReportStatus | null }[] = [
   { slug: "alle", status: null },
 ];
 
+/** Kind switch (bug reports and ideas from the game); "alle" is the default and stays out of the URL. */
+const KINDS: { slug: string; kind: BugReportKind | null; label: string }[] = [
+  { slug: "alle", kind: null, label: "Alle" },
+  { slug: "fehler", kind: "bug", label: "Fehler" },
+  { slug: "ideen", kind: "idea", label: "Ideen" },
+];
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function listHref(tab: string, player?: string, cursor?: string) {
+function listHref(
+  tab: string,
+  opts: { kind?: string; player?: string; cursor?: string } = {}
+) {
   const query = new URLSearchParams({ status: tab });
-  if (player) {
-    query.set("spieler", player);
+  if (opts.kind && opts.kind !== "alle") {
+    query.set("art", opts.kind);
   }
-  if (cursor) {
-    query.set("cursor", cursor);
+  if (opts.player) {
+    query.set("spieler", opts.player);
+  }
+  if (opts.cursor) {
+    query.set("cursor", opts.cursor);
   }
   return `/bug-meldungen?${query}`;
 }
@@ -84,13 +100,19 @@ function Row({ report }: { report: AdminBugReportListItem }) {
         )}
       </td>
       <td>
-        <Truncate className="text-soft" max="max-w-full">
-          {report.categories.length > 0
-            ? report.categories
+        <span className="flex min-w-0 items-center gap-2">
+          <Chip tone={BUG_KIND_TONE[report.kind] ?? "danger"}>
+            {BUG_KIND_LABEL[report.kind] ?? "Fehler"}
+          </Chip>
+          {/* Older game builds still send categories; newer ones only the kind. */}
+          {report.categories.length > 0 ? (
+            <Truncate className="min-w-0 text-soft text-xs" max="max-w-full">
+              {report.categories
                 .map((c) => BUG_CATEGORY_LABEL[c] ?? c)
-                .join(", ")
-            : "–"}
-        </Truncate>
+                .join(", ")}
+            </Truncate>
+          ) : null}
+        </span>
       </td>
       <td>
         <Truncate href={`/spieler/${report.playerId}`} max="max-w-full">
@@ -131,6 +153,8 @@ export default async function BugReportsPage({
 }) {
   const params = await searchParams;
   const tab = TABS.find((t) => t.slug === param(params, "status")) ?? TABS[0];
+  const kindTab =
+    KINDS.find((k) => k.slug === param(params, "art")) ?? KINDS[0];
   const playerParam = param(params, "spieler");
   const player =
     playerParam && UUID.test(playerParam) ? playerParam : undefined;
@@ -138,6 +162,9 @@ export default async function BugReportsPage({
   const query = new URLSearchParams({ limit: String(LIMIT) });
   if (tab?.status) {
     query.set("status", tab.status);
+  }
+  if (kindTab?.kind) {
+    query.set("kind", kindTab.kind);
   }
   if (player) {
     query.set("playerId", player);
@@ -147,7 +174,10 @@ export default async function BugReportsPage({
   }
   const result = await api<AdminBugReportList>(`/admin/bug-reports?${query}`);
   const slug = tab?.slug ?? "neu";
+  const kindSlug = kindTab?.slug ?? "alle";
   const counts = result.ok ? result.data.counts : null;
+  // Missing on APIs before 17.10.2026; then the switch shows no numbers.
+  const kindCounts = result.ok ? (result.data.kindCounts ?? null) : null;
   const playerName =
     player && result.ok
       ? result.data.items.find((r) => r.playerId === player)?.playerName
@@ -157,7 +187,7 @@ export default async function BugReportsPage({
     <>
       <PageTitle
         icon="info"
-        sub="Meldungen aus dem Spiel (F9): Bildschirmfoto mit Markierungen, Notiz und Spielstand. Status setzen dürfen alle; Löschen nur Admins. Meldungen werden nach 90 Tagen automatisch gelöscht."
+        sub="Fehler und Ideen aus dem Spiel (F9): Bildschirmfoto mit Markierungen, Notiz und Spielstand. Status setzen dürfen alle; Löschen nur Admins. Meldungen werden nach 90 Tagen automatisch gelöscht."
       >
         Bug-Meldungen
       </PageTitle>
@@ -171,12 +201,35 @@ export default async function BugReportsPage({
               {playerName ?? "diesem Spieler"}
             </Link>
             .{" "}
-            <Link className="link" href={listHref(slug)}>
+            <Link className="link" href={listHref(slug, { kind: kindSlug })}>
               Filter aufheben
             </Link>
           </p>
         </Notice>
       ) : null}
+
+      <nav aria-label="Nach Art filtern" className="mb-3 flex flex-wrap gap-3">
+        {KINDS.map((k) => {
+          const count = kindCounts
+            ? k.kind
+              ? kindCounts[k.kind]
+              : kindCounts.bug + kindCounts.idea
+            : null;
+          return (
+            <Link
+              aria-current={k.slug === kindSlug ? "page" : undefined}
+              className="chip chip-link"
+              href={listHref(slug, { kind: k.slug, player })}
+              key={k.slug}
+            >
+              {k.label}
+              {count === null ? null : (
+                <span className="font-data text-gold">{count}</span>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
 
       <nav
         aria-label="Nach Status filtern"
@@ -192,7 +245,7 @@ export default async function BugReportsPage({
             <Link
               aria-current={t.slug === slug ? "page" : undefined}
               className="chip chip-link"
-              href={listHref(t.slug, player)}
+              href={listHref(t.slug, { kind: kindSlug, player })}
               key={t.slug}
             >
               {t.status ? BUG_STATUS_LABEL[t.status] : "Alle"}
@@ -213,7 +266,10 @@ export default async function BugReportsPage({
                 className="flex flex-wrap items-center gap-3 border-line border-t-2 px-4 py-3 text-muted text-sm"
               >
                 {cursor ? (
-                  <Link className="btn btn-sm" href={listHref(slug, player)}>
+                  <Link
+                    className="btn btn-sm"
+                    href={listHref(slug, { kind: kindSlug, player })}
+                  >
                     ← Zum Anfang
                   </Link>
                 ) : null}
@@ -224,7 +280,11 @@ export default async function BugReportsPage({
                 {result.data.nextCursor ? (
                   <Link
                     className="btn btn-sm"
-                    href={listHref(slug, player, result.data.nextCursor)}
+                    href={listHref(slug, {
+                      kind: kindSlug,
+                      player,
+                      cursor: result.data.nextCursor,
+                    })}
                   >
                     Ältere →
                   </Link>
@@ -239,7 +299,7 @@ export default async function BugReportsPage({
               {/* The note takes the free width; the place a share of it. */}
               <col />
               <col className="w-[14%]" />
-              <col className="w-32" />
+              <col className="w-40" />
               <col className="w-28" />
               <col className="w-28" />
               <col className="w-40" />
@@ -250,7 +310,7 @@ export default async function BugReportsPage({
                 <th>Gemeldet</th>
                 <th>Meldung</th>
                 <th>Ort</th>
-                <th>Kategorien</th>
+                <th>Art</th>
                 <th>Spieler</th>
                 <th>Plattform</th>
                 <th>Status</th>

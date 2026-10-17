@@ -26,6 +26,7 @@
 import {
   AdminPassword,
   type BugReportCategory,
+  type BugReportKind,
   type BugReportMark,
   type BugReportPlatform,
   type PlayerAppearance,
@@ -219,9 +220,11 @@ const NOTE_TEXT =
 /**
  * Bug reports from the game (P-033) for the admin page: fixed ids, placeholder PNG screenshots
  * (gradients, no real screenshot). Day offsets relative to now; `seen` is set by the moderator.
+ * `kind` defaults to "bug"; the last entry is an idea (no categories, like builds since 17.10.2026).
  */
 const BUG_REPORTS: {
   id: string;
+  kind?: BugReportKind;
   player: number;
   daysAgo: number;
   status: "new" | "seen" | "done";
@@ -291,6 +294,20 @@ const BUG_REPORTS: {
     context: { location: "Schattenreich, Raum 3", seed: "dev-seed-run-02" },
     platform: "android",
     tint: [150, 80, 200],
+  },
+  {
+    id: "00000000-0000-4000-8000-0000000b0004",
+    kind: "idea",
+    player: 2,
+    daysAgo: 0.8,
+    status: "new",
+    note: "Idee: Im Dorf eine Truhe, in der man eine Waffe für den nächsten Run zurücklegen kann.",
+    categories: [],
+    marks: [{ x: 0.55, y: 0.45, w: 0.14, h: 0.16, note: "hier wäre Platz" }],
+    strokes: [],
+    context: { location: "Dorf", resolution: "1920x1080", locale: "de" },
+    platform: "windows",
+    tint: [80, 170, 120],
   },
 ];
 
@@ -954,6 +971,7 @@ async function seed(tx: Tx): Promise<Summary> {
       playerId: player(r.player).id,
       createdAt: daysAgo(r.daysAgo),
       status: r.status,
+      kind: r.kind ?? "bug",
       note: r.note,
       categories: r.categories,
       marks: r.marks,
