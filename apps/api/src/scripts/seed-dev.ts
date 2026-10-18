@@ -1017,7 +1017,7 @@ try {
       `  Note:     moderation note on ${bannedName}${summary.noteCreated ? "" : " (existed)"}`,
       `  Deleted:  ${DELETIONS.length} entries in the deletion log (${summary.newDeletions} new)`,
       `  Bugs:     ${BUG_REPORTS.length} bug reports with placeholder screenshots (${summary.newBugReports} new)`,
-      "  Web:      http://localhost:3000/ranglisten - Admin: http://localhost:3001",
+      "  Web:      http://localhost:3100/ranglisten - Admin: http://localhost:3102",
     ].join("\n")
   );
 } finally {

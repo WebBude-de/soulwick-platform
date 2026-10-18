@@ -59,11 +59,11 @@ the `apiGet` contract) and `apps/web/README.md`. `docs/design/web/HANDOFF_WEB.md
 - `bun run --cwd apps/web typecheck`, `bun run --cwd apps/web build` and `bunx biome check apps/web`
   must be green (run `bunx biome check --write apps/web` first for formatting).
 - Never start a second Next dev server in `apps/web`: Next allows one per folder and the member runs
-  `bun dev` himself. If his server answers on port 3000, check the pages there; start your own only
+  `bun dev` himself. If his server answers on port 3100, check the pages there; start your own only
   when nothing runs, and stop it by its PID when done.
 - Run the site against seeded data. Ask the user whether the API already runs; otherwise
   `bun run services:up`, `bun run db:seed:dev` (after `bun run db:deploy` if the database is new; never
-  reset the user's database) and `bun run dev:api`, then `bun run --cwd apps/web dev` (port 3000, only
+  reset the user's database) and `bun run dev:api`, then `bun run --cwd apps/web dev` (port 3100, only
   if no dev server runs in `apps/web`). Check `/leaderboards` in every tab and both periods,
   `/guilds/DOCHT` and `/delete-account`, each in English and German.
 - Screenshots with headless Chrome at 1440 px and 390 px into `.screenshots/web-<page>.png`

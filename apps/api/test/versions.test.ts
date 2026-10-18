@@ -72,9 +72,9 @@ describe("versions and environments (P16)", () => {
 
   it("keeps an explicit relay path and rejects invalid values", () => {
     expect(
-      testConfig({ RELAY_PUBLIC_URL: "ws://localhost:8790/v1/" })
+      testConfig({ RELAY_PUBLIC_URL: "ws://localhost:3103/v1/" })
         .RELAY_PUBLIC_URL
-    ).toBe("ws://localhost:8790/v1");
+    ).toBe("ws://localhost:3103/v1");
     expect(() =>
       testConfig({ RELAY_PUBLIC_URL: "https://play.example.test" })
     ).toThrow("RELAY_PUBLIC_URL");

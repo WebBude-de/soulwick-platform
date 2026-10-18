@@ -95,7 +95,7 @@ Die Oberfläche funktioniert ohne Client-JavaScript.
 ```bash
 bun install                                        # im Repo-Wurzelordner
 cp apps/admin/.env.example apps/admin/.env.local   # API_URL anpassen
-bun run dev:admin                                  # http://localhost:3001 (alles zusammen: bun dev)
+bun run dev:admin                                  # http://localhost:3102 (alles zusammen: bun dev)
 ```
 
 Die API muss laufen (`bun run services:up`, `bun run db:deploy`, `bun run db:seed:dev`,
@@ -108,14 +108,14 @@ API an (`DEFAULT_ADMIN_EMAIL`/`DEFAULT_ADMIN_PASSWORD`, `bun run db:seed`, siehe
 
 | Variable | Standard | Bedeutung |
 | --- | --- | --- |
-| `API_URL` | `http://localhost:8787` | Adresse der API (nur serverseitig genutzt) |
+| `API_URL` | `http://localhost:3101` | Adresse der API (nur serverseitig genutzt) |
 | `ADMIN_COOKIE_SECURE` | `true` | Wirkt nur im Produktions-Build (`NODE_ENV=production`); nur auf `false` setzen, wenn dieser über reines http läuft (lokal gestartetes Image) |
 
 ## Befehle
 
 | Befehl | Was passiert |
 | --- | --- |
-| `bun run --cwd apps/admin dev` | Entwicklungsserver auf Port 3001 |
+| `bun run --cwd apps/admin dev` | Entwicklungsserver auf Port 3102 |
 | `bun run --cwd apps/admin build` | Produktions-Build (`output: "standalone"`) |
 | `bun run --cwd apps/admin start` | Produktions-Build starten |
 | `bun run --cwd apps/admin typecheck` | Routen-Typen erzeugen und TypeScript prüfen |

@@ -34,7 +34,7 @@ export const API_KEY = await createTestKey("test-key-1");
 /** A key the API never published. */
 export const FOREIGN_KEY = await createTestKey("foreign-key");
 
-export const ISSUER = "http://localhost:8787";
+export const ISSUER = "http://localhost:3101";
 export const JWKS_URL = "http://api.test/auth/jwks";
 
 export async function signPlayerJwt(

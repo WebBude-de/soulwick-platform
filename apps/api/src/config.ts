@@ -42,7 +42,7 @@ const ConfigSchema = z
     NODE_ENV: z
       .enum(["development", "production", "test"])
       .default("development"),
-    PORT: z.coerce.number().int().min(1).max(65_535).default(8787),
+    PORT: z.coerce.number().int().min(1).max(65_535).default(3101),
     DATABASE_URL: z.string().default(""),
 
     /**
@@ -55,7 +55,7 @@ const ConfigSchema = z
     /** Public base URL of this API (issuer of the player JWTs), e.g. https://api.playsoulwick.com. */
     BETTER_AUTH_URL: z
       .url()
-      .default("http://localhost:8787")
+      .default("http://localhost:3101")
       .transform((v) => v.replace(TRAILING_SLASHES, "")),
     /** Lifetime of a player session (login token), fixed from the login. */
     PLAYER_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).default(30),

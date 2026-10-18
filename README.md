@@ -53,14 +53,14 @@ mirrored by the game's GDScript client), Biome with the Ultracite presets, Husky
 
 | Folder | Package | What | Local port |
 | --- | --- | --- | --- |
-| `apps/web` | `@soulwick/web` | website (Next.js, EN/DE) | 3000 |
-| `apps/admin` | `@soulwick/admin` | admin panel (Next.js) | 3001 |
-| `apps/api` | `@soulwick/api` | player and admin API (Hono on Bun) | 8787 |
-| `apps/relay` | `@soulwick/relay` | WebSocket relay for co-op (Bun) | 8790 |
+| `apps/web` | `@soulwick/web` | website (Next.js, EN/DE) | 3100 |
+| `apps/admin` | `@soulwick/admin` | admin panel (Next.js) | 3102 |
+| `apps/api` | `@soulwick/api` | player and admin API (Hono on Bun) | 3101 |
+| `apps/relay` | `@soulwick/relay` | WebSocket relay for co-op (Bun) | 3103 |
 | `packages/contracts` | `@soulwick/contracts` | API and relay contracts (zod), the single source of truth | – |
 | `packages/db` | `@soulwick/db` | Prisma schema, migrations, client | – |
 | `packages/config` | `@soulwick/config` | shared TypeScript config | – |
-| `infra/` | – | local services only (`docker-compose.yml`: Postgres) and the server guide | 5432 |
+| `infra/` | – | local services only (`docker-compose.yml`: Postgres) and the server guide | 5532 |
 
 ## Quick start
 
@@ -71,10 +71,10 @@ bun install                      # dependencies and Husky hooks
 cp .env.example .env.local       # then fill in BETTER_AUTH_SECRET, RELAY_INTERNAL_KEY, DEV_AUTH_KEY
 for app in api relay web admin; do cp apps/$app/.env.example apps/$app/.env.local; done
 cp infra/.env.example infra/.env.local
-bun run services:up              # local Postgres (container soulwick-postgres, port 5432)
+bun run services:up              # local Postgres (container soulwick-postgres, port 5532)
 bun run db:deploy                # apply migrations
 bun run db:seed:dev              # test data: admins, players, a guild, runs
-bun dev                          # web 3000, admin 3001, API 8787, relay 8790
+bun dev                          # web 3100, admin 3102, API 3101, relay 3103
 ```
 
 Generate secrets with e.g. `openssl rand -base64 48`. Only the `.env.example` files are committed;
@@ -84,7 +84,10 @@ in the Docker volume).
 **Local logins after the seed** (local test data only): admin `admin@soulwick.local`, moderator
 `moderator@soulwick.local`, password `soulwick-admin-local`. A test player signs in with
 `POST /auth/device` and `{ "deviceId": "<UUID>", "name": "Lumen" }`. The game started from the Godot
-editor talks to `localhost:8787` (API) and `localhost:8790` (relay) automatically.
+editor talks to `localhost:3101` (API) and `localhost:3103` (relay) automatically; the local browser
+version of the game runs on `localhost:3110`. The local ports follow the desktop's port block scheme
+(block 1, P-035); the Docker images keep their container ports (API 8787, relay 8790, web 3000,
+admin 3001).
 
 ## Checks
 

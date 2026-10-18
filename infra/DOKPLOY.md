@@ -132,7 +132,8 @@ Das Spiel wählt Dev oder Prod **beim Export**, nicht im laufenden Spiel (P-018;
 `soulwick`: `online/online_config.gd`, `online/environment.cfg`; Details in `soulwick/docs/MULTIPLAYER.md`):
 
 1. **Editor:** Der Godot-Editor (und jeder Start mit der Editor-EXE) nutzt immer `local` =
-   `http://localhost:8787` und `ws://localhost:8790/v1`, also `bun dev` aus diesem Repo.
+   `http://localhost:3101` und `ws://localhost:3103/v1`, also `bun dev` aus diesem Repo (lokale Ports
+   nach P-035; die Container-Ports oben bleiben).
 2. **Exportierter Build:** Die Umgebung kommt aus dem Feature-Tag `env_development` bzw.
    `env_production` der Export-Vorlage, sonst aus `online/environment.cfg` (`[build] env="development"`
    oder `"production"`), sonst `development`. Das Skript `tools/export_build.ps1 -Env …` schreibt die

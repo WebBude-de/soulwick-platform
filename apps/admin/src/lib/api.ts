@@ -46,7 +46,7 @@ export function errorText(code: string, fallback?: string): string {
 }
 
 /** Base URL of the API (server-side only). */
-export const apiBase = () => process.env.API_URL ?? "http://localhost:8787";
+export const apiBase = () => process.env.API_URL ?? "http://localhost:3101";
 
 /** Parses a response body; non-JSON bodies (e.g. a proxy error page) count as empty. */
 async function readJson(res: Response): Promise<unknown> {
