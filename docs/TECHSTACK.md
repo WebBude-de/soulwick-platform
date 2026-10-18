@@ -52,8 +52,8 @@
 | Was | Befehl (im Repo-Root) |
 | --- | --- |
 | Abhängigkeiten | `bun install` (richtet auch die Husky-Hooks ein) |
-| Lokale Dienste starten / stoppen | `bun run services:up` / `bun run services:down` (Postgres `soulwick-postgres` auf Port 5432 aus `infra/docker-compose.yml`, Werte aus `infra/.env`) |
-| Alle Apps entwickeln | `bun dev` (Turbo: API 8787, Web 3000, Admin 3001, Relay 8790; Postgres aus `services:up`) |
+| Lokale Dienste starten / stoppen | `bun run services:up` / `bun run services:down` (Postgres `soulwick-postgres` auf Port 5532 aus `infra/docker-compose.yml`, Werte aus `infra/.env`) |
+| Alle Apps entwickeln | `bun dev` (Turbo: API 3101, Web 3100, Admin 3102, Relay 3103, Port-Block 1 nach P-035; Postgres aus `services:up`) |
 | Einzeln | `bun run dev:api` / `bun run dev:web` / `bun run dev:admin` / `bun run dev:relay` |
 | Images bauen (wie Dokploy) | `docker build -f apps/api/Dockerfile .`, ebenso `apps/relay`, `apps/web`, `apps/admin` (kein Compose für die Apps) |
 | Formatieren und Lint-Fixes | `bun run fix` (`biome check --write .`) |
@@ -80,11 +80,11 @@ Mindestens vor jedem Bericht: `bun run check`, `bun run typecheck`, `bun test`, 
 | App | Variablen |
 | --- | --- |
 | api | `DATABASE_URL`, `BETTER_AUTH_SECRET` (≥ 32 Zeichen, P-027), `BETTER_AUTH_URL` (öffentliche Basis-URL der API, in production https), `PORT`, `PLAYER_TOKEN_TTL_DAYS`, `ADMIN_TOKEN_TTL_HOURS`, `DEV_AUTH_ENABLED`, `DEV_AUTH_KEY`, **Gast (P-028):** `GUEST_AUTH_ENABLED`, `GUEST_LOGINS_PER_MINUTE`, `GUEST_ACCOUNTS_PER_HOUR`; `STEAM_WEB_API_KEY`, `STEAM_APP_ID`, `STEAM_TICKET_IDENTITY`, `CORS_ORIGINS`, `RATE_LIMIT_PER_MINUTE`, `TRUST_PROXY`, `MIN_SECONDS_PER_ROOM`, `KNOWN_GAME_VERSIONS`, `LOG_LEVEL`; **Stores (P14):** `GOOGLE_PLAY_CLIENT_ID`, `GOOGLE_PLAY_CLIENT_SECRET`, `EXTERNAL_AUTH_TIMEOUT_MS`; **Konten (P15):** `LINK_ATTEMPTS_PER_MINUTE`, `DELETION_REQUESTS_PER_HOUR`; **Versionen und Relay (P16):** `MIN_GAME_VERSION`, `PROTOCOL_VERSION`, `RELAY_PUBLIC_URL`, `RELAY_INTERNAL_KEY`; **Admin → Relay (P18):** `RELAY_INTERNAL_URL` (leer = Live-Räume aus, gesetzt nur zusammen mit `RELAY_INTERNAL_KEY`), `RELAY_INTERNAL_TIMEOUT_MS`; **Rechtstexte (P-025):** `ERECHT24_API_KEY` und `ERECHT24_PLUGIN_KEY` (beide nötig, sonst `status: "missing"`); **Kontolöschung (P-026):** `SUPPORT_EMAIL` (optional, leer = keine Support-Adresse in `GET /public/config`); **Basis-Seed (Start-Admin):** `DEFAULT_ADMIN_EMAIL`, `DEFAULT_ADMIN_PASSWORD` (auch Dev-Seed); nur Tests: `TEST_DATABASE_URL` |
-| relay | `PROTOCOL_VERSION`, `API_INTERNAL_URL` (interne Adresse der API, Pflicht: JWKS für das Spieler-JWT, P-027), `JWKS_URL` (optional, Standard `<API_INTERNAL_URL>/auth/jwks`), `JWKS_CACHE_SECONDS` (600, TESTWERT), `RELAY_INTERNAL_KEY` (gleich wie die API), `RELAY_PORT` (8790), `RELAY_HOST`, `TRUST_PROXY`, `LOG_LEVEL`, `STATUS_CACHE_SECONDS`, `API_TIMEOUT_MS`, `CLIENT_ROUTING`; Grenzen (TESTWERTE): `MAX_FRAME_BYTES`, `MAX_CONTROL_BYTES`, `MAX_MESSAGES_PER_SECOND`, `MAX_BYTES_PER_SECOND`, `RATE_LIMIT_STRIKES`, `MAX_CONNECTIONS_PER_IP_PER_MINUTE`, `MAX_BUFFERED_BYTES`, `ROOM_IDLE_MINUTES`, `IDLE_MINUTES`, `HELLO_TIMEOUT_SECONDS`, `HEARTBEAT_INTERVAL_SECONDS`, `HEARTBEAT_TIMEOUT_SECONDS`; nur lokal: `RELAY_SIM_LATENCY_MS`, `RELAY_SIM_LOSS` |
+| relay | `PROTOCOL_VERSION`, `API_INTERNAL_URL` (interne Adresse der API, Pflicht: JWKS für das Spieler-JWT, P-027), `JWKS_URL` (optional, Standard `<API_INTERNAL_URL>/auth/jwks`), `JWKS_CACHE_SECONDS` (600, TESTWERT), `RELAY_INTERNAL_KEY` (gleich wie die API), `RELAY_PORT` (lokal 3103, Image 8790), `RELAY_HOST`, `TRUST_PROXY`, `LOG_LEVEL`, `STATUS_CACHE_SECONDS`, `API_TIMEOUT_MS`, `CLIENT_ROUTING`; Grenzen (TESTWERTE): `MAX_FRAME_BYTES`, `MAX_CONTROL_BYTES`, `MAX_MESSAGES_PER_SECOND`, `MAX_BYTES_PER_SECOND`, `RATE_LIMIT_STRIKES`, `MAX_CONNECTIONS_PER_IP_PER_MINUTE`, `MAX_BUFFERED_BYTES`, `ROOM_IDLE_MINUTES`, `IDLE_MINUTES`, `HELLO_TIMEOUT_SECONDS`, `HEARTBEAT_INTERVAL_SECONDS`, `HEARTBEAT_TIMEOUT_SECONDS`; nur lokal: `RELAY_SIM_LATENCY_MS`, `RELAY_SIM_LOSS` |
 | db (`packages/db`) | `DATABASE_URL` (für Prisma CLI, `db:status`, `db:verify`; `db:verify` legt daraus eine Wegwerf-Datenbank ab) |
 | web | `API_URL` (serverseitig), `SITE_URL` (öffentliche Basis-URL für Metadaten, Sitemap, Open Graph; `https://playsoulwick.com`) |
 | admin | `API_URL`, `ADMIN_COOKIE_SECURE` |
-| infra (Compose, nur lokal) | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `DB_PORT` (Standard 5432; kein Objektspeicher) |
+| infra (Compose, nur lokal) | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `DB_PORT` (Standard 5532; kein Objektspeicher) |
 
 Vorlagen: `apps/*/.env.example`, `infra/.env.example`. Produktive Werte nur in Dokploy (zwei Umgebungen `development` und `production`, Variablen als `${{environment.NAME}}`; siehe [infra/DOKPLOY.md](../infra/DOKPLOY.md)).
 

@@ -51,11 +51,11 @@ Browser  ─┘                       └─ soulwick-postgres
 - Nachrichtenformen aus `packages/contracts/src/lobby.ts` (zod für JSON-Steuer-Nachrichten, Konstanten für den Binärrahmen). **Verträge zuerst**, wie bei der API.
 - Kein Datenbankzugriff; Räume liegen nur im Speicher. Für Gildenräume und Sperren fragt der Relay die API (§2.7).
 - Eine Instanz zuerst (wie die API, P-008), genau eine Replica, weil Räume im Speicher liegen. Später je Region eine Instanz; der Raumcode bekommt dann ein Regions-Präfix (OFFEN).
-- Konfiguration: `RELAY_PORT` (lokal 8790), `API_INTERNAL_URL` (Pflicht: JWKS und Status, P-027), optional `JWKS_URL` und `JWKS_CACHE_SECONDS`, `RELAY_INTERNAL_KEY`, `PROTOCOL_VERSION`, Grenzwerte (`MAX_FRAME_BYTES`, `MAX_BYTES_PER_SECOND`, `MAX_MESSAGES_PER_SECOND`, `ROOM_IDLE_MINUTES`), `TRUST_PROXY`, `LOG_LEVEL`; nur lokal `RELAY_SIM_LATENCY_MS`, `RELAY_SIM_LOSS` bzw. die Startoptionen `--sim-latency`, `--sim-loss`.
+- Konfiguration: `RELAY_PORT` (lokal 3103), `API_INTERNAL_URL` (Pflicht: JWKS und Status, P-027), optional `JWKS_URL` und `JWKS_CACHE_SECONDS`, `RELAY_INTERNAL_KEY`, `PROTOCOL_VERSION`, Grenzwerte (`MAX_FRAME_BYTES`, `MAX_BYTES_PER_SECOND`, `MAX_MESSAGES_PER_SECOND`, `ROOM_IDLE_MINUTES`), `TRUST_PROXY`, `LOG_LEVEL`; nur lokal `RELAY_SIM_LATENCY_MS`, `RELAY_SIM_LOSS` bzw. die Startoptionen `--sim-latency`, `--sim-loss`.
 
 ### 2.2 Verbindungsaufbau
 
-1. Das Spiel öffnet `wss://play.playsoulwick.com/v1` (lokal `ws://localhost:8790/v1`).
+1. Das Spiel öffnet `wss://play.playsoulwick.com/v1` (lokal `ws://localhost:3103/v1`).
 2. Erste Nachricht innerhalb von 5 s (TESTWERT): `hello` mit Spieler-JWT (`token`, vorher über `GET /auth/token` der API geholt, P-027), `protocolVersion`, `gameVersion`, `platform` (`windows`, `linux`, `macos`, `android`, `ios`). Das Token steht bewusst **nicht** in der URL, damit es in keinem Zugriffsprotokoll landet (VORSCHLAG).
 3. Der Relay prüft die JWT-Signatur selbst gegen die öffentlichen Schlüssel der API (EdDSA, JWKS unter `<API_INTERNAL_URL>/auth/jwks`, Cache 10 min, unbekannte `kid` lädt neu; P-027), dazu `aud` = `soulwick-relay`, das Ablaufdatum und die `protocolVersion`. Fehler → `error` und Verbindungsende. Geprüft wird nur bei `hello`; läuft das JWT (15 min) später ab, bleibt die Verbindung bestehen.
 4. Antwort `welcome` mit `playerId` (`sub` des JWT) und dem Namen aus der Statusabfrage der API. Danach `create` oder `join`.
@@ -269,10 +269,10 @@ Domains sind ein **VORSCHLAG** (P-018) im Muster von P-008; Einrichtung Schritt 
 
 | Was | Wie |
 | --- | --- |
-| Dienste | `bun run services:up`, `bun dev` (API 8787, Relay 8790, Web 3000, Admin 3001; Postgres 5432) |
+| Dienste | `bun run services:up`, `bun dev` (API 3101, Relay 3103, Web 3100, Admin 3102; Postgres 5532; Browser-Version des Spiels 3110; P-035) |
 | Vier Spieler auf einem PC | Godot-Editor *Debug → Ausführungsinstanzen anpassen* mit Argument `--player=1..4`; jede Instanz meldet sich per `/auth/dev` mit eigener Geräte-ID an und tritt per Raumcode bei |
 | Gilden | Testdaten aus `bun run db:seed:dev`: „Dochtwächter“ `[DOCHT]` (Code `DOCHT2345`) und „Aschenrunde“ `[ASCHE]` (Code `ASCHE2345`); Seed-Spieler „Lumen“ (`dev-device-00000001`) ist in beiden, Gilden-Raum für ASCHE z. B. mit „Glutfunke“ (`dev-device-00000005`) testen |
-| Handy (Android) | Ein-Klick-Export per USB, `adb reverse tcp:8787 tcp:8787` und `adb reverse tcp:8790 tcp:8790`; das Handy erreicht `localhost` des PCs ohne HTTPS-Umweg (unverschlüsseltes HTTP/WS im Debug-Export erlauben, prüfen) |
+| Handy (Android) | Ein-Klick-Export per USB, `adb reverse tcp:3101 tcp:3101` und `adb reverse tcp:3103 tcp:3103`; das Handy erreicht `localhost` des PCs ohne HTTPS-Umweg (unverschlüsseltes HTTP/WS im Debug-Export erlauben, prüfen) |
 | Steam | Test-AppID 480 mit `steam_appid.txt`, Steam-Client offen; zwei Steam-Konten brauchen zwei Rechner |
 | Schlechtes Netz | Relay-Optionen `--sim-latency` und `--sim-loss`, unter Windows zusätzlich „clumsy“ |
 | Automatisch | Headless-Host und Headless-Client gegen den lokalen Relay als Smoke-Test (`tools/net_smoke.gd` im Spiel-Repo), `bun test` für das Relay-Protokoll |

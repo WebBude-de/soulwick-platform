@@ -107,7 +107,7 @@ export const testConfig = (overrides: Record<string, string> = {}): Config =>
   loadConfig({
     NODE_ENV: "test",
     BETTER_AUTH_SECRET: "test-better-auth-secret-0123456789abcdef",
-    BETTER_AUTH_URL: "http://localhost:8787",
+    BETTER_AUTH_URL: "http://localhost:3101",
     DEV_AUTH_ENABLED: "true",
     DEV_AUTH_KEY: DEV_KEY,
     RATE_LIMIT_PER_MINUTE: "100000",

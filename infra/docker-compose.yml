@@ -15,7 +15,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-soulwick}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-soulwick-local-only}
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "${DB_PORT:-5532}:5432"
     volumes:
       - soulwick-pgdata:/var/lib/postgresql/data
     healthcheck:

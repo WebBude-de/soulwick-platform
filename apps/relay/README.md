@@ -15,7 +15,7 @@ Gegenstück im Spiel: `online/relay_peer.gd` (`MultiplayerPeerExtension` auf `We
 ```bash
 bun install                                   # im Repo-Wurzelordner
 cp apps/relay/.env.example apps/relay/.env.local   # API_INTERNAL_URL und RELAY_INTERNAL_KEY kommen aus der Wurzel-.env.local
-bun run dev:relay                             # ws://localhost:8790/v1, http://localhost:8790/health
+bun run dev:relay                             # ws://localhost:3103/v1, http://localhost:3103/health
 bun run --cwd apps/relay dev --sim-latency=120 --sim-loss=5   # schlechtes Netz simulieren (nur lokal)
 ```
 
@@ -25,11 +25,11 @@ Gildenstatus. Ohne `RELAY_INTERNAL_KEY` (oder wenn die API nicht antwortet) funk
 weiter, Gildenräume antworten `api_unavailable`; ohne je geladene Schlüssel wird jedes `hello` mit
 `unauthorized` abgelehnt. In einen Gildenraum darf, wer die Gilde in `guildIds` des Status hat (mehrere
 Gilden je Spieler, D-147/P-031; ältere APIs: `guildId`); sagt die zwischengespeicherte Antwort „kein
-Mitglied“, fragt der Relay vor `not_guild_member` einmal frisch nach. Handy per USB: `adb reverse tcp:8790 tcp:8790`.
+Mitglied“, fragt der Relay vor `not_guild_member` einmal frisch nach. Handy per USB: `adb reverse tcp:3103 tcp:3103`.
 
 ## Protokoll (Kurzfassung für den GDScript-Client)
 
-**Verbindung:** `ws://localhost:8790/v1` (lokal), `wss://play.playsoulwick.com/v1` bzw.
+**Verbindung:** `ws://localhost:3103/v1` (lokal), `wss://play.playsoulwick.com/v1` bzw.
 `wss://play-dev.playsoulwick.com/v1` (Vorschlag P-018). Das Token steht nicht in der URL.
 
 **Token (P-027):** `hello.token` ist das kurzlebige JWT aus `GET /auth/token` der API (mit dem
@@ -111,7 +111,7 @@ Die `/internal/*`-Endpunkte brauchen keine neue `PROTOCOL_VERSION` (nur der Grun
 
 | Variable | Pflicht | Standard | Bedeutung |
 | --- | --- | --- | --- |
-| `RELAY_PORT` (oder `PORT`) | nein | `8790` | Port |
+| `RELAY_PORT` (oder `PORT`) | nein | `3103` | Port (das Docker-Image setzt 8790) |
 | `PROTOCOL_VERSION` | nein | `1` | Nur Clients mit genau dieser Version (P16) |
 | `API_INTERNAL_URL` | ja | – | Interne Adresse der API, z. B. `http://soulwick-api:8787`: JWKS der Spieler-JWTs und Sperr-/Gildenstatus |
 | `JWKS_URL` | nein | `<API_INTERNAL_URL>/auth/jwks` | Andere Adresse der öffentlichen Schlüssel |
@@ -140,7 +140,7 @@ Die `/internal/*`-Endpunkte brauchen keine neue `PROTOCOL_VERSION` (nur der Grun
 | `bun test apps/relay` | Tests (Protokoll, Räume, Anmeldung, Weiterleitung, Limits, Ende-zu-Ende mit echten WebSockets) |
 | `bun run --filter @soulwick/relay typecheck` | TypeScript prüfen |
 | `docker build -f apps/relay/Dockerfile -t soulwick-relay .` | Image bauen (Kontext = Repo-Wurzel) |
-| `docker run --rm -p 8790:8790 -e API_INTERNAL_URL=http://host.docker.internal:8787 soulwick-relay` | Image starten, `/health` prüfen |
+| `docker run --rm -p 3103:8790 -e API_INTERNAL_URL=http://host.docker.internal:3101 soulwick-relay` | Image starten, `/health` prüfen |
 
 **Betrieb:** genau **eine** Replica je Umgebung (Räume im Speicher). Ein Neustart schließt alle Räume
 (`room_closed` mit `shutdown`, dann Close 1001); das Spiel behandelt das wie einen Host-Abbruch.

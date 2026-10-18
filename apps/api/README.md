@@ -23,11 +23,11 @@ cp apps/api/.env.example apps/api/.env.local         # Werte nur der API
 bun run db:deploy                                    # Migrationen anwenden (neue Migration: bun run db:migrate --name <name>)
 bun run db:seed                                      # Basis-Seed: Admin aus DEFAULT_ADMIN_EMAIL/-PASSWORD (siehe unten)
 bun run db:seed:dev                                  # Testdaten (siehe unten)
-bun run dev:api                                      # http://localhost:8787/health
+bun run dev:api                                      # http://localhost:3101/health
 bun run services:down                                # Dienste stoppen (Daten bleiben im Volume)
 ```
 
-Ist Port 5432 belegt, in `infra/.env.local` `DB_PORT=<freier Port>` setzen und den Port in
+Ist Port 5532 belegt, in `infra/.env.local` `DB_PORT=<freier Port>` setzen und den Port in
 `DATABASE_URL` (Wurzel-`.env.local`) anpassen. Benutzer, Passwort und Datenbankname kommen aus
 `POSTGRES_*` in `infra/.env.local` (Standard `soulwick` / `soulwick-local-only` / `soulwick`).
 
@@ -93,11 +93,11 @@ Der Seed **verweigert `NODE_ENV=production`**. Im Docker-Image ist er nur für d
 
 | Variable | Pflicht | Standard | Bedeutung |
 | --- | --- | --- | --- |
-| `DATABASE_URL` | ja | – | PostgreSQL-Verbindung (lokal `postgres://soulwick:soulwick-local-only@localhost:5432/soulwick`); Wurzel-`.env.local`; auch Prisma CLI und Tests lesen sie dort |
+| `DATABASE_URL` | ja | – | PostgreSQL-Verbindung (lokal `postgres://soulwick:soulwick-local-only@localhost:5532/soulwick`); Wurzel-`.env.local`; auch Prisma CLI und Tests lesen sie dort |
 | `TEST_DATABASE_URL` | nein | `DATABASE_URL` | Nur Tests: Postgres-Server für die Wegwerf-Datenbanken `soulwick_test_<zufall>` |
 | `BETTER_AUTH_SECRET` | ja | – | Better Auth (P-027): signiert Session-Tokens, verschlüsselt die JWT-Signierschlüssel; daraus abgeleitet der HMAC-Schlüssel für Verknüpfungs- und Löschcodes (≥ 32 Zeichen, je Umgebung, nur API) |
-| `BETTER_AUTH_URL` | nein | `http://localhost:8787` | Öffentliche Basis-URL der API (Aussteller `iss` der Relay-JWTs); in production `https://…` Pflicht |
-| `PORT` | nein | `8787` | HTTP-Port |
+| `BETTER_AUTH_URL` | nein | `http://localhost:3101` | Öffentliche Basis-URL der API (Aussteller `iss` der Relay-JWTs); in production `https://…` Pflicht |
+| `PORT` | nein | `3101` | HTTP-Port (das Docker-Image setzt 8787) |
 | `PLAYER_TOKEN_TTL_DAYS` | nein | `30` | Gültigkeit einer Spieler-Session ab Anmeldung (ohne Verlängern) |
 | `ADMIN_TOKEN_TTL_HOURS` | nein | `8` | Gültigkeit einer Admin-Session ab Anmeldung (ohne Verlängern) |
 | `DEV_AUTH_ENABLED` | nein | `false` | Testphasen-Login `POST /auth/dev` erlauben |
@@ -125,7 +125,7 @@ Der Seed **verweigert `NODE_ENV=production`**. Im Docker-Image ist er nur für d
 | `SUPPORT_EMAIL` | nein | leer | Support-Adresse für Kontolöschung ohne Spielzugang; über `GET /public/config` als `supportEmail` (leer = `null`, Website zeigt nichts; P-026) |
 | `LOG_LEVEL` | nein | `info` | `info`, `error` oder `silent` |
 | `RELAY_INTERNAL_KEY` | nein | leer | Gemeinsamer Schlüssel mit dem Relay (≥ 32 Zeichen) für `GET /internal/relay/players/:playerId/status` (Header `x-relay-key`, liefert Name, Sperre, Gilde) und für die Gegenrichtung (Live-Räume, P-024); leer = Endpunkt aus (404) |
-| `RELAY_INTERNAL_URL` | nein | leer | Interne Adresse des Relays derselben Umgebung (z. B. `http://soulwick-relay:8790`, lokal `http://localhost:8790`) für `/admin/relay/*` und den Kick nach einer Sperre (P-024); braucht `RELAY_INTERNAL_KEY`; leer = `501 relay_not_configured`, Sperren ohne Relay-Kick |
+| `RELAY_INTERNAL_URL` | nein | leer | Interne Adresse des Relays derselben Umgebung (z. B. `http://soulwick-relay:8790`, lokal `http://localhost:3103`) für `/admin/relay/*` und den Kick nach einer Sperre (P-024); braucht `RELAY_INTERNAL_KEY`; leer = `501 relay_not_configured`, Sperren ohne Relay-Kick |
 | `RELAY_INTERNAL_TIMEOUT_MS` | nein | `3000` | TESTWERT: Zeitlimit je Aufruf an den Relay |
 | `ERECHT24_API_KEY` | nein | leer | Projekt-Schlüssel der eRecht24 Rechtstexte-API v2 (P-025); ohne ihn oder ohne `ERECHT24_PLUGIN_KEY` meldet `GET /legal/:type` `missing`, die Website zeigt den Platzhalter |
 | `ERECHT24_PLUGIN_KEY` | nein | leer | Plugin-/Entwickler-Schlüssel von eRecht24 (Header `eRecht24-plugin-key`); wie bei DapItUp Pflicht für den Abruf |

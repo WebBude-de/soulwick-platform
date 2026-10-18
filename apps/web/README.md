@@ -18,7 +18,7 @@ braucht keine API.
 ```bash
 bun install                                    # im Repo-Wurzelordner
 cp apps/web/.env.example apps/web/.env.local   # API_URL anpassen
-bun run dev:web                                # http://localhost:3000 (alles zusammen: bun dev)
+bun run dev:web                                # http://localhost:3100 (alles zusammen: bun dev)
 ```
 
 Für echte Daten muss die API laufen (`bun run services:up`, `bun run db:deploy`, `bun run db:seed:dev`,
@@ -28,7 +28,7 @@ Für echte Daten muss die API laufen (`bun run services:up`, `bun run db:deploy`
 
 | Variable | Standard | Bedeutung |
 | --- | --- | --- |
-| `API_URL` | `http://localhost:8787` | Adresse der API (nur serverseitig genutzt) |
+| `API_URL` | `http://localhost:3101` | Adresse der API (nur serverseitig genutzt) |
 | `SITE_URL` | `https://playsoulwick.com` | Öffentliche Basis-URL für Canonical, Sitemap und Open Graph |
 | `LIVE_FEATURES` | `true` | Live-Funktionen an/aus (`src/lib/features.ts`). Schaltet **nur** Live-Funktionen, nie Beschreibungen: `false` = keine Spielen- und Installieren-Knöpfe (auch mit `GAME_URL`), stattdessen das Schild „Zum Release spielbar“; Ranglisten-Abschnitt ohne Live-Tafeln („Die Tafeln gehen zum Release live“) und ohne API-Aufrufe; `/leaderboards` und `/guilds/[tag]` liefern 404 und fehlen in der Sitemap; die Open-Source-Seite zeigt keine Spiel-Downloads. Navigation und alle Feature-Texte bleiben gleich. Wird auf dem Server gelesen (kein `NEXT_PUBLIC_`), Umschalten ohne Neubau: Seiten pro Anfrage sofort, die vorab gebauten Neuigkeiten-Seiten spätestens nach fünf Minuten (Docker baut sie mit `false`). Dokploy: development `true`, production `false` bis zum Release |
 | `GAME_URL` | leer | Adresse der Browser-Version des Spiels (`src/lib/game.ts`), z. B. `https://game-dev.playsoulwick.com`. Wirkt nur mit `LIVE_FEATURES` an (`playLinks()`): Hero zeigt „Kostenlos im Browser spielen“ und „Was dich erwartet“, darunter „Als App installieren“ (`GAME_URL?install`) und die Kachel „Browser · spielbar“; der Knopf oben rechts heißt „Spielen“, das Handy-Menü beginnt mit „Im Browser spielen“ / „Web-App installieren“, Beiträge enden mit dem Spielen-Knopf. Sonst (leer, keine http(s)-Adresse oder `LIVE_FEATURES=false`): Schild „Zum Release spielbar“, Kachel „Browser · zum Release“, oben rechts „Ranglisten“ (live), die Steam-Wunschliste (`content/stores.json`) oder „Neuigkeiten“. Links im selben Tab, kein Einbetten. Pro Anfrage auf dem Server gelesen. Dokploy: development gesetzt, production vorerst leer |
@@ -37,7 +37,7 @@ Für echte Daten muss die API laufen (`bun run services:up`, `bun run db:deploy`
 
 | Befehl | Was passiert |
 | --- | --- |
-| `bun run --cwd apps/web dev` | Entwicklungsserver auf Port 3000 |
+| `bun run --cwd apps/web dev` | Entwicklungsserver auf Port 3100 |
 | `bun run --cwd apps/web build` | Produktions-Build (`output: "standalone"`) |
 | `bun run --cwd apps/web start` | Produktions-Build starten |
 | `bun run --cwd apps/web typecheck` | Routen-Typen erzeugen und TypeScript prüfen |

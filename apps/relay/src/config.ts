@@ -22,7 +22,7 @@ const ConfigSchema = z
       .enum(["development", "production", "test"])
       .default("development"),
     /** 0 = random free port (tests). */
-    RELAY_PORT: z.coerce.number().int().min(0).max(65_535).default(8790),
+    RELAY_PORT: z.coerce.number().int().min(0).max(65_535).default(3103),
     /** "::" = dual stack (IPv6 and IPv4), so `ws://localhost` works for clients that resolve ::1 first. */
     RELAY_HOST: z.string().default("::"),
 

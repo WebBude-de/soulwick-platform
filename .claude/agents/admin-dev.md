@@ -50,8 +50,8 @@ fast to scan, consistent, calm.
   formatting).
 - Run the panel against seeded data. Ask the user whether the API already runs; otherwise
   `bun run services:up`, `bun run db:seed:dev` (after `bun run db:deploy` if the database is new; never
-  reset the user's database) and `bun run dev:api`, then `bun run --cwd apps/admin dev` (port 3001; use
-  `bun run --cwd apps/admin dev --port 3011` if taken). Log in as `admin@soulwick.local` /
+  reset the user's database) and `bun run dev:api`, then `bun run --cwd apps/admin dev` (port 3102; use
+  `bun run --cwd apps/admin dev --port 3152` if taken). Log in as `admin@soulwick.local` /
   `DEFAULT_ADMIN_PASSWORD` (default `soulwick-admin-local`) and as `moderator@soulwick.local` to see
   the role-dependent UI. Open every page (Übersicht, Spieler incl. the banned player "Sternasche",
   Gilden incl. "Dochtwächter", Runs with the flagged filter, Statistik, Live-Räume, Löschprotokoll, Protokoll,

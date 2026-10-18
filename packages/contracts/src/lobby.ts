@@ -4,7 +4,7 @@ import { IsoDateTime, Uuid } from "./common.ts";
 /**
  * Relay contract (apps/relay, KONZEPT_ONLINE.md §2, D-119, P-016).
  *
- * Transport: one WebSocket per game instance to `wss://<relay>/v1` (local `ws://localhost:8790/v1`).
+ * Transport: one WebSocket per game instance to `wss://<relay>/v1` (local `ws://localhost:3103/v1`).
  * - Control messages are JSON **text** frames, discriminated by `type` (schemas below).
  * - Game packets are **binary** frames: a fixed 10-byte little-endian header plus the untouched
  *   Godot packet (see RELAY_FRAME_*). The relay never reads the payload.
