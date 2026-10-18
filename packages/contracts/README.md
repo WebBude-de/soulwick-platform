@@ -21,6 +21,12 @@ Das Konto-Profil (ein Charakter je Konto, P-034) steht in `src/common.ts` (`Play
 TESTWERT) und `POST /me/xp` (`AddXpRequest`, `AddXpResponse`). Spiel und Server rechnen mit denselben
 Funktionen; der GDScript-Client spiegelt sie. `PlayerLevel` (in `src/common.ts`) ist die Level-Zahl in
 `GuildMember`, `LeaderboardEntry`, `GuildRoom`, `RoomPeer` und `RelayPlayerStatus`.
+`src/world.ts` enthält die Cloud-Welten (D-188, KF8, P-038): Blob `WorldData` (Spielstand v5 als JSON,
+je ConfigFile-Abschnitt ein Objekt), `WorldSummary`, `WorldMeta` / `CloudWorld`, `PutWorldRequest` mit
+`baseRevision`, `discarded` (Sicherung der unterlegenen Seite) und `resolvedMerges`,
+`WorldConflictResponse` (409 mit Server-Stand), Sicherungen (`WorldBackup*`), Archiv
+(`RestoreWorldRequest`/`Response`) und die Grenzen (`MAX_CLOUD_WORLDS`, `WORLD_MAX_DATA_BYTES`, 30 Tage;
+TESTWERT). Gemischt wird im Spiel (`meta/save_merge.gd`, KF9), nie auf dem Server.
 `src/bug-report.ts` enthält die Bug-Meldungen aus dem Spiel (`POST /bug-reports` mit Screenshot,
 Markierungen und Kategorien; `kind` unterscheidet „bug“ (Standard) und „idea“) und ihre Admin-Routen
 samt Grenzen (`BUG_REPORT_MAX_*`, P-033; Filter `?kind=bug|idea`).

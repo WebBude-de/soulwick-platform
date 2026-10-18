@@ -50,8 +50,15 @@ export function createApp(base: BaseDeps) {
     cors({
       origin: (origin) =>
         config.CORS_ORIGINS.includes(origin) ? origin : null,
-      allowHeaders: ["Content-Type", "Authorization"],
-      allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+      // If-Match / If-None-Match / ETag: revisions of cloud worlds (P-038, browser build).
+      allowHeaders: [
+        "Content-Type",
+        "Authorization",
+        "If-Match",
+        "If-None-Match",
+      ],
+      allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      exposeHeaders: ["ETag", "Retry-After"],
       maxAge: 600,
     })
   );

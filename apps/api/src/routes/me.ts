@@ -31,6 +31,7 @@ import { updateProfile } from "../services/profile.ts";
 import { issuePlayerSession } from "../services/sessions.ts";
 import { addXp } from "../services/xp.ts";
 import type { AppEnv, Deps } from "../types.ts";
+import { worldRoutes } from "./worlds.ts";
 
 export function meRoutes(deps: Deps) {
   const app = new Hono<AppEnv>();
@@ -93,6 +94,9 @@ export function meRoutes(deps: Deps) {
     });
     return c.json(result);
   });
+
+  /** Cloud worlds (D-188, KF8, P-038): routes/worlds.ts. */
+  app.route("/worlds", worldRoutes(deps));
 
   /** Own active guilds for the online menu (D-147), oldest membership first. */
   app.get("/guilds", async (c) => {
@@ -159,6 +163,7 @@ export function meRoutes(deps: Deps) {
         removedCaller: result.removedCaller,
         merged: result.merged,
         guilds: result.guilds,
+        worlds: result.worlds,
       });
       const session = await issuePlayerSession(deps, result.remaining);
       const response: LinkAccountResponse = {

@@ -197,8 +197,9 @@ export type DeletedAccount = Pick<
 /**
  * Deletes an account; the one implementation behind DELETE /me, the website confirmation and
  * DELETE /admin/players/:id. Guild membership is removed first (founder role passes on, P-102;
- * the last member disbands the guild); identities, bans, link and deletion codes, notes, bug reports and run
- * participation rows go with the player (ON DELETE CASCADE), so runs stay for guild boards but
+ * the last member disbands the guild); identities, bans, link and deletion codes, notes, bug reports,
+ * XP entries, cloud worlds with their backups (D-188) and run participation rows go with the
+ * player (ON DELETE CASCADE), so runs stay for guild boards but
  * no longer reference the player. Writes the deletion log row (no name, P-026).
  */
 export async function deletePlayerAccount(

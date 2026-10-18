@@ -27,7 +27,7 @@
 | **P23** | Kosmetik im Profil (Plattform-Teil von WK2): Kosmetik von Spielfigur und Wick im Vertrag `PlayerAppearance`, Übertragung über `PATCH /me` | geplant | **WK0** (Spiel-Repo: Aussehen und Rolle von Wick, D-175 OFFEN), P22 |
 | **P24** | Dorf-Schnappschuss (Plattform-Teil von WK6): Dorf mit Deko auf dem Server, Gilde und Freunde schauen es an (nur ansehen) | geplant | WK0, WK5 (Dorf-Deko im Spiel), P4 (Gilden, MP8) |
 | **KF3** | Strang K: Konto-XP und Level am Konto (`POST /me/xp`, `level` in Profil, Gilde, Rangliste, Lobby) | **fertig (18.10.2026)**, 405/405 Tests; offen: Spiel-Client KF4, Admin-Anzeige (admin-dev) | – |
-| **KF8** | Strang K: Cloud-Welten (= CP5): Vertrag, Tabelle, Routen, Sicherungen, Archiv | geplant | KF3 (ein `api-dev` nach dem anderen) |
+| **KF8** | Strang K: Cloud-Welten (= CP5): Vertrag, Tabelle, Routen, Sicherungen, Archiv | **fertig (18.10.2026)**, 420/420 Tests, P-038; offen: Spiel-Client KF9, Datenschutzerklärung/Store-Angaben | KF3 |
 | **KF5** | Strang K: Better Auth für Spieler (Benutzername, Magic Link, Google, Apple, Discord, Steam OpenID), Anmeldung hinzufügen, Web-Anmeldung (P-036, P-037) | geplant | KF8; Mailversand-Anbieter (OFFEN), Konten bei Google, Apple, Discord, Steam (Projektmitglied) |
 | **KF11** | Strang K: Anmeldeseiten der Website (DE/EN) | geplant | KF5 (Routen und Verträge) |
 | P2 | Online gehen (Dokploy) | geplant | P7, P8 (Images auf Bun, Prisma-Migrationen) |
@@ -378,7 +378,7 @@ Doku für alle Punkte fertig (14.10.2026) in [infra/DOKPLOY.md](../infra/DOKPLOY
 
 ## Strang K – Konto und Fortschritt (D-188)
 
-**Ziel:** Ein Konto je Mensch mit allen Anmeldungen, Welten in der Cloud mit Mischregeln statt Konfliktdialog und ein Konto-Level, das bei jedem Run sichtbar steigt; alles zum Release auf allen Plattformen (D-188, D-179). Konzept, Feldtabelle und Spiel-Pakete (KF1, KF2, KF4, KF6, KF7, KF9, KF10) stehen im Spiel-Repo: `soulwick/docs/KONZEPT_KONTO_FORTSCHRITT.md` und `soulwick/docs/ROADMAP.md` (Strang K); hier nur der **Plattform-Teil**. Entscheidungen: D-188 (Spiel-Repo), P-036, P-037.
+**Ziel:** Ein Konto je Mensch mit allen Anmeldungen, Welten in der Cloud mit Mischregeln statt Konfliktdialog und ein Konto-Level, das bei jedem Run sichtbar steigt; alles zum Release auf allen Plattformen (D-188, D-179). Konzept, Feldtabelle und Spiel-Pakete (KF1, KF2, KF4, KF6, KF7, KF9, KF10) stehen im Spiel-Repo: `soulwick/docs/KONZEPT_KONTO_FORTSCHRITT.md` und `soulwick/docs/ROADMAP.md` (Strang K); hier nur der **Plattform-Teil**. Entscheidungen: D-188 (Spiel-Repo), P-036, P-037, P-038.
 **Reihenfolge:** **ein `api-dev` nach dem anderen**, Verträge in `packages/contracts` immer zuerst: **KF3 → KF8 → KF5**, danach **KF11** (`web-dev`). Alle drei `api-dev`-Pakete teilen `packages/contracts`, `packages/db/prisma` und `services/account-link.ts`. Spiel: KF4 nach KF3, KF9 nach KF8, KF6 nach KF5 und KF11.
 
 ### KF3 – XP und Level am Konto ✔
@@ -394,21 +394,24 @@ Doku für alle Punkte fertig (14.10.2026) in [infra/DOKPLOY.md](../infra/DOKPLOY
 - [ ] Spiel KF4: offene Einträge aus `user://progress.cfg` mit `POST /me/xp` hochladen (älteste zuerst, höchstens 50 je Anfrage, `deferred` behalten), `PlayerSelf.xp` übernehmen, Level in Lobby-Platz (`RoomPeer.level`), Gildenliste und Rangliste; GDScript-Spiegel von `xpForLevel`, `levelForXp`, `runXp` (Spiel-Repo, `player-dev`).
 - [ ] Admin-Panel: Level und XP in Spielerliste und Spieler-Details zeigen (`AdminPlayerListItem.xp/level`; admin-dev).
 
-### KF8 – Cloud-Welten (= CP5)
+### KF8 – Cloud-Welten (= CP5) ✔
 
 **Agent:** `api-dev` (2. von 3), nach KF3. **Dateien:** `packages/contracts/src/world.ts` (neu), `identity.ts` (`AccountSummary`), `index.ts`; `packages/db/prisma/schema.prisma` + Migration; `apps/api/src/routes/me.ts` (oder neu `routes/worlds.ts`), neu `services/worlds.ts`, `services/{account-link,account-deletion,housekeeping}.ts`, `config.ts`; Tests, Dev-Seed, Doku. **Prüfung:** `bun run check`, `typecheck`, `test` (Versionskonflikt, Größe, Grenze 3 Welten, Zeitstempel-Kappung, Sicherung wiederherstellen, Archiv, Zusammenführen, Löschen), `db:verify`.
 
-- [ ] Vertrag: `GET /me/worlds`, `GET` / `PUT` / `DELETE /me/worlds/:worldId` mit `baseVersion`, `409 version_conflict` samt Server-Stand, Zusammenfassung (Name, Rekord, Schmiede, Spielzeit, zuletzt gespielt), ≤ 64 KB, höchstens 3 Welten (TESTWERT).
-- [ ] Tabellen für Cloud-Welten, Sicherungen und Archiv (30 Tage, TESTWERT), Aufräumen im Housekeeping; `last_played` aus der Zukunft (> 5 min) auf Serverzeit.
-- [ ] Sicherungen und Archiv auflisten und wiederherstellen (als neuer Stand hochgeladen).
-- [ ] Zusammenführen (gleiche Welt-ID → beide Stände bleiben für das Spiel zum Mischen, sonst freie Plätze, Rest ins Archiv) und Löschen mit dem Konto; „leeres Konto“ um Cloud-Welten über 5 Minuten Spielzeit ergänzen.
-- [ ] Inhalt ist unzuverlässig: speist nie Ranglisten, Gildenkasse oder Käufe; Datenschutzerklärung und Store-Angaben ergänzen (Projektmitglied).
+- [x] *(18.10.2026, P-038)* Vertrag `world.ts`: `GET /me/worlds` (aktiv und Archiv), `GET` / `PUT` / `DELETE /me/worlds/:worldId` mit `revision` (`baseRevision` oder `If-Match`, `ETag`), `409 revision_conflict` samt Server-Stand, Blob als JSON je ConfigFile-Abschnitt (≤ 64 KB, Format ≥ v5, Welt-ID und `meta.version` geprüft, `[cloud]` verworfen), Zusammenfassung (Name, Rekord, Schmiede, Spielzeit, zuletzt gespielt), höchstens 3 aktive Welten, Rate-Limit `WORLD_WRITES_PER_HOUR` (alles TESTWERT). **Wer mischt:** das Spiel (KF9), der Server nie.
+- [x] *(18.10.2026; Migration `20261018133235_cloud_worlds`, nur Hinzufügen; `db:verify` grün, 13 Migrationen, Dev-Seed im Wegwerf-Lauf)* Tabellen `cloud_worlds` und `cloud_world_backups`, Sicherungen und Archiv 30 Tage, Aufräumen im Housekeeping; `last_played` aus der Zukunft (> 5 min) auf Serverzeit.
+- [x] *(18.10.2026)* Sicherungen (`discarded`: Server- oder lokaler Stand) und Archiv auflisten und wiederherstellen (`…/backups/:id/restore` als neuer Stand mit Serverzeit, `…/unarchive`; voll → `409 world_limit_reached` oder `archiveWorldId`).
+- [x] *(18.10.2026)* Zusammenführen (gleiche Welt-ID → zuletzt gespielter Stand bleibt, der andere als Sicherung mit `pendingMerge` zum Einmischen im Spiel, sonst freie Plätze, Rest ins Archiv) und Löschen mit dem Konto; „leeres Konto“ um Cloud-Welten über 5 Minuten Spielzeit ergänzt (`AccountSummary.worlds`).
+- [x] *(18.10.2026; `worlds.test.ts` 15 Tests: Versionskonflikt, Größe, Grenze 3 Welten, Zeitstempel-Kappung, Sicherung wiederherstellen, Archiv, Zusammenführen, Löschen, Rate-Limit; gesamt 420/420; Dev-Seed zweimal gegen eine Wegwerf-Datenbank, danach Login als Lumen, Liste, `PUT` mit `If-Match`, `409`, Sicherungen, `unarchive`, CORS-Vorabfrage geprüft)* Tests, Dev-Seed (3 Welten für Lumen), Doku.
+- [ ] Spiel KF9: Spielstand v5 (`[world] id`, `[cloud]`), `meta/save_merge.gd`, `online/cloud_save.gd` gegen diesen Vertrag (Spiel-Repo, `village-dev`).
+- [ ] Inhalt ist unzuverlässig: speist nie Ranglisten, Gildenkasse oder Käufe (so gebaut); Datenschutzerklärung und Store-Angaben ergänzen (Projektmitglied).
+- [ ] Dokploy: `WORLD_WRITES_PER_HOUR` nur setzen, wenn vom Standard abweichend (Integrator, `infra/DOKPLOY.md`).
 
 ### KF5 – Better Auth für Spieler (P-036, P-037)
 
 **Agent:** `api-dev` (3. von 3), nach KF8. **Dateien:** `packages/contracts/src/{identity,player}.ts`; `packages/db/prisma/schema.prisma` + Migration (Enum `identity_provider`, `player_identities.auth_account_id`, ggf. Benutzername); `apps/api/src/auth/{auth,player-plugin}.ts`, `routes/{auth,me}.ts`, `services/{identities,account-link,account-deletion,sessions}.ts`, neu Mail-Adapter in `lib/`, `config.ts`, `apps/api/.env.example`, README; Tests, Doku. **Prüfung:** `bun run check`, `typecheck`, `test` (je Anbieter mit Fake-`fetch`: Nachweis falsch, Identität vergeben, Zusammenführen, Sperre, Rate-Limit, kein Verknüpfen über E-Mail), `db:verify`.
 
-- [ ] P-037 vom Team bestätigen (Empfehlung (a): `player_identities` als einzige Liste, `auth_accounts` nur Geheimnisse).
+- [x] *(18.10.2026, Projektmitglied)* P-037 entschieden: Variante (a), `player_identities` als einzige Liste, `auth_accounts` nur Geheimnisse, E-Mail nur in `auth_users.email` (Admin und Spieler nicht mit derselben E-Mail).
 - [ ] Benutzername/Passwort (Plugin `username`), Magic Link (Plugin `magicLink`, Mail-Adapter; Anbieter OFFEN), Google, Apple, Discord (`socialProviders`), Steam OpenID 2.0 auf die `steam`-Identität; `accountLinking` aus.
 - [ ] „Anmeldung hinzufügen“ mit Sitzung und Nachweis; Web-Anmeldung aus dem Spiel (`POST /auth/web-login`, Abholen); Sign in with Apple nativ (Identity-Token).
 - [ ] „Leeres Konto“ nach D-188 vollständig (Gilde, Runs, XP, Cloud-Welten); Apple-Token-Widerruf beim Löschen; Game-Center-Prüfung (P14); Rate-Limits.

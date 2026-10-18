@@ -114,6 +114,11 @@ const ConfigSchema = z
       .min(1)
       .max(3650)
       .default(BUG_REPORT_RETENTION_DAYS_DEFAULT),
+    /**
+     * TESTWERT: writes to cloud worlds (PUT, DELETE, restore, unarchive under /me/worlds) per
+     * account and hour (D-188, P-038). The game syncs at most every 5 minutes in the village.
+     */
+    WORLD_WRITES_PER_HOUR: z.coerce.number().int().min(1).default(120),
     /** Behind Dokploy/Traefik the client IP comes from X-Forwarded-For. */
     TRUST_PROXY: z
       .enum(["true", "false", "1", "0"])

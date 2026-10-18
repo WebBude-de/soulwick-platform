@@ -8,4 +8,5 @@ export * from "./legal.ts";
 export * from "./lobby.ts";
 export * from "./player.ts";
 export * from "./run.ts";
+export * from "./world.ts";
 export * from "./xp.ts";

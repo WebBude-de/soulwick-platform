@@ -15,6 +15,7 @@ import { findActiveBan } from "./bans.ts";
 import type { Tx } from "./db-types.ts";
 import { findMemberships, higherRole, removeMember } from "./guilds.ts";
 import { findIdentities } from "./identities.ts";
+import { mergeWorlds, type WorldMergeCounts, worldProgress } from "./worlds.ts";
 import { mergeXp } from "./xp.ts";
 
 const CODE_ATTEMPTS = 5;
@@ -81,7 +82,12 @@ export async function createLinkCode(
   return await attempt(CODE_ATTEMPTS);
 }
 
-async function summarize(tx: Tx, player: Player): Promise<AccountSummary> {
+/** The merge summary plus whether a cloud world counts as progress (D-188). */
+async function summarize(
+  tx: Tx,
+  player: Player,
+  now: Date
+): Promise<{ summary: AccountSummary; worldsProgress: boolean }> {
   const guilds = (await findMemberships(tx, player.id)).map((m) => ({
     name: m.name,
     tag: m.tag,
@@ -89,7 +95,8 @@ async function summarize(tx: Tx, player: Player): Promise<AccountSummary> {
   }));
   const runCount = await tx.runPlayer.count({ where: { playerId: player.id } });
   const identities = await findIdentities(tx, player.id);
-  return {
+  const worlds = await worldProgress(tx, player.id, now);
+  const summary: AccountSummary = {
     id: player.id,
     name: player.name,
     createdAt: iso(player.createdAt),
@@ -99,7 +106,9 @@ async function summarize(tx: Tx, player: Player): Promise<AccountSummary> {
     providers: [...new Set(identities.map((i) => i.provider))],
     xp: player.xp,
     level: levelForXp(player.xp),
+    worlds: worlds.count,
   };
+  return { summary, worldsProgress: worlds.hasProgress };
 }
 
 /** What happened to the guild memberships of a merge (logged only). */
@@ -166,9 +175,15 @@ async function mergeGuildMemberships(
   return counts;
 }
 
-/** D-122, D-188: an account is empty when it has no guild, no runs and no XP. */
-const hasProgress = (s: AccountSummary) =>
-  s.guild !== null || s.runCount > 0 || (s.xp ?? 0) > 0;
+/**
+ * D-122, D-188: an account is empty when it has no guild, no runs, no XP and no cloud world with
+ * more than WORLD_EMPTY_PLAY_SECONDS play time.
+ */
+const hasProgress = (s: { summary: AccountSummary; worldsProgress: boolean }) =>
+  s.summary.guild !== null ||
+  s.summary.runCount > 0 ||
+  (s.summary.xp ?? 0) > 0 ||
+  s.worldsProgress;
 
 /**
  * Moves everything of `dropId` onto `keepId` and deletes `dropId` (D-122). Runs inside the
@@ -182,6 +197,8 @@ const hasProgress = (s: AccountSummary) =>
  * - run participations move; a run both accounts took part in keeps one row; reporter moves;
  * - bug reports (P-033) and the name history (P-034) move; keep's name and appearance stay;
  * - XP entries move, a run id both accounts know counts once; keep's XP = sum (D-188);
+ * - cloud worlds move; a world id both accounts know stays one world with the other state as a
+ *   pending-merge backup for the game, the limit archives the least recently played (P-038);
  * - name and `created_at` of keep stay, `last_seen_at` becomes the later of both.
  */
 async function absorbAccount(
@@ -189,7 +206,7 @@ async function absorbAccount(
   keep: Player,
   drop: Player,
   now: Date
-): Promise<{ guilds: GuildMergeCounts }> {
+): Promise<{ guilds: GuildMergeCounts; worlds: WorldMergeCounts }> {
   await tx.playerIdentity.updateMany({
     where: { playerId: drop.id },
     data: { playerId: keep.id },
@@ -226,6 +243,7 @@ async function absorbAccount(
   });
 
   await mergeXp(tx, keep.id, drop.id);
+  const worlds = await mergeWorlds(tx, keep.id, drop.id, now);
 
   if (drop.lastSeenAt > keep.lastSeenAt) {
     await tx.player.update({
@@ -234,7 +252,7 @@ async function absorbAccount(
     });
   }
   await tx.player.delete({ where: { id: drop.id } });
-  return { guilds };
+  return { guilds, worlds };
 }
 
 export interface LinkResult {
@@ -244,6 +262,7 @@ export interface LinkResult {
   /** true when the caller's own account was removed (its device continues on `remaining`). */
   removedCaller: boolean;
   removedPlayerId: string;
+  worlds: WorldMergeCounts;
 }
 
 /**
@@ -304,8 +323,8 @@ export async function redeemLinkCode(
         );
       }
 
-      const ownerSummary = await summarize(tx, owner);
-      const callerSummary = await summarize(tx, caller);
+      const ownerSummary = await summarize(tx, owner, now);
+      const callerSummary = await summarize(tx, caller, now);
       let keep: Player;
       let drop: Player;
       let merged = false;
@@ -323,8 +342,8 @@ export async function redeemLinkCode(
             "account_has_progress",
             "Both accounts have progress; confirm the merge",
             {
-              remaining: ownerIsOlder ? ownerSummary : callerSummary,
-              removed: ownerIsOlder ? callerSummary : ownerSummary,
+              remaining: (ownerIsOlder ? ownerSummary : callerSummary).summary,
+              removed: (ownerIsOlder ? callerSummary : ownerSummary).summary,
             }
           );
         }
@@ -334,7 +353,7 @@ export async function redeemLinkCode(
         drop = owner;
       }
 
-      const { guilds } = await absorbAccount(tx, keep, drop, now);
+      const { guilds, worlds } = await absorbAccount(tx, keep, drop, now);
       // The owner's code is used up (gone with the owner if the owner was absorbed).
       await tx.linkCode.deleteMany({ where: { id: row.id } });
       const remaining = await tx.player.findUniqueOrThrow({
@@ -346,6 +365,7 @@ export async function redeemLinkCode(
         removedCaller: drop.id === caller.id,
         merged,
         guilds,
+        worlds,
       };
     },
     { timeout: MERGE_TIMEOUT_MS }
