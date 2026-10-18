@@ -29,7 +29,10 @@ describe("moderation in the relay core", () => {
     const h = createHarness();
     const host = await h.host("Host");
     h.advance(2000);
-    const a = await h.player("Ash", { platform: "android" });
+    const a = await h.player("Ash", {
+      platform: "android",
+      status: { level: 4 },
+    });
     await a.send({ type: "join", code: host.code });
     await host.send({ type: "start" });
 
@@ -62,6 +65,7 @@ describe("moderation in the relay core", () => {
         platform: "windows",
         host: true,
         inRoomSeconds: 2 + RELAY_ROOM_RATE_WINDOW_SECONDS,
+        level: null,
       },
       {
         peerId: 2,
@@ -70,6 +74,7 @@ describe("moderation in the relay core", () => {
         platform: "android",
         host: false,
         inRoomSeconds: RELAY_ROOM_RATE_WINDOW_SECONDS,
+        level: 4,
       },
     ]);
     const window = 2 + RELAY_ROOM_RATE_WINDOW_SECONDS;

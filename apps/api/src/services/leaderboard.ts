@@ -1,8 +1,9 @@
-import type {
-  LeaderboardEntry,
-  LeaderboardKind,
-  LeaderboardPeriod,
-  LeaderboardResponse,
+import {
+  type LeaderboardEntry,
+  type LeaderboardKind,
+  type LeaderboardPeriod,
+  type LeaderboardResponse,
+  levelForXp,
 } from "@soulwick/contracts";
 import { Prisma } from "@soulwick/db";
 import { iso } from "../lib/validate.ts";
@@ -32,6 +33,8 @@ interface Row {
   room_reached: number;
   run_id: string;
   tag: string | null;
+  /** Account XP of the player (player boards), null on the guild board. */
+  xp: number | null;
 }
 
 const NIL_UUID = "00000000-0000-0000-0000-000000000000";
@@ -107,7 +110,7 @@ export async function getLeaderboard(
         order by entity_id, room_reached desc, duration_seconds asc, created_at asc
       ),
       ranked as (
-        select b.*, g.name, g.tag,
+        select b.*, g.name, g.tag, null::int as xp,
           (select count(*)::int from guild_members gm where gm.guild_id = b.entity_id) as member_count,
           rank() over (order by ${order})::int as rank,
           row_number() over (order by ${order}, b.created_at asc)::int as pos
@@ -133,7 +136,7 @@ export async function getLeaderboard(
         order by entity_id, room_reached desc, duration_seconds asc, created_at asc
       ),
       ranked as (
-        select b.*, p.name,
+        select b.*, p.name, p.xp,
           -- Oldest active guild of the player (D-147: a player can be in several).
           (select g.tag from guild_members gm
             join guilds g on g.id = gm.guild_id and g.disbanded_at is null
@@ -161,6 +164,7 @@ export async function getLeaderboard(
     runId: r.run_id,
     achievedAt: iso(r.created_at),
     memberCount: r.member_count === null ? null : Number(r.member_count),
+    level: r.xp === null ? null : levelForXp(Number(r.xp)),
   });
 
   const entries = rows.filter((r) => Number(r.pos) <= limit).map(toEntry);

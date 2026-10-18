@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { IsoDateTime, Uuid } from "./common.ts";
+import { IsoDateTime, PlayerLevel, Uuid } from "./common.ts";
 
 /**
  * Relay contract (apps/relay, KONZEPT_ONLINE.md §2, D-119, P-016).
@@ -160,6 +160,11 @@ export const RoomPeer = z.object({
   /** From the API; null when the API was not reachable at `hello`. */
   name: z.string().nullable(),
   platform: ClientPlatform,
+  /**
+   * Account level from the API at `hello` (D-188; it does not change while connected); null when
+   * the API was not reachable. Added without a protocol bump; optional for older relays.
+   */
+  level: PlayerLevel.nullable().optional(),
 });
 export type RoomPeer = z.infer<typeof RoomPeer>;
 
@@ -265,6 +270,8 @@ export const WelcomeMessage = z.object({
   playerId: Uuid,
   /** From the API; null when the API was not reachable. */
   name: z.string().nullable(),
+  /** Own account level from the API (D-188), like `RoomPeer.level`. Optional for older relays. */
+  level: PlayerLevel.nullable().optional(),
   protocolVersion: z.number().int(),
   /** Largest accepted WebSocket message (header + payload) in bytes. */
   maxFrameBytes: z.number().int(),
@@ -539,6 +546,8 @@ export const RelayPlayerStatus = z.object({
    * the room's guild is in this list. Optional: older APIs only send `guildId`.
    */
   guildIds: z.array(Uuid).optional(),
+  /** Account level (D-188) for `RoomPeer.level`. Optional: older APIs do not send it. */
+  level: PlayerLevel.optional(),
 });
 export type RelayPlayerStatus = z.infer<typeof RelayPlayerStatus>;
 
@@ -576,6 +585,8 @@ export const RelayRoomPlayer = z.object({
   platform: ClientPlatform,
   /** Peer 1. */
   host: z.boolean(),
+  /** Account level at `hello` (D-188); null when the API was not reachable. Optional for older relays. */
+  level: PlayerLevel.nullable().optional(),
   /** Seconds since the player created or joined the room. */
   inRoomSeconds: z.number().int().min(0),
 });

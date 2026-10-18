@@ -7,6 +7,7 @@ import {
   IsoDateTime,
   PaginationQuery,
   PlayerAppearance,
+  PlayerLevel,
   PlayerName,
   RunMode,
   Uuid,
@@ -230,6 +231,9 @@ export const AdminPlayerListItem = z.object({
   guildTag: z.string().nullable(),
   /** Tags of all active guilds, oldest membership first (D-147). Optional for older API builds. */
   guildTags: z.array(z.string()).optional(),
+  /** Account XP and level (D-188, read only). Optional for older API builds. */
+  xp: z.number().int().min(0).optional(),
+  level: PlayerLevel.optional(),
 });
 export type AdminPlayerListItem = z.infer<typeof AdminPlayerListItem>;
 

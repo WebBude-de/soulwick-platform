@@ -85,6 +85,9 @@ model Player {
   lastSeenAt DateTime @default(now()) @map("last_seen_at") @db.Timestamptz(6)
   /// The account's character (P-034, D-152): {character, colors}; null = the game's default.
   appearance Json?
+  /// Account XP (D-188): sum of `xp_entries.xp`, kept in step by POST /me/xp and merges. The level
+  /// is derived from it (`levelForXp` in @soulwick/contracts), never stored.
+  xp         Int      @default(0)
 
   identities      PlayerIdentity[]
   bans            Ban[]
@@ -102,6 +105,8 @@ model Player {
   nameChanges     PlayerNameChange[]
   /// Better Auth user that carries the sessions of this player (P-027); created at first login.
   authUser        User?
+  /// One row per run that brought (or was refused) account XP (D-188); deleted with the account.
+  xpEntries       XpEntry[]
 
   @@map("players")
 }
@@ -495,4 +500,45 @@ model BugReport {
   @@index([createdAt], map: "bug_reports_created_at_idx")
   @@index([playerId], map: "bug_reports_player_id_idx")
   @@map("bug_reports")
+}
+
+// ---------------------------------------------------------------------------
+// Account XP (D-188, KF3)
+// ---------------------------------------------------------------------------
+
+/// One run of one player for the account XP (POST /me/xp). The run id comes from the game and
+/// counts once per account (unique with the player); the counts are stored as reported, the XP
+/// as computed by the server (`runXp` in @soulwick/contracts). `record_rooms` and
+/// `first_run_of_day` are what the server granted. Flagged entries keep 0 XP with the reason.
+/// Merging accounts moves the rows (a run id both accounts know stays once); deleting the
+/// account deletes them.
+model XpEntry {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId        String   @map("player_id") @db.Uuid
+  runId           String   @map("run_id") @db.Uuid
+  xp              Int
+  rooms           Int
+  champions       Int
+  bosses          Int
+  deepestRoom     Int      @map("deepest_room")
+  recordRooms     Int      @map("record_rooms")
+  firstRunOfDay   Boolean  @map("first_run_of_day")
+  /// RunEndReason of the contract (`portal`, `wiped`, `abandoned`); plain text like bug report platforms.
+  endReason       String   @map("end_reason")
+  players         Int
+  durationSeconds Int      @map("duration_seconds")
+  gameVersion     String   @map("game_version")
+  /// When the run ended (device clock, future values set to the server time).
+  endedAt         DateTime @map("ended_at") @db.Timestamptz(6)
+  /// UTC day of `ended_at`: one first-run-of-the-day bonus per account and day.
+  day             DateTime @db.Date
+  flagReason      String?  @map("flag_reason")
+  /// Upload time: the daily cap counts the XP credited per UTC day of this column.
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, runId], map: "xp_entries_player_run_uq")
+  @@index([playerId, createdAt], map: "xp_entries_player_id_created_at_idx")
+  @@map("xp_entries")
 }

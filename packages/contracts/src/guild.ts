@@ -6,6 +6,7 @@ import {
   InviteCode,
   IsoDateTime,
   PlayerAppearance,
+  PlayerLevel,
   Uuid,
 } from "./common.ts";
 import { GameVersion, RoomCode } from "./lobby.ts";
@@ -60,6 +61,8 @@ export const GuildMember = z.object({
   joinedAt: IsoDateTime,
   /** The member's character (P-034); null = default character. Optional for older API builds. */
   appearance: PlayerAppearance.nullable().optional(),
+  /** The member's account level (D-188). Optional for older API builds. */
+  level: PlayerLevel.optional(),
 });
 export type GuildMember = z.infer<typeof GuildMember>;
 
@@ -219,6 +222,8 @@ export const GuildRoom = z.object({
       playerId: Uuid,
       name: z.string().nullable(),
       host: z.boolean(),
+      /** Current account level (D-188); null if the player no longer exists. Optional for older API builds. */
+      level: PlayerLevel.nullable().optional(),
     })
   ),
   createdAt: IsoDateTime,

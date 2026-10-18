@@ -14,21 +14,35 @@ const hello = (token: string, protocolVersion = 1) => ({
 });
 
 describe("hello", () => {
-  it("welcomes a valid player with name and limits", async () => {
+  it("welcomes a valid player with name, level and limits", async () => {
     const h = createHarness();
-    const s = h.status.add("Lumen");
+    const s = h.status.add("Lumen", { level: 7 });
     const p = h.connect();
     await p.send(hello(await playerToken(s.playerId)));
     expect(p.t.last()).toEqual({
       type: "welcome",
       playerId: s.playerId,
       name: "Lumen",
+      level: 7,
       protocolVersion: 1,
       maxFrameBytes: 65_536,
       maxPlayers: 4,
       clientRouting: "host_only",
     });
     expect(p.client.closed).toBe(false);
+  });
+
+  it("passes the account level into the room peers; an older API without level gives null (D-188)", async () => {
+    const h = createHarness();
+    const host = await h.host("Host");
+    const a = await h.player("Ash", { status: { level: 12 } });
+    await a.send({ type: "join", code: host.code });
+    const joined = a.t.of("joined")[0];
+    expect(joined?.room.peers.map((peer) => peer.level)).toEqual([null, 12]);
+    expect(host.t.of("peer_joined")[0]?.peer).toMatchObject({
+      name: "Ash",
+      level: 12,
+    });
   });
 
   it("rejects invalid, foreign-key, expired, wrong-audience and HS256 tokens with unauthorized (4001)", async () => {

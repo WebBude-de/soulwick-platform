@@ -57,8 +57,9 @@ Spiel (Godot, Host-Modell)          Browser                              eRecht2
 
 | Tabelle | Inhalt |
 | --- | --- |
-| `players` | id (uuid), `name` (Anzeigename, nicht eindeutig), `created_at`, `last_seen_at`, `appearance` (jsonb `{character, colors}`, null = Standardfigur; P-034, D-152). **Ohne** `steam_id`/`device_id` (→ `player_identities`, P-014). |
+| `players` | id (uuid), `name` (Anzeigename, nicht eindeutig), `created_at`, `last_seen_at`, `appearance` (jsonb `{character, colors}`, null = Standardfigur; P-034, D-152), `xp` (Konto-XP = Summe von `xp_entries.xp`; das Level wird daraus berechnet, nie gespeichert; D-188). **Ohne** `steam_id`/`device_id` (→ `player_identities`, P-014). |
 | `player_name_changes` | Namenswechsel (P-034): `player_id` (→ `players`, Kaskade), `old_name`, `new_name`, `changed_at`, `admin_id` (→ `auth_users`, null = der Spieler selbst); Grundlage der Grenze 3 je 24 h und Verlauf im Admin-Panel; nach 90 Tagen gelöscht (TESTWERT) |
+| `xp_entries` | Konto-XP je Run (D-188, KF3): `player_id` (→ `players`, Kaskade), `run_id` (vom Spiel, eindeutig je Spieler: zählt genau einmal), gemeldete Zahlen (Räume, Champions, Bosse, tiefster Raum, Ende, Spieler, Dauer, Version), vom Server gewährte `record_rooms` und `first_run_of_day`, berechnete `xp`, `flag_reason` (markiert = 0 XP), `ended_at`, `day` (UTC-Tag), `created_at` (Tagesdeckel); Zusammenführen verschiebt die Zeilen, gleiche Run-ID bleibt einmal |
 | `player_identities` | id, `player_id` (→ `players`, Kaskade), `provider` (Enum `steam` / `device` / `google_play` / `game_center`), `provider_user_id`, `created_at`, `last_used_at`; eindeutig über (`provider`, `provider_user_id`); mehrere Identitäten je Spieler. Verknüpfen per Code, Zusammenführen (D-122) und Entkoppeln über `/me/link-code`, `/me/link`, `/me/identities` (P15). |
 | `bans` | Spieler, Grund, `created_by_admin_id`, `expires_at` (null = dauerhaft), `revoked_at`, `revoked_by` |
 | `guilds` | Name, Kürzel (2–5), Einladungscode, Gründer, `created_at`, `disbanded_at` |

@@ -1,6 +1,6 @@
 # ROADMAP – Soulwick Platform
 
-> **Stand:** 17.10.2026 · **Fokus jetzt: Website zuerst**, davor die Umstellung auf Bun/Turbo/Prisma (P7, P8). Die Pakete P1–P6 entsprechen MP7, MP7b, MP8 und MP9 aus `soulwick/docs/ROADMAP_MULTIPLAYER.md`, hier nur der **Plattform-Teil**. Spielseitige Punkte (GDScript-Client, Gildengebäude, Anzeige im Spiel) bleiben in der Spiel-Roadmap. Das Zielbild Crossplay (Steam, Google Play, App Store) steht in `soulwick/docs/ROADMAP_CROSSPLAY.md` (D-108); die Architektur (Host + eigener Relay, Publisher WebBude) ist mit **D-119** entschieden (14.10.2026); released wird gemeinsam auf allen Versionen – Browser, Steam, Android und iOS (D-179, ersetzt die Reihenfolge Steam → Android → iOS aus D-119). Konzept für die Online-Pakete P13–P17: [KONZEPT_ONLINE.md](KONZEPT_ONLINE.md).
+> **Stand:** 18.10.2026 · **Neu: Strang K (Konto und Fortschritt, D-188) mit KF3 → KF8 → KF5 → KF11.** **Fokus davor: Website zuerst**, davor die Umstellung auf Bun/Turbo/Prisma (P7, P8). Die Pakete P1–P6 entsprechen MP7, MP7b, MP8 und MP9 aus `soulwick/docs/ROADMAP_MULTIPLAYER.md`, hier nur der **Plattform-Teil**. Spielseitige Punkte (GDScript-Client, Gildengebäude, Anzeige im Spiel) bleiben in der Spiel-Roadmap. Das Zielbild Crossplay (Steam, Google Play, App Store) steht in `soulwick/docs/ROADMAP_CROSSPLAY.md` (D-108); die Architektur (Host + eigener Relay, Publisher WebBude) ist mit **D-119** entschieden (14.10.2026); released wird gemeinsam auf allen Versionen – Browser, Steam, Android und iOS (D-179, ersetzt die Reihenfolge Steam → Android → iOS aus D-119). Konzept für die Online-Pakete P13–P17: [KONZEPT_ONLINE.md](KONZEPT_ONLINE.md).
 > **Abhaken** nur mit Nachweis (Prüfbefehle grün, Datum). Jedes Paket ist für **einen Agenten** geschnitten und nennt seine Dateien; der Koordinator hakt nach Prüfung ab.
 
 ## Überblick und Reihenfolge
@@ -26,6 +26,10 @@
 | **P22** | Konto-Profil: ein Charakter (Name + Aussehen) je Konto (P-034, D-152) | **API fertig (16.10.2026)**; offen: Profil-Editor im Spiel, Anzeige im Admin-Panel (admin-dev), Namensfilter | P20 |
 | **P23** | Kosmetik im Profil (Plattform-Teil von WK2): Kosmetik von Spielfigur und Wick im Vertrag `PlayerAppearance`, Übertragung über `PATCH /me` | geplant | **WK0** (Spiel-Repo: Aussehen und Rolle von Wick, D-175 OFFEN), P22 |
 | **P24** | Dorf-Schnappschuss (Plattform-Teil von WK6): Dorf mit Deko auf dem Server, Gilde und Freunde schauen es an (nur ansehen) | geplant | WK0, WK5 (Dorf-Deko im Spiel), P4 (Gilden, MP8) |
+| **KF3** | Strang K: Konto-XP und Level am Konto (`POST /me/xp`, `level` in Profil, Gilde, Rangliste, Lobby) | **fertig (18.10.2026)**, 405/405 Tests; offen: Spiel-Client KF4, Admin-Anzeige (admin-dev) | – |
+| **KF8** | Strang K: Cloud-Welten (= CP5): Vertrag, Tabelle, Routen, Sicherungen, Archiv | geplant | KF3 (ein `api-dev` nach dem anderen) |
+| **KF5** | Strang K: Better Auth für Spieler (Benutzername, Magic Link, Google, Apple, Discord, Steam OpenID), Anmeldung hinzufügen, Web-Anmeldung (P-036, P-037) | geplant | KF8; Mailversand-Anbieter (OFFEN), Konten bei Google, Apple, Discord, Steam (Projektmitglied) |
+| **KF11** | Strang K: Anmeldeseiten der Website (DE/EN) | geplant | KF5 (Routen und Verträge) |
 | P2 | Online gehen (Dokploy) | geplant | P7, P8 (Images auf Bun, Prisma-Migrationen) |
 | P3 | Website fertig (alte Fassung) | offene Punkte gehen in P9, P10, P12 auf | – |
 | P4 | Gilden im Spiel nutzbar | geplant | **MP0** (Spiel-Repo), **CP0** (Fragen 3/4 entschieden, D-119), P13 (Gilden-Räume) |
@@ -372,9 +376,55 @@ Doku für alle Punkte fertig (14.10.2026) in [infra/DOKPLOY.md](../infra/DOKPLOY
 - [ ] Melden und Ausblenden im Admin-Panel (admin-dev); Löschen mit dem Konto und Mitnehmen beim Zusammenführen.
 - [ ] Datenschutzerklärung um den Dorf-Schnappschuss ergänzen (Projektmitglied, eRecht24).
 
+## Strang K – Konto und Fortschritt (D-188)
+
+**Ziel:** Ein Konto je Mensch mit allen Anmeldungen, Welten in der Cloud mit Mischregeln statt Konfliktdialog und ein Konto-Level, das bei jedem Run sichtbar steigt; alles zum Release auf allen Plattformen (D-188, D-179). Konzept, Feldtabelle und Spiel-Pakete (KF1, KF2, KF4, KF6, KF7, KF9, KF10) stehen im Spiel-Repo: `soulwick/docs/KONZEPT_KONTO_FORTSCHRITT.md` und `soulwick/docs/ROADMAP.md` (Strang K); hier nur der **Plattform-Teil**. Entscheidungen: D-188 (Spiel-Repo), P-036, P-037.
+**Reihenfolge:** **ein `api-dev` nach dem anderen**, Verträge in `packages/contracts` immer zuerst: **KF3 → KF8 → KF5**, danach **KF11** (`web-dev`). Alle drei `api-dev`-Pakete teilen `packages/contracts`, `packages/db/prisma` und `services/account-link.ts`. Spiel: KF4 nach KF3, KF9 nach KF8, KF6 nach KF5 und KF11.
+
+### KF3 – XP und Level am Konto ✔
+
+**Agent:** `api-dev` (1. von 3). **Dateien:** `packages/contracts/src/xp.ts` (neu), `{common,player,guild,leaderboard,lobby,identity,admin,index}.ts`; `packages/db/prisma/schema.prisma` + Migration `account_xp`; `apps/api/src/services/xp.ts` (neu), `services/{guilds,leaderboard,guild-rooms,relay-status,account-link}.ts`, `routes/me.ts`, `routes/admin/players.ts`, `scripts/seed-dev.ts`; `apps/relay/src/relay.ts`; Tests `apps/api/test/xp.test.ts` (neu), `guild-rooms.test.ts`, `internal-relay.test.ts`, `apps/relay/test/{hello,internal}.test.ts`; Doku. **Prüfung:** `bun run check`, `typecheck`, `test`, `build`, `db:verify`.
+
+- [x] *(18.10.2026)* Vertrag `xp.ts`: Kurve `xpForLevel` / `levelForXp` / `accountLevel` (50·L·(L−1)), `runXp` (Raum 5, Champion 10, Boss 50, Rekord 5 je Raum, Portal 20, erster Run des Tages 25, Koop +20 % abgerundet, Deckel 2 000 je Run; alles TESTWERT), `AddXpRequest` / `AddXpResponse`, `PlayerLevel`. **Wer rechnet:** Das Spiel meldet je Run nur die Zahlen seines eigenen Spielers (Räume, Champions, Bosse, tiefster Raum, Ende, Spielerzahl), der Server rechnet mit `runXp`; Rekord-Bonus und ersten Run des Tages (UTC) leitet er aus den Einträgen des Kontos ab; den Koop-Bonus gibt er nach der gemeldeten Spielerzahl (XP sind gedeckelt und nur Optik, Konzept §3.6).
+- [x] *(18.10.2026; Migration `20261018130548_account_xp`, nur Hinzufügen; `db:verify` grün, 12 Migrationen, Dev-Seed im Wegwerf-Lauf)* `players.xp` (Summe) und Tabelle `xp_entries` (eindeutig je Spieler + Run-ID, Kaskade).
+- [x] *(18.10.2026)* `POST /me/xp`: je Eintrag `credited` / `duplicate` / `flagged` (Plausibilität wie Run-Berichte: `too_fast`, `unknown_game_version`, 0 XP) / `deferred` (über 20 000 XP je UTC-Tag des Hochladens, später erneut senden); `endedAt` aus der Zukunft (> 5 min) = Serverzeit; eine Transaktion mit Zeilensperre auf den Spieler.
+- [x] *(18.10.2026)* `xp`, `level`, `levelStartXp`, `nextLevelXp`, `xpToNextLevel` in `PlayerSelf`; `level` in `GuildMember`, `LeaderboardEntry` (Spieler-Ranglisten; Gilden-Rangliste `null`), `GuildRoom.players`, `RelayPlayerStatus`, Relay `RoomPeer` und `welcome` (Stand bei `hello`, ohne Protokoll-Erhöhung), `RelayRoomPlayer`, `AccountSummary` (`xp`, `level`), `AdminPlayerListItem` / `AdminPlayerDetail` (`xp`, `level`).
+- [x] *(18.10.2026)* Zusammenführen zählt zusammen (gleiche Run-ID einmal), XP > 0 gilt als Fortschritt (kein stilles Zusammenführen, D-188 „leeres Konto“); Löschen löscht die Einträge mit.
+- [x] *(18.10.2026; `xp.test.ts` 10 Tests, Relay 102/102, gesamt 405/405; Seed zweimal hintereinander gegen eine Wegwerf-Datenbank, danach Login als Lumen, `POST /me/xp`, Gilde, Ranglisten geprüft)* Tests und Prüfung; Dev-Seed mit XP für Spieler 1–9.
+- [ ] Spiel KF4: offene Einträge aus `user://progress.cfg` mit `POST /me/xp` hochladen (älteste zuerst, höchstens 50 je Anfrage, `deferred` behalten), `PlayerSelf.xp` übernehmen, Level in Lobby-Platz (`RoomPeer.level`), Gildenliste und Rangliste; GDScript-Spiegel von `xpForLevel`, `levelForXp`, `runXp` (Spiel-Repo, `player-dev`).
+- [ ] Admin-Panel: Level und XP in Spielerliste und Spieler-Details zeigen (`AdminPlayerListItem.xp/level`; admin-dev).
+
+### KF8 – Cloud-Welten (= CP5)
+
+**Agent:** `api-dev` (2. von 3), nach KF3. **Dateien:** `packages/contracts/src/world.ts` (neu), `identity.ts` (`AccountSummary`), `index.ts`; `packages/db/prisma/schema.prisma` + Migration; `apps/api/src/routes/me.ts` (oder neu `routes/worlds.ts`), neu `services/worlds.ts`, `services/{account-link,account-deletion,housekeeping}.ts`, `config.ts`; Tests, Dev-Seed, Doku. **Prüfung:** `bun run check`, `typecheck`, `test` (Versionskonflikt, Größe, Grenze 3 Welten, Zeitstempel-Kappung, Sicherung wiederherstellen, Archiv, Zusammenführen, Löschen), `db:verify`.
+
+- [ ] Vertrag: `GET /me/worlds`, `GET` / `PUT` / `DELETE /me/worlds/:worldId` mit `baseVersion`, `409 version_conflict` samt Server-Stand, Zusammenfassung (Name, Rekord, Schmiede, Spielzeit, zuletzt gespielt), ≤ 64 KB, höchstens 3 Welten (TESTWERT).
+- [ ] Tabellen für Cloud-Welten, Sicherungen und Archiv (30 Tage, TESTWERT), Aufräumen im Housekeeping; `last_played` aus der Zukunft (> 5 min) auf Serverzeit.
+- [ ] Sicherungen und Archiv auflisten und wiederherstellen (als neuer Stand hochgeladen).
+- [ ] Zusammenführen (gleiche Welt-ID → beide Stände bleiben für das Spiel zum Mischen, sonst freie Plätze, Rest ins Archiv) und Löschen mit dem Konto; „leeres Konto“ um Cloud-Welten über 5 Minuten Spielzeit ergänzen.
+- [ ] Inhalt ist unzuverlässig: speist nie Ranglisten, Gildenkasse oder Käufe; Datenschutzerklärung und Store-Angaben ergänzen (Projektmitglied).
+
+### KF5 – Better Auth für Spieler (P-036, P-037)
+
+**Agent:** `api-dev` (3. von 3), nach KF8. **Dateien:** `packages/contracts/src/{identity,player}.ts`; `packages/db/prisma/schema.prisma` + Migration (Enum `identity_provider`, `player_identities.auth_account_id`, ggf. Benutzername); `apps/api/src/auth/{auth,player-plugin}.ts`, `routes/{auth,me}.ts`, `services/{identities,account-link,account-deletion,sessions}.ts`, neu Mail-Adapter in `lib/`, `config.ts`, `apps/api/.env.example`, README; Tests, Doku. **Prüfung:** `bun run check`, `typecheck`, `test` (je Anbieter mit Fake-`fetch`: Nachweis falsch, Identität vergeben, Zusammenführen, Sperre, Rate-Limit, kein Verknüpfen über E-Mail), `db:verify`.
+
+- [ ] P-037 vom Team bestätigen (Empfehlung (a): `player_identities` als einzige Liste, `auth_accounts` nur Geheimnisse).
+- [ ] Benutzername/Passwort (Plugin `username`), Magic Link (Plugin `magicLink`, Mail-Adapter; Anbieter OFFEN), Google, Apple, Discord (`socialProviders`), Steam OpenID 2.0 auf die `steam`-Identität; `accountLinking` aus.
+- [ ] „Anmeldung hinzufügen“ mit Sitzung und Nachweis; Web-Anmeldung aus dem Spiel (`POST /auth/web-login`, Abholen); Sign in with Apple nativ (Identity-Token).
+- [ ] „Leeres Konto“ nach D-188 vollständig (Gilde, Runs, XP, Cloud-Welten); Apple-Token-Widerruf beim Löschen; Game-Center-Prüfung (P14); Rate-Limits.
+- [ ] Neue Variablen (OAuth-Clients je Umgebung, Mailversand) in `.env.example`, README und Bericht für `infra/DOKPLOY.md` (Integrator).
+
+### KF11 – Anmeldeseiten der Website
+
+**Agent:** `web-dev`, nach KF5. **Dateien:** `apps/web/src/app/[locale]/login/**`, `apps/web/messages/{de,en}/*.json`. **Prüfung:** `bun run check`, `typecheck`, `build`, Browser-Durchlauf gegen die lokale API.
+
+- [ ] Login mit Benutzername, Magic Link, Google, Apple, Discord, Steam; Markenknöpfe nach den Regeln der Anbieter („Sign in through Steam“ unverändert).
+- [ ] Seite der Web-Anmeldung aus dem Spiel (`/login/<code>`), Fehler- und Erfolgsseiten (DE/EN).
+- [ ] Fehlende Routen oder Felder als „Requests for api-dev“ melden.
+
 ## Später
 
 - KI-Wunschbosse „Traumweber“ (Server-Teil laut `soulwick/docs/ROADMAP_KI_BOSS.md`).
 - Rate-Limit über mehrere API-Container (z. B. Redis), falls nötig.
-- Crossplay: Relay, Anmeldung, Verknüpfung und Versionen sind jetzt P13–P17; Cloud-Save (CP5) und Käufe (CP6; Geschäftsmodell entschieden in D-176, serverseitige Prüfung D-177, Preise OFFEN) bleiben später: `soulwick/docs/ROADMAP_CROSSPLAY.md`.
+- Crossplay: Relay, Anmeldung, Verknüpfung und Versionen sind jetzt P13–P17; Cloud-Save (CP5) gehört seit D-188 zum Release (KF8, Strang K); Käufe (CP6; Geschäftsmodell entschieden in D-176, serverseitige Prüfung D-177, Preise OFFEN) bleiben später: `soulwick/docs/ROADMAP_CROSSPLAY.md`.
 - Relay je Region (Raumcode mit Regions-Präfix, CP0 Frage 10, OFFEN); dedizierter Godot-Server als Container-Pool (`soulwick/docs/ROADMAP_CROSSPLAY.md` „Dedizierter Server (später)“).

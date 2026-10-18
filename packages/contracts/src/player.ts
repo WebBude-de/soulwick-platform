@@ -6,6 +6,7 @@ import {
   PlayerName,
   Uuid,
 } from "./common.ts";
+import { AccountLevel } from "./xp.ts";
 
 /**
  * POST /auth/dev. `name` and `appearance` are only used when the account is created (the game sends
@@ -87,6 +88,12 @@ export const PlayerSelf = z.object({
    * Optional for older API builds.
    */
   appearance: PlayerAppearance.nullable().optional(),
+  /**
+   * Account XP and level (D-188, KF3): `xp`, `level`, `levelStartXp`, `nextLevelXp`,
+   * `xpToNextLevel` as in `AccountLevel`. Optional for older API builds (missing = the game shows
+   * its local level only).
+   */
+  ...AccountLevel.partial().shape,
 });
 export type PlayerSelf = z.infer<typeof PlayerSelf>;
 

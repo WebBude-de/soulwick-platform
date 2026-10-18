@@ -33,6 +33,7 @@ describe("internal relay endpoint", () => {
       guildId: null,
       guildMember: null,
       guildIds: [],
+      level: 1,
     });
   });
 

@@ -73,13 +73,14 @@ Admin-Bereich lokal zum Anzeigen brauchen:
 | Runs | 20 Runs (`solo`, `quick`, `guild`) über die aktuelle und die vorige Saison, Seeds `dev-seed-01` … `dev-seed-20`; einer ist markiert (`too_fast`), zwei Spieler teilen sich einen Rang; dazu 15 Runs über die letzten zwei Wochen (`dev-seed-21` … `dev-seed-35`, davon ein Gilden-Run der „Aschenrunde“) für die Admin-Statistik |
 | Notiz | eine Moderations-Notiz des Moderators zu „Sternasche“ (P-023) |
 | Aussehen | Spieler 1–8 bekommen eine feste Figur mit Farben (`appearance`, P-034), 9 und 10 behalten die Standardfigur (`null`); gesetzt wird nur, solange kein Aussehen gespeichert ist |
+| Konto-XP | 218 Runs mit XP (D-188) für Spieler 1–9 (feste Run-IDs `5eed0000-…`, gerechnet wie `POST /me/xp`), damit Level in Gilde, Rangliste und Admin sichtbar sind: Glutfunke Level 11, Lumen 10, Aschkralle 8 … Funkenflug 2; Rauchquarz ohne XP (Level 1). `players.xp` wird bei jedem Lauf als Summe der Einträge neu gesetzt |
 | Bug-Meldungen | 4 Meldungen (P-033) von Lumen, Glutfunke, Wachsherz und Aschkralle mit Platzhalter-Screenshots (PNG-Verläufe 480×270, kein echtes Bild), Markierungen, Strichen und Ort; drei Fehler (zwei `new`, eine `seen` vom Moderator) und eine Idee (`kind: idea`, `new`) |
 | Löschprotokoll | 4 Einträge (Website, im Spiel, Admin; zwei davon „war gesperrt“) über die letzten zwei Wochen, ohne Namen (P-026) |
 | Sperre | Spieler „Sternasche“ für 7 Tage gesperrt (durch den Moderator); seine Runs fehlen in den Ranglisten, seine Anmeldung liefert `403 banned` |
 | Protokoll | Einträge `admin.create`, `player.ban` und `player.note_add`, damit die Protokoll-Seite gefüllt ist |
 
 Der Seed ist **idempotent**: Jeder Datensatz hat einen festen Schlüssel (E-Mail, Geräte-ID,
-Gilden-Kürzel, Run-Seed, Sperrgrund, Notiztext, ID der Löschprotokoll-Zeile bzw. der Bug-Meldung). Ein zweiter Lauf ergänzt nur Fehlendes und überschreibt keine
+Gilden-Kürzel, Run-Seed, Sperrgrund, Notiztext, ID der Löschprotokoll-Zeile bzw. der Bug-Meldung, XP-Run-ID). Ein zweiter Lauf ergänzt nur Fehlendes und überschreibt keine
 Änderungen aus dem Admin-Bereich (auch die Passwörter vorhandener Zugänge bleiben, z. B. nach
 „Mein Konto“).
 Komplett neu aufsetzen: `bun run db:reset` (löscht die lokale Datenbank, spielt alle Migrationen und den
@@ -166,7 +167,12 @@ Spieler (Header `Authorization: Bearer <token>`):
   15 min, Claims `sub` = Spieler-ID, `name`, `iat`, `exp`, `iss`, `aud` = `soulwick-relay`);
   `GET /auth/jwks` (öffentlich): Schlüssel dazu
 - `GET /me`, `PATCH /me` (`{ name?, appearance? }`, Konto-Profil P-034, siehe unten), `DELETE /me`, `GET /me/identities`, `DELETE /me/identities/:provider`, `POST /me/link-code`,
-  `POST /me/link` (Konten verknüpfen nach D-121/D-122), `POST /me/deletion-code` (Einmal-Löschcode)
+  `POST /me/link` (Konten verknüpfen nach D-121/D-122), `POST /me/deletion-code` (Einmal-Löschcode),
+  `POST /me/xp` (Konto-XP je Run-ID genau einmal, D-188: `{entries: XpEntry[]}` → je Eintrag
+  `credited` / `duplicate` / `flagged` / `deferred` und `account` mit `xp`, `level`; Rechnung mit
+  `runXp()` aus dem Vertrag, Deckel 2 000 je Run und 20 000 je UTC-Tag, TESTWERT). `PlayerSelf` trägt
+  `xp`, `level`, `levelStartXp`, `nextLevelXp`, `xpToNextLevel`; Gildenmitglieder, Ranglisten-Einträge,
+  Gildenräume und der Relay-Status tragen `level`
 - `POST /account-deletion/verify`, `POST /account-deletion/confirm` (öffentlich, Lösch-Seite der Website, P-026)
 - Gilden (D-147, P-031; bis 5 Gilden je Spieler, TESTWERT): `GET /me/guilds`, `POST /guilds`,
   `POST /guilds/join`, `GET /guilds/:id`, `POST /guilds/:id/leave`,

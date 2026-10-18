@@ -58,7 +58,7 @@ Browser  ─┘                       └─ soulwick-postgres
 1. Das Spiel öffnet `wss://play.playsoulwick.com/v1` (lokal `ws://localhost:3103/v1`).
 2. Erste Nachricht innerhalb von 5 s (TESTWERT): `hello` mit Spieler-JWT (`token`, vorher über `GET /auth/token` der API geholt, P-027), `protocolVersion`, `gameVersion`, `platform` (`windows`, `linux`, `macos`, `android`, `ios`). Das Token steht bewusst **nicht** in der URL, damit es in keinem Zugriffsprotokoll landet (VORSCHLAG).
 3. Der Relay prüft die JWT-Signatur selbst gegen die öffentlichen Schlüssel der API (EdDSA, JWKS unter `<API_INTERNAL_URL>/auth/jwks`, Cache 10 min, unbekannte `kid` lädt neu; P-027), dazu `aud` = `soulwick-relay`, das Ablaufdatum und die `protocolVersion`. Fehler → `error` und Verbindungsende. Geprüft wird nur bei `hello`; läuft das JWT (15 min) später ab, bleibt die Verbindung bestehen.
-4. Antwort `welcome` mit `playerId` (`sub` des JWT) und dem Namen aus der Statusabfrage der API. Danach `create` oder `join`.
+4. Antwort `welcome` mit `playerId` (`sub` des JWT) und Name und Konto-Level (`level`, D-188) aus der Statusabfrage der API; beides steht auch an jedem Platz im Raum (`RoomPeer`), Stand bei `hello`. Danach `create` oder `join`.
 5. Herzschlag: WebSocket-Ping alle 15 s, Verbindung gilt nach 30 s ohne Antwort als getrennt (TESTWERTE).
 
 ### 2.3 Steuer-Nachrichten (JSON, Textrahmen)

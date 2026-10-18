@@ -16,6 +16,11 @@ Kontolöschung mit Einmal-Löschcode (P14, P15, P-026); das Löschprotokoll für
 `src/admin.ts`.
 Das Konto-Profil (ein Charakter je Konto, P-034) steht in `src/common.ts` (`PlayerAppearance`,
 `PlayerCharacter`) und `src/player.ts` (`UpdateProfileRequest` für `PATCH /me`).
+`src/xp.ts` enthält Konto-XP und Level (D-188, KF3): die Level-Kurve `xpForLevel` / `levelForXp` /
+`accountLevel` (50·L·(L−1)), die XP eines Runs `runXp` (Werte `XP_VALUES`, Koop-Bonus, Deckel; alles
+TESTWERT) und `POST /me/xp` (`AddXpRequest`, `AddXpResponse`). Spiel und Server rechnen mit denselben
+Funktionen; der GDScript-Client spiegelt sie. `PlayerLevel` (in `src/common.ts`) ist die Level-Zahl in
+`GuildMember`, `LeaderboardEntry`, `GuildRoom`, `RoomPeer` und `RelayPlayerStatus`.
 `src/bug-report.ts` enthält die Bug-Meldungen aus dem Spiel (`POST /bug-reports` mit Screenshot,
 Markierungen und Kategorien; `kind` unterscheidet „bug“ (Standard) und „idea“) und ihre Admin-Routen
 samt Grenzen (`BUG_REPORT_MAX_*`, P-033; Filter `?kind=bug|idea`).
