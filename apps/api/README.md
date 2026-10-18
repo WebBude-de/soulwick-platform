@@ -74,6 +74,7 @@ Admin-Bereich lokal zum Anzeigen brauchen:
 | Notiz | eine Moderations-Notiz des Moderators zu „Sternasche“ (P-023) |
 | Aussehen | Spieler 1–8 bekommen eine feste Figur mit Farben (`appearance`, P-034), 9 und 10 behalten die Standardfigur (`null`); gesetzt wird nur, solange kein Aussehen gespeichert ist |
 | Konto-XP | 218 Runs mit XP (D-188) für Spieler 1–9 (feste Run-IDs `5eed0000-…`, gerechnet wie `POST /me/xp`), damit Level in Gilde, Rangliste und Admin sichtbar sind: Glutfunke Level 11, Lumen 10, Aschkralle 8 … Funkenflug 2; Rauchquarz ohne XP (Level 1). `players.xp` wird bei jedem Lauf als Summe der Einträge neu gesetzt |
+| Cloud-Welten | 3 Welten von Lumen (D-188, KF8; feste Welt-IDs `5eed0001-…`): „Glutwald“ (heute gespielt) und eine Welt ohne eigenen Namen aktiv, „Alte Welt“ im Archiv (noch 25 Tage); je Welt eine Sicherung (`merge`). Zum Ausprobieren: Login als Lumen, `GET /me/worlds` |
 | Bug-Meldungen | 4 Meldungen (P-033) von Lumen, Glutfunke, Wachsherz und Aschkralle mit Platzhalter-Screenshots (PNG-Verläufe 480×270, kein echtes Bild), Markierungen, Strichen und Ort; drei Fehler (zwei `new`, eine `seen` vom Moderator) und eine Idee (`kind: idea`, `new`) |
 | Löschprotokoll | 4 Einträge (Website, im Spiel, Admin; zwei davon „war gesperrt“) über die letzten zwei Wochen, ohne Namen (P-026) |
 | Sperre | Spieler „Sternasche“ für 7 Tage gesperrt (durch den Moderator); seine Runs fehlen in den Ranglisten, seine Anmeldung liefert `403 banned` |
@@ -116,6 +117,7 @@ Der Seed **verweigert `NODE_ENV=production`**. Im Docker-Image ist er nur für d
 | `DELETION_REQUESTS_PER_HOUR` | nein | `5` | TESTWERT: `POST /account-deletion/verify` je IP und Stunde (P-026; zusätzlich höchstens 5 falsche Codes je Spielername) |
 | `BUG_REPORTS_PER_HOUR` | nein | `10` | TESTWERT: `POST /bug-reports` je Spieler und Stunde (P-033; jeder angemeldete Versuch zählt) |
 | `BUG_REPORTS_PER_IP_PER_HOUR` | nein | `20` | TESTWERT: `POST /bug-reports` je IP und Stunde (mehrere Spieler hinter einer IP) |
+| `WORLD_WRITES_PER_HOUR` | nein | `120` | TESTWERT: Schreibzugriffe auf Cloud-Welten (`PUT`, `DELETE`, Wiederherstellen, aus dem Archiv holen unter `/me/worlds`) je Konto und Stunde (D-188, P-038) |
 | `BUG_REPORT_RETENTION_DAYS` | nein | `90` | TESTWERT: Bug-Meldungen werden so viele Tage nach dem Eingang automatisch gelöscht (beim Start der API und dann alle 24 h) |
 | `TRUST_PROXY` | nein | `true` | Client-IP aus `X-Forwarded-For` (hinter Dokploy/Traefik); lokal `false` (`.env.example`) |
 | `MIN_SECONDS_PER_ROOM` | nein | `8` | TESTWERT: schnellere Runs werden markiert |
@@ -173,6 +175,13 @@ Spieler (Header `Authorization: Bearer <token>`):
   `runXp()` aus dem Vertrag, Deckel 2 000 je Run und 20 000 je UTC-Tag, TESTWERT). `PlayerSelf` trägt
   `xp`, `level`, `levelStartXp`, `nextLevelXp`, `xpToNextLevel`; Gildenmitglieder, Ranglisten-Einträge,
   Gildenräume und der Relay-Status tragen `level`
+- Cloud-Welten (D-188, KF8, P-038; Vertrag `world.ts`): `GET /me/worlds` (aktive Welten und Archiv),
+  `GET` / `PUT` / `DELETE /me/worlds/:worldId` (Revision über `baseRevision` oder `If-Match: "<n>"`,
+  Antwort mit `ETag`; veralteter Stand → `409 revision_conflict` mit dem Server-Stand, das Spiel mischt
+  und lädt erneut hoch; `DELETE` archiviert, `?permanent=true` löscht), `POST /me/worlds/:worldId/unarchive`,
+  `GET /me/worlds/:worldId/backups`, `GET …/backups/:backupId`, `POST …/backups/:backupId/restore`.
+  Höchstens 3 aktive Welten (die am längsten nicht gespielte geht ins Archiv), Blob ≤ 64 KB, Sicherungen und
+  Archiv 30 Tage (alles TESTWERT); Aufräumen im Housekeeping
 - `POST /account-deletion/verify`, `POST /account-deletion/confirm` (öffentlich, Lösch-Seite der Website, P-026)
 - Gilden (D-147, P-031; bis 5 Gilden je Spieler, TESTWERT): `GET /me/guilds`, `POST /guilds`,
   `POST /guilds/join`, `GET /guilds/:id`, `POST /guilds/:id/leave`,

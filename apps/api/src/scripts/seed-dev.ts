@@ -5,11 +5,12 @@
  * fifteen runs spread over the last two weeks (admin statistics, P-023), one temporary ban, one moderation note, four
  * entries in the deletion log (P-026, no personal data), three bug reports with placeholder
  * screenshots (P-033), a character (appearance, P-034) for players 1-8, account XP from a few
- * runs each (D-188, levels 1 to about 8) and the matching audit entries, so the
+ * runs each (D-188, levels 1 to about 8), three cloud worlds of player 1 (two active, one
+ * archived, one backup each; KF8) and the matching audit entries, so the
  * website leaderboards and every admin page show data locally.
  *
  * Idempotent: every record has a fixed key (email, device id, steam id, guild tag, run seed, ban
- * reason, note text, deletion log id, bug report id, XP run id);
+ * reason, note text, deletion log id, bug report id, XP run id, cloud world and backup id);
  * re-running only adds what is missing and never overwrites changes made through the admin panel
  * (existing admin accounts keep their password, e.g. one changed under "Mein Konto").
  * Refuses to run with NODE_ENV=production.
@@ -743,6 +744,90 @@ function seedXpEntries(n: number, playerId: string) {
   });
 }
 
+/**
+ * Cloud worlds of player 1 (D-188, KF8): two active, one archived, one backup each, with fixed
+ * ids. The blob is a small save file v5 as JSON (contract world.ts).
+ */
+const SEED_WORLDS = [
+  {
+    n: 1,
+    name: "Glutwald",
+    playedDaysAgo: 0,
+    deepestRoom: 23,
+    forge: 9,
+    gold: 340,
+    hours: 6,
+  },
+  {
+    n: 2,
+    name: "",
+    playedDaysAgo: 4,
+    deepestRoom: 11,
+    forge: 3,
+    gold: 85,
+    hours: 2,
+  },
+  {
+    n: 3,
+    name: "Alte Welt",
+    playedDaysAgo: 40,
+    deepestRoom: 6,
+    forge: 1,
+    gold: 12,
+    hours: 1,
+    archivedDaysAgo: 5,
+  },
+] as const;
+const SEED_WORLD_PLAYER = 1;
+const seedWorldId = (n: number) =>
+  `5eed0001-0000-4000-8000-${n.toString(16).padStart(12, "0")}`;
+const seedWorldRowId = (n: number) =>
+  `5eed0002-0000-4000-8000-${n.toString(16).padStart(12, "0")}`;
+const seedBackupId = (n: number) =>
+  `5eed0003-0000-4000-8000-${n.toString(16).padStart(12, "0")}`;
+
+function seedWorldState(
+  w: (typeof SEED_WORLDS)[number],
+  gold: number,
+  lastPlayed: Date
+) {
+  const data = {
+    meta: { version: 5 },
+    world: { id: seedWorldId(w.n), name: w.name },
+    progress: {
+      permanent_gold: gold,
+      permanent_crystals: 2,
+      unlocked: ["event_first_run"],
+    },
+    meta_upgrades: {
+      max_hp: Math.min(w.forge, 5),
+      damage: Math.max(0, w.forge - 5),
+    },
+    stats: {
+      deepest_room: w.deepestRoom,
+      runs: w.forge * 3,
+      play_time: w.hours * 3600,
+    },
+    profile: {
+      created: Math.floor(daysAgo(w.playedDaysAgo + 20).getTime() / 1000),
+      last_played: Math.floor(lastPlayed.getTime() / 1000),
+    },
+  };
+  return {
+    data,
+    sizeBytes: Buffer.byteLength(JSON.stringify(data), "utf8"),
+    formatVersion: 5,
+    gameVersion: "1.0.0",
+    platform: "linux",
+    name: w.name,
+    deepestRoom: w.deepestRoom,
+    forgeLevel: w.forge,
+    forgeMax: 20,
+    playTimeSeconds: w.hours * 3600,
+    lastPlayedAt: lastPlayed,
+  };
+}
+
 interface Summary {
   banCreated: boolean;
   guildsCreated: number;
@@ -751,6 +836,7 @@ interface Summary {
   newDeletions: number;
   newPlayers: number;
   newRuns: number;
+  newWorlds: number;
   newXpEntries: number;
   noteCreated: boolean;
 }
@@ -822,6 +908,7 @@ async function seed(tx: Tx): Promise<Summary> {
     newAdmins: 0,
     newBugReports: 0,
     newXpEntries: 0,
+    newWorlds: 0,
   };
 
   // --- admins --------------------------------------------------------------------------------
@@ -1075,6 +1162,41 @@ async function seed(tx: Tx): Promise<Summary> {
     set xp = coalesce((select sum(e.xp) from xp_entries e where e.player_id = p.id), 0)
     where p.id in (${Prisma.join(PLAYERS.map((spec) => Prisma.sql`${player(spec.n).id}::uuid`))})`;
 
+  // --- cloud worlds (D-188, KF8) ---------------------------------------------------------------
+  const worldOwner = player(SEED_WORLD_PLAYER).id;
+  const { count: newWorlds } = await tx.cloudWorld.createMany({
+    data: SEED_WORLDS.map((w) => {
+      const archived = "archivedDaysAgo" in w;
+      return {
+        id: seedWorldRowId(w.n),
+        playerId: worldOwner,
+        worldId: seedWorldId(w.n),
+        revision: 2,
+        ...seedWorldState(w, w.gold, daysAgo(w.playedDaysAgo)),
+        createdAt: daysAgo(w.playedDaysAgo + 20),
+        updatedAt: daysAgo(w.playedDaysAgo),
+        status: archived ? ("archived" as const) : ("active" as const),
+        archivedAt: archived ? daysAgo(w.archivedDaysAgo) : null,
+        expiresAt: archived ? daysAgo(w.archivedDaysAgo - 30) : null,
+      };
+    }),
+    skipDuplicates: true,
+  });
+  summary.newWorlds = newWorlds;
+  // One backup per world: the state that lost the "last played" fields of a merge.
+  await tx.cloudWorldBackup.createMany({
+    data: SEED_WORLDS.map((w) => ({
+      id: seedBackupId(w.n),
+      cloudWorldId: seedWorldRowId(w.n),
+      reason: "merge" as const,
+      fromRevision: 1,
+      ...seedWorldState(w, w.gold + 50, daysAgo(w.playedDaysAgo + 1)),
+      createdAt: daysAgo(w.playedDaysAgo),
+      expiresAt: daysAgo(w.playedDaysAgo - 30),
+    })),
+    skipDuplicates: true,
+  });
+
   return summary;
 }
 
@@ -1105,6 +1227,7 @@ try {
       `  Deleted:  ${DELETIONS.length} entries in the deletion log (${summary.newDeletions} new)`,
       `  Bugs:     ${BUG_REPORTS.length} bug reports with placeholder screenshots (${summary.newBugReports} new)`,
       `  XP:       ${Object.values(XP_RUNS).reduce((a, b) => a + b, 0)} runs with account XP (${summary.newXpEntries} new), ${PLAYERS[0]?.name} level ${levelForXp(seedXpEntries(1, "").reduce((sum, e) => sum + e.xp, 0))}`,
+      `  Worlds:   ${SEED_WORLDS.length} cloud worlds of ${PLAYERS[0]?.name} (2 active, 1 archived, 1 backup each; ${summary.newWorlds} new)`,
       "  Web:      http://localhost:3100/ranglisten - Admin: http://localhost:3102",
     ].join("\n")
   );

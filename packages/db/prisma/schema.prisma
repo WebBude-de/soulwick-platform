@@ -89,24 +89,26 @@ model Player {
   /// is derived from it (`levelForXp` in @soulwick/contracts), never stored.
   xp         Int      @default(0)
 
-  identities      PlayerIdentity[]
-  bans            Ban[]
+  identities       PlayerIdentity[]
+  bans             Ban[]
   /// Up to MAX_GUILDS_PER_PLAYER active guilds (D-147); the limit is enforced by the API.
   guildMemberships GuildMember[]
-  foundedGuilds   Guild[]          @relation("GuildFounder")
-  reportedRuns    Run[]            @relation("RunReporter")
-  runs            RunPlayer[]
-  linkCode        LinkCode?
-  deletionCode    DeletionCode?
-  notes           PlayerNote[]
+  foundedGuilds    Guild[]            @relation("GuildFounder")
+  reportedRuns     Run[]              @relation("RunReporter")
+  runs             RunPlayer[]
+  linkCode         LinkCode?
+  deletionCode     DeletionCode?
+  notes            PlayerNote[]
   /// Bug reports from the game (P-033); deleted with the account (the screenshot may show personal data).
-  bugReports      BugReport[]
+  bugReports       BugReport[]
   /// Name changes (P-034): limit for PATCH /me and moderation history.
-  nameChanges     PlayerNameChange[]
+  nameChanges      PlayerNameChange[]
   /// Better Auth user that carries the sessions of this player (P-027); created at first login.
-  authUser        User?
+  authUser         User?
   /// One row per run that brought (or was refused) account XP (D-188); deleted with the account.
-  xpEntries       XpEntry[]
+  xpEntries        XpEntry[]
+  /// Cloud worlds (D-188, KF8): at most MAX_CLOUD_WORLDS active, the rest archived; deleted with the account.
+  cloudWorlds      CloudWorld[]
 
   @@map("players")
 }
@@ -204,13 +206,13 @@ model User {
   /// When an admin account was disabled (admin panel); `banned` is the switch Better Auth reads.
   disabledAt    DateTime? @map("disabled_at") @db.Timestamptz(6)
 
-  player       Player?      @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  sessions     Session[]
-  accounts     Account[]
-  bansCreated  Ban[]        @relation("BanCreatedBy")
-  bansRevoked  Ban[]        @relation("BanRevokedBy")
-  auditEntries AuditLog[]
-  playerNotes  PlayerNote[]
+  player            Player?            @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  sessions          Session[]
+  accounts          Account[]
+  bansCreated       Ban[]              @relation("BanCreatedBy")
+  bansRevoked       Ban[]              @relation("BanRevokedBy")
+  auditEntries      AuditLog[]
+  playerNotes       PlayerNote[]
   bugReportsHandled BugReport[]
   playerRenames     PlayerNameChange[]
 
@@ -541,4 +543,102 @@ model XpEntry {
   @@unique([playerId, runId], map: "xp_entries_player_run_uq")
   @@index([playerId, createdAt], map: "xp_entries_player_id_created_at_idx")
   @@map("xp_entries")
+}
+
+// ---------------------------------------------------------------------------
+// Cloud worlds (D-188, KF8 = CP5, P-038)
+// ---------------------------------------------------------------------------
+
+enum CloudWorldStatus {
+  active
+  archived
+
+  @@map("cloud_world_status")
+}
+
+enum CloudWorldSource {
+  upload
+  restore
+  account_merge
+
+  @@map("cloud_world_source")
+}
+
+enum CloudWorldBackupReason {
+  merge
+  restore
+  account_merge
+
+  @@map("cloud_world_backup_reason")
+}
+
+/// One world of an account in the cloud (contract world.ts). `world_id` comes from the game
+/// (`[world] id`, save format v5) and is unique per account; `data` is the save file as JSON
+/// (untrusted, never read by leaderboards or the guild treasury). `revision` grows with every new
+/// state; the game merges conflicts itself (P-038). The summary columns are what the game reported.
+/// Archived worlds are deleted at `expires_at` (housekeeping); deleting the account deletes all.
+model CloudWorld {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId        String           @map("player_id") @db.Uuid
+  worldId         String           @map("world_id") @db.Uuid
+  revision        Int
+  status          CloudWorldStatus @default(active)
+  source          CloudWorldSource @default(upload)
+  data            Json
+  sizeBytes       Int              @map("size_bytes")
+  formatVersion   Int              @map("format_version")
+  gameVersion     String           @map("game_version")
+  /// ClientPlatform of the contract; plain text like bug report platforms.
+  platform        String
+  name            String
+  deepestRoom     Int              @map("deepest_room")
+  forgeLevel      Int              @map("forge_level")
+  forgeMax        Int              @map("forge_max")
+  playTimeSeconds Int              @map("play_time_seconds")
+  /// `[profile] last_played` (future values capped to the server time on upload).
+  lastPlayedAt    DateTime         @map("last_played_at") @db.Timestamptz(6)
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  /// Set by the API with its (injectable) clock on every new revision or status change.
+  updatedAt       DateTime         @default(now()) @map("updated_at") @db.Timestamptz(6)
+  archivedAt      DateTime?        @map("archived_at") @db.Timestamptz(6)
+  /// Only for archived worlds: deleted after this.
+  expiresAt       DateTime?        @map("expires_at") @db.Timestamptz(6)
+
+  player  Player             @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  backups CloudWorldBackup[]
+
+  @@unique([playerId, worldId], map: "cloud_worlds_player_world_uq")
+  @@index([status, expiresAt], map: "cloud_worlds_status_expires_at_idx")
+  @@map("cloud_worlds")
+}
+
+/// A restorable earlier state of a cloud world, kept WORLD_BACKUP_RETENTION_DAYS (`expires_at`):
+/// the losing side of a merge, the state a restore replaced, or the other account's state after
+/// an account merge (`pending_merge` until the game merged it in).
+model CloudWorldBackup {
+  id              String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cloudWorldId    String                 @map("cloud_world_id") @db.Uuid
+  reason          CloudWorldBackupReason
+  /// Server revision of the saved state; null for a discarded local state.
+  fromRevision    Int?                   @map("from_revision")
+  pendingMerge    Boolean                @default(false) @map("pending_merge")
+  data            Json
+  sizeBytes       Int                    @map("size_bytes")
+  formatVersion   Int                    @map("format_version")
+  gameVersion     String                 @map("game_version")
+  platform        String
+  name            String
+  deepestRoom     Int                    @map("deepest_room")
+  forgeLevel      Int                    @map("forge_level")
+  forgeMax        Int                    @map("forge_max")
+  playTimeSeconds Int                    @map("play_time_seconds")
+  lastPlayedAt    DateTime               @map("last_played_at") @db.Timestamptz(6)
+  createdAt       DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt       DateTime               @map("expires_at") @db.Timestamptz(6)
+
+  world CloudWorld @relation(fields: [cloudWorldId], references: [id], onDelete: Cascade)
+
+  @@index([cloudWorldId, createdAt], map: "cloud_world_backups_world_created_at_idx")
+  @@index([expiresAt], map: "cloud_world_backups_expires_at_idx")
+  @@map("cloud_world_backups")
 }

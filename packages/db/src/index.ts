@@ -28,6 +28,8 @@ export type {
   AuditLog,
   Ban,
   BugReport,
+  CloudWorld,
+  CloudWorldBackup,
   DeletionCode,
   Guild,
   GuildMember,

@@ -151,6 +151,11 @@ export const AccountSummary = z.object({
    */
   xp: z.number().int().min(0).optional(),
   level: PlayerLevel.optional(),
+  /**
+   * Cloud worlds of the account, active and archived (D-188, KF8). A world with more than
+   * WORLD_EMPTY_PLAY_SECONDS play time counts as progress. Optional for older API builds.
+   */
+  worlds: z.number().int().min(0).optional(),
 });
 export type AccountSummary = z.infer<typeof AccountSummary>;
 
