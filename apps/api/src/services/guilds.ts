@@ -1,10 +1,12 @@
 import {
+  accountLevel,
   type CreateGuildRequest,
   type ForgeLevels,
   type GuildDetail,
   type GuildProgress,
   type GuildSummary,
   type LeaveGuildResponse,
+  levelForXp,
   MAX_GUILD_MEMBERS,
   MAX_GUILD_TREASURY,
   MAX_GUILDS_PER_PLAYER,
@@ -124,6 +126,7 @@ export async function toPlayerSelf(
     guild: guilds[0] ?? null,
     guilds,
     appearance: appearanceOf(player.appearance),
+    ...accountLevel(player.xp),
   };
 }
 
@@ -141,7 +144,9 @@ export const higherRole = (a: GuildRole, b: GuildRole): GuildRole =>
 export async function listMembers(db: DbOrTx, guildId: string) {
   const rows = await db.guildMember.findMany({
     where: { guildId },
-    include: { player: { select: { name: true, appearance: true } } },
+    include: {
+      player: { select: { name: true, appearance: true, xp: true } },
+    },
     orderBy: { joinedAt: "asc" },
   });
   return rows
@@ -152,6 +157,7 @@ export async function listMembers(db: DbOrTx, guildId: string) {
       role: r.role,
       joinedAt: iso(r.joinedAt),
       appearance: appearanceOf(r.player.appearance),
+      level: levelForXp(r.player.xp),
     }));
 }
 

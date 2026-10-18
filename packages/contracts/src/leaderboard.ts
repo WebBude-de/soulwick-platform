@@ -3,6 +3,7 @@ import {
   IsoDateTime,
   LeaderboardKind,
   LeaderboardPeriod,
+  PlayerLevel,
   SeasonId,
   Uuid,
 } from "./common.ts";
@@ -32,6 +33,11 @@ export const LeaderboardEntry = z.object({
   achievedAt: IsoDateTime,
   /** Guild board only, otherwise null. */
   memberCount: z.number().int().nullable(),
+  /**
+   * Current account level of the player (D-188); null on the guild board. Optional for older API
+   * builds.
+   */
+  level: PlayerLevel.nullable().optional(),
 });
 export type LeaderboardEntry = z.infer<typeof LeaderboardEntry>;
 

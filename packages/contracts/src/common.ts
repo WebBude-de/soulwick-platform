@@ -65,6 +65,12 @@ export const PlayerAppearance = z.object({
 });
 export type PlayerAppearance = z.infer<typeof PlayerAppearance>;
 
+/**
+ * Account level of a player (D-188): `levelForXp(xp)` from xp.ts, starting at 1. Cosmetic only;
+ * shown in the lobby, guild lists and leaderboards.
+ */
+export const PlayerLevel = z.number().int().min(1);
+
 export const GuildName = z
   .string()
   .trim()

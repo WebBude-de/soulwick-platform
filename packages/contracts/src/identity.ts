@@ -3,6 +3,7 @@ import {
   GuildRole,
   IsoDateTime,
   PlayerAppearance,
+  PlayerLevel,
   PlayerName,
   Uuid,
 } from "./common.ts";
@@ -144,6 +145,12 @@ export const AccountSummary = z.object({
   /** Run participations. */
   runCount: z.number().int().min(0),
   providers: z.array(IdentityProvider),
+  /**
+   * Account XP and level (D-188). XP > 0 counts as progress (no silent merge); a merge adds the
+   * XP of both accounts, each run id once. Optional for older API builds.
+   */
+  xp: z.number().int().min(0).optional(),
+  level: PlayerLevel.optional(),
 });
 export type AccountSummary = z.infer<typeof AccountSummary>;
 

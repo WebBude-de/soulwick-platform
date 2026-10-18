@@ -1,7 +1,8 @@
-import type {
-  GuildRoom,
-  GuildRoomList,
-  RelayRoomSummary,
+import {
+  type GuildRoom,
+  type GuildRoomList,
+  levelForXp,
+  type RelayRoomSummary,
 } from "@soulwick/contracts";
 import { ApiError } from "../lib/errors.ts";
 import type { Logger } from "../lib/logger.ts";
@@ -22,11 +23,19 @@ function openGuildRooms(
   );
 }
 
-/** Current names from the database; the relay only knows the name from the player's `hello`. */
-async function playerNames(
+interface PlayerLabel {
+  level: number;
+  name: string;
+}
+
+/**
+ * Current names and levels from the database; the relay only knows the name from the player's
+ * `hello`.
+ */
+async function playerLabels(
   db: DbOrTx,
   rooms: readonly RelayRoomSummary[]
-): Promise<Map<string, string>> {
+): Promise<Map<string, PlayerLabel>> {
   const ids = [
     ...new Set(rooms.flatMap((r) => r.players.map((p) => p.playerId))),
   ];
@@ -35,21 +44,23 @@ async function playerNames(
   }
   const rows = await db.player.findMany({
     where: { id: { in: ids } },
-    select: { id: true, name: true },
+    select: { id: true, name: true, xp: true },
   });
-  return new Map(rows.map((r) => [r.id, r.name]));
+  return new Map(
+    rows.map((r) => [r.id, { name: r.name, level: levelForXp(r.xp) }])
+  );
 }
 
 function toGuildRoom(
   room: RelayRoomSummary,
-  names: ReadonlyMap<string, string>
+  labels: ReadonlyMap<string, PlayerLabel>
 ): GuildRoom | null {
   const host = room.players.find((p) => p.host);
   if (!host) {
     return null;
   }
   const nameOf = (p: { playerId: string; name: string | null }) =>
-    names.get(p.playerId) ?? p.name;
+    labels.get(p.playerId)?.name ?? p.name;
   return {
     code: room.code,
     hostName: nameOf(host),
@@ -62,6 +73,7 @@ function toGuildRoom(
       playerId: p.playerId,
       name: nameOf(p),
       host: p.host,
+      level: labels.get(p.playerId)?.level ?? null,
     })),
     createdAt: room.createdAt,
     expiresAt: room.expiresAt,
@@ -100,10 +112,10 @@ export async function listGuildRooms(
     });
     return unavailable;
   }
-  const names = await playerNames(db, rooms);
+  const labels = await playerLabels(db, rooms);
   return {
     time: now.toISOString(),
     relayAvailable: true,
-    rooms: rooms.flatMap((r) => toGuildRoom(r, names) ?? []),
+    rooms: rooms.flatMap((r) => toGuildRoom(r, labels) ?? []),
   };
 }

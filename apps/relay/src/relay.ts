@@ -61,6 +61,8 @@ export interface RelayDeps {
 
 interface PlayerInfo {
   gameVersion: string;
+  /** Account level from the API at `hello` (D-188); null when the API was not reachable. */
+  level: number | null;
   name: string | null;
   platform: ClientPlatform;
   playerId: string;
@@ -137,6 +139,7 @@ export class Client {
       playerId: this.player.playerId,
       name: this.player.name,
       platform: this.player.platform,
+      level: this.player.level,
     };
   }
 }
@@ -604,6 +607,7 @@ export class Relay {
     client.player = {
       playerId,
       name: result.kind === "ok" ? result.status.name : null,
+      level: result.kind === "ok" ? (result.status.level ?? null) : null,
       platform: msg.platform,
       gameVersion: msg.gameVersion,
     };
@@ -618,6 +622,7 @@ export class Relay {
       type: "welcome",
       playerId,
       name: client.player.name,
+      level: client.player.level,
       protocolVersion: this.config.PROTOCOL_VERSION,
       maxFrameBytes: this.config.MAX_FRAME_BYTES,
       maxPlayers: MAX_ROOM_PLAYERS,

@@ -1,4 +1,5 @@
 import {
+  AddXpRequest,
   type DeletionCodeResponse,
   type IdentityList,
   IdentityProvider,
@@ -28,6 +29,7 @@ import {
 } from "../services/identities.ts";
 import { updateProfile } from "../services/profile.ts";
 import { issuePlayerSession } from "../services/sessions.ts";
+import { addXp } from "../services/xp.ts";
 import type { AppEnv, Deps } from "../types.ts";
 
 export function meRoutes(deps: Deps) {
@@ -75,6 +77,21 @@ export function meRoutes(deps: Deps) {
       guildDisbanded: result.guilds?.some((g) => g.disbanded) ?? false,
     });
     return c.body(null, 204);
+  });
+
+  /**
+   * Account XP (D-188, KF3): uploads finished runs of the own player; each run id counts once.
+   * See AddXpRequest / AddXpResponse.
+   */
+  app.post("/xp", async (c) => {
+    const body = await parseBody(c, AddXpRequest);
+    const result = await addXp(deps.db, {
+      playerId: c.get("player").id,
+      entries: body.entries,
+      config: deps.config,
+      now: now(),
+    });
+    return c.json(result);
   });
 
   /** Own active guilds for the online menu (D-147), oldest membership first. */

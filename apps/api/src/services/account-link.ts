@@ -4,6 +4,7 @@ import {
   LINK_CODE_ALPHABET,
   LINK_CODE_LENGTH,
   LINK_CODE_TTL_SECONDS,
+  levelForXp,
   MAX_GUILDS_PER_PLAYER,
 } from "@soulwick/contracts";
 import type { Db, Player } from "@soulwick/db";
@@ -14,6 +15,7 @@ import { findActiveBan } from "./bans.ts";
 import type { Tx } from "./db-types.ts";
 import { findMemberships, higherRole, removeMember } from "./guilds.ts";
 import { findIdentities } from "./identities.ts";
+import { mergeXp } from "./xp.ts";
 
 const CODE_ATTEMPTS = 5;
 /** Merging touches several tables; Prisma's default of 5 s is tight on a busy database. */
@@ -95,6 +97,8 @@ async function summarize(tx: Tx, player: Player): Promise<AccountSummary> {
     guilds,
     runCount,
     providers: [...new Set(identities.map((i) => i.provider))],
+    xp: player.xp,
+    level: levelForXp(player.xp),
   };
 }
 
@@ -162,8 +166,9 @@ async function mergeGuildMemberships(
   return counts;
 }
 
-/** D-122: an account is empty when it has no guild and no runs. */
-const hasProgress = (s: AccountSummary) => s.guild !== null || s.runCount > 0;
+/** D-122, D-188: an account is empty when it has no guild, no runs and no XP. */
+const hasProgress = (s: AccountSummary) =>
+  s.guild !== null || s.runCount > 0 || (s.xp ?? 0) > 0;
 
 /**
  * Moves everything of `dropId` onto `keepId` and deletes `dropId` (D-122). Runs inside the
@@ -176,6 +181,7 @@ const hasProgress = (s: AccountSummary) => s.guild !== null || s.runCount > 0;
  *   higher role remains; the rest are left with the founder hand-off of P-102;
  * - run participations move; a run both accounts took part in keeps one row; reporter moves;
  * - bug reports (P-033) and the name history (P-034) move; keep's name and appearance stay;
+ * - XP entries move, a run id both accounts know counts once; keep's XP = sum (D-188);
  * - name and `created_at` of keep stay, `last_seen_at` becomes the later of both.
  */
 async function absorbAccount(
@@ -218,6 +224,8 @@ async function absorbAccount(
     where: { playerId: drop.id },
     data: { playerId: keep.id },
   });
+
+  await mergeXp(tx, keep.id, drop.id);
 
   if (drop.lastSeenAt > keep.lastSeenAt) {
     await tx.player.update({

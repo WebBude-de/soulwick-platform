@@ -4,12 +4,12 @@
  * is in both, D-147), twenty runs across the current and the previous season (one flagged) plus
  * fifteen runs spread over the last two weeks (admin statistics, P-023), one temporary ban, one moderation note, four
  * entries in the deletion log (P-026, no personal data), three bug reports with placeholder
- * screenshots (P-033), a character (appearance, P-034) for players 1-8 and the matching audit
- * entries, so the
+ * screenshots (P-033), a character (appearance, P-034) for players 1-8, account XP from a few
+ * runs each (D-188, levels 1 to about 8) and the matching audit entries, so the
  * website leaderboards and every admin page show data locally.
  *
  * Idempotent: every record has a fixed key (email, device id, steam id, guild tag, run seed, ban
- * reason, note text, deletion log id, bug report id);
+ * reason, note text, deletion log id, bug report id, XP run id);
  * re-running only adds what is missing and never overwrites changes made through the admin panel
  * (existing admin accounts keep their password, e.g. one changed under "Mein Konto").
  * Refuses to run with NODE_ENV=production.
@@ -29,9 +29,12 @@ import {
   type BugReportKind,
   type BugReportMark,
   type BugReportPlatform,
+  levelForXp,
   type PlayerAppearance,
   PlayerCharacter,
   type RunMode,
+  runXp,
+  xpDayOf,
 } from "@soulwick/contracts";
 import {
   type AccountDeletionChannel,
@@ -670,6 +673,76 @@ function seasonTime(monthsBack: 0 | 1, fraction: number): Date {
 const seasonId = (d: Date) =>
   `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 
+// --- account XP (D-188) ---------------------------------------------------------------------------
+
+/** Seeded runs with account XP per player number (player 10 has none: level 1). */
+const XP_RUNS: Record<number, number> = {
+  1: 70,
+  2: 40,
+  3: 25,
+  4: 14,
+  5: 50,
+  6: 9,
+  7: 6,
+  8: 3,
+  9: 1,
+};
+
+/** Fixed run id per player and run, so re-running the seed adds nothing twice. */
+const seedXpRunId = (n: number, i: number) =>
+  `5eed0000-0000-4000-8000-${(n * 1000 + i).toString(16).padStart(12, "0")}`;
+
+/**
+ * XP entries of one seeded player, oldest first, computed like POST /me/xp: record bonus from the
+ * running account record, one first-run-of-the-day bonus per UTC day, co-op every third run.
+ */
+function seedXpEntries(n: number, playerId: string) {
+  const count = XP_RUNS[n] ?? 0;
+  let record = 0;
+  const bonusDays = new Set<string>();
+  return Array.from({ length: count }, (_, i) => {
+    const rooms = 3 + ((i * 7 + n) % 14);
+    const deepestRoom = rooms;
+    const endedAt = daysAgo(((count - i) * 40) / count);
+    const day = xpDayOf(endedAt);
+    const firstRunOfDay = !bonusDays.has(day);
+    bonusDays.add(day);
+    const recordRooms = Math.max(0, deepestRoom - record);
+    record = Math.max(record, deepestRoom);
+    const endReason = i % 4 === 3 ? ("portal" as const) : ("wiped" as const);
+    const players = i % 3 === 2 ? 2 : 1;
+    const bosses = deepestRoom >= 15 ? 1 : 0;
+    const champions = i % 3;
+    const xp = runXp({
+      rooms,
+      champions,
+      bosses,
+      recordRooms,
+      endReason,
+      firstRunOfDay,
+      players,
+    }).total;
+    return {
+      playerId,
+      runId: seedXpRunId(n, i),
+      xp,
+      rooms,
+      champions,
+      bosses,
+      deepestRoom,
+      recordRooms,
+      firstRunOfDay,
+      endReason,
+      players,
+      durationSeconds: rooms * 60,
+      gameVersion: "1.0.0",
+      endedAt,
+      day: new Date(`${day}T00:00:00Z`),
+      createdAt: endedAt,
+    };
+  });
+}
+
 interface Summary {
   banCreated: boolean;
   guildsCreated: number;
@@ -678,6 +751,7 @@ interface Summary {
   newDeletions: number;
   newPlayers: number;
   newRuns: number;
+  newXpEntries: number;
   noteCreated: boolean;
 }
 
@@ -747,6 +821,7 @@ async function seed(tx: Tx): Promise<Summary> {
     newDeletions: 0,
     newAdmins: 0,
     newBugReports: 0,
+    newXpEntries: 0,
   };
 
   // --- admins --------------------------------------------------------------------------------
@@ -988,6 +1063,18 @@ async function seed(tx: Tx): Promise<Summary> {
   });
   summary.newBugReports = newBugReports;
 
+  // --- account XP (D-188) --------------------------------------------------------------------
+  const { count: newXpEntries } = await tx.xpEntry.createMany({
+    data: PLAYERS.flatMap((spec) => seedXpEntries(spec.n, player(spec.n).id)),
+    skipDuplicates: true,
+  });
+  summary.newXpEntries = newXpEntries;
+  // players.xp is always the sum of the entries (also XP gained locally through POST /me/xp).
+  await tx.$executeRaw`
+    update players p
+    set xp = coalesce((select sum(e.xp) from xp_entries e where e.player_id = p.id), 0)
+    where p.id in (${Prisma.join(PLAYERS.map((spec) => Prisma.sql`${player(spec.n).id}::uuid`))})`;
+
   return summary;
 }
 
@@ -1017,6 +1104,7 @@ try {
       `  Note:     moderation note on ${bannedName}${summary.noteCreated ? "" : " (existed)"}`,
       `  Deleted:  ${DELETIONS.length} entries in the deletion log (${summary.newDeletions} new)`,
       `  Bugs:     ${BUG_REPORTS.length} bug reports with placeholder screenshots (${summary.newBugReports} new)`,
+      `  XP:       ${Object.values(XP_RUNS).reduce((a, b) => a + b, 0)} runs with account XP (${summary.newXpEntries} new), ${PLAYERS[0]?.name} level ${levelForXp(seedXpEntries(1, "").reduce((sum, e) => sum + e.xp, 0))}`,
       "  Web:      http://localhost:3100/ranglisten - Admin: http://localhost:3102",
     ].join("\n")
   );

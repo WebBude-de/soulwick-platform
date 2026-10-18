@@ -7,6 +7,7 @@ import {
   type BanRelayResult,
   BanRequest,
   type BanResponse,
+  levelForXp,
   RenamePlayerRequest,
   Uuid,
 } from "@soulwick/contracts";
@@ -68,6 +69,8 @@ const toListItem = (r: ListRow): AdminPlayerListItem => ({
   banned: r.bans.length > 0,
   guildTag: r.guildMemberships[0]?.guild.tag ?? null,
   guildTags: r.guildMemberships.map((m) => m.guild.tag),
+  xp: r.xp,
+  level: levelForXp(r.xp),
 });
 
 export function adminPlayerRoutes(deps: Deps) {

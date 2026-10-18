@@ -165,7 +165,8 @@ describe("GET /guilds/:id/rooms (relay configured)", () => {
       maxPlayers: 4,
       started: false,
       gameVersion: "1.0.0",
-      players: [{ playerId: founder.id, name: "Lumen", host: true }],
+      // Name and level (D-188) from the database.
+      players: [{ playerId: founder.id, name: "Lumen", host: true, level: 1 }],
       createdAt: "2026-10-16T11:58:00.000Z",
       expiresAt: "2026-10-16T12:28:00.000Z",
     });
