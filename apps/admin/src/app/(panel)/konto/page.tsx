@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { changeOwnEmail, changeOwnPassword } from "@/app/actions";
+import { PasswordField } from "@/components/password-field";
 import { Chip, DetailList, Flash, PageTitle, Section } from "@/components/ui";
 import { getMe, isAdmin } from "@/lib/api";
 import { ADMIN_ROLE_LABEL, formatDateTime } from "@/lib/format";
@@ -68,16 +69,12 @@ export default async function AccountPage({
                 type="email"
               />
             </label>
-            <label className="block">
-              <span className="field-label">Aktuelles Passwort</span>
-              <input
-                autoComplete="current-password"
-                className="input w-full"
-                name="currentPassword"
-                required
-                type="password"
-              />
-            </label>
+            <PasswordField
+              autoComplete="current-password"
+              label="Aktuelles Passwort"
+              name="currentPassword"
+              required
+            />
             <p className="text-muted text-sm">
               Gilt sofort für die nächste Anmeldung. Es gibt keine
               Bestätigungsmail – bitte die Adresse genau prüfen.
@@ -90,42 +87,28 @@ export default async function AccountPage({
 
         <Section title="Passwort ändern">
           <form action={changeOwnPassword} className="max-w-md space-y-4">
-            <label className="block">
-              <span className="field-label">Aktuelles Passwort</span>
-              <input
-                autoComplete="current-password"
-                className="input w-full"
-                name="currentPassword"
-                required
-                type="password"
-              />
-            </label>
-            <label className="block">
-              <span className="field-label">
-                Neues Passwort (mind. 12 Zeichen)
-              </span>
-              <input
-                autoComplete="new-password"
-                className="input w-full"
-                maxLength={256}
-                minLength={12}
-                name="newPassword"
-                required
-                type="password"
-              />
-            </label>
-            <label className="block">
-              <span className="field-label">Neues Passwort wiederholen</span>
-              <input
-                autoComplete="new-password"
-                className="input w-full"
-                maxLength={256}
-                minLength={12}
-                name="repeatPassword"
-                required
-                type="password"
-              />
-            </label>
+            <PasswordField
+              autoComplete="current-password"
+              label="Aktuelles Passwort"
+              name="currentPassword"
+              required
+            />
+            <PasswordField
+              autoComplete="new-password"
+              label="Neues Passwort (mind. 12 Zeichen)"
+              maxLength={256}
+              minLength={12}
+              name="newPassword"
+              required
+            />
+            <PasswordField
+              autoComplete="new-password"
+              label="Neues Passwort wiederholen"
+              maxLength={256}
+              minLength={12}
+              name="repeatPassword"
+              required
+            />
             <p className="text-muted text-sm">
               Danach sind alle anderen Sitzungen dieses Kontos abgemeldet (z. B.
               ein anderer Browser); diese hier bleibt angemeldet.

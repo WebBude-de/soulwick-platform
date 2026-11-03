@@ -1,7 +1,12 @@
 import type { AdminUserList } from "@soulwick/contracts";
 import type { Metadata } from "next";
-import { createAdminUser, setAdminDisabled } from "@/app/actions";
+import {
+  createAdminUser,
+  setAdminDisabled,
+  setAdminPassword,
+} from "@/app/actions";
 import { RowAction, RowDangerAction } from "@/components/danger-action";
+import { PasswordField } from "@/components/password-field";
 import {
   Chip,
   ErrorBox,
@@ -90,7 +95,42 @@ export default async function AdminsPage({
                       <RowActions>
                         {a.id === me.id ? (
                           <span className="text-muted">–</span>
-                        ) : a.disabledAt ? (
+                        ) : (
+                          <RowDangerAction
+                            action={setAdminPassword.bind(null, a.id, a.email)}
+                            description={
+                              <p className="wrap-anywhere">
+                                Für {a.email}, z. B. wenn das Passwort vergessen
+                                wurde. Alle Sitzungen des Zugangs werden
+                                abgemeldet; ein deaktivierter Zugang bleibt
+                                deaktiviert. Gib das Passwort sicher weiter.
+                              </p>
+                            }
+                            hint={`Neues Passwort für ${a.email} setzen`}
+                            id={`admin-password-${a.id}`}
+                            label="Passwort…"
+                            neutral
+                            submitLabel="Passwort neu setzen"
+                          >
+                            <PasswordField
+                              autoComplete="new-password"
+                              label="Neues Passwort (mind. 12 Zeichen)"
+                              maxLength={256}
+                              minLength={12}
+                              name="newPassword"
+                              required
+                            />
+                            <PasswordField
+                              autoComplete="new-password"
+                              label="Neues Passwort wiederholen"
+                              maxLength={256}
+                              minLength={12}
+                              name="repeatPassword"
+                              required
+                            />
+                          </RowDangerAction>
+                        )}
+                        {a.id === me.id ? null : a.disabledAt ? (
                           <RowAction
                             action={setAdminDisabled.bind(
                               null,
@@ -149,17 +189,15 @@ export default async function AdminsPage({
               type="email"
             />
           </label>
-          <label>
-            <span className="field-label">Passwort (mind. 12 Zeichen)</span>
-            <input
-              autoComplete="new-password"
-              className="input w-64 max-w-full"
-              minLength={12}
-              name="password"
-              required
-              type="password"
-            />
-          </label>
+          <PasswordField
+            autoComplete="new-password"
+            className="max-w-full"
+            inputClassName="w-64 max-w-full"
+            label="Passwort (mind. 12 Zeichen)"
+            minLength={12}
+            name="password"
+            required
+          />
           <label>
             <span className="field-label">Rolle</span>
             <select className="input" defaultValue="moderator" name="role">

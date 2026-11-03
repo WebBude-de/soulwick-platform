@@ -7,6 +7,7 @@ import type {
   AdminRelayCloseRoomResponse,
   AdminRelayKickResponse,
   AdminSelf,
+  AdminSetPasswordResponse,
   BanResponse,
   TransferGuildResponse,
 } from "@soulwick/contracts";
@@ -378,6 +379,49 @@ export async function setAdminDisabled(
     "/admins",
     result,
     disabled ? `Zugang ${email} deaktiviert.` : `Zugang ${email} aktiviert.`
+  );
+}
+
+/** New password for another admin account (forgotten password); ends all its sessions. */
+export async function setAdminPassword(
+  adminId: string,
+  email: string,
+  form: FormData
+) {
+  const newPassword = String(form.get("newPassword") ?? "");
+  const repeatPassword = String(form.get("repeatPassword") ?? "");
+  if (newPassword.length < MIN_PASSWORD) {
+    back(
+      "/admins",
+      fail(`Das neue Passwort braucht mindestens ${MIN_PASSWORD} Zeichen.`),
+      ""
+    );
+  }
+  if (newPassword !== repeatPassword) {
+    back(
+      "/admins",
+      fail("Die beiden neuen Passwörter stimmen nicht überein."),
+      ""
+    );
+  }
+  const result = await api<AdminSetPasswordResponse>(
+    `/admin/admins/${encodeURIComponent(adminId)}/password`,
+    { method: "POST", body: { newPassword } }
+  );
+  // The shared text for cannot_change_self is about disabling; say where the own password goes.
+  const checked =
+    result.ok || result.error !== "cannot_change_self"
+      ? result
+      : fail("Dein eigenes Passwort änderst du unter „Mein Konto“.");
+  const revoked = result.ok ? result.data.revokedSessions : 0;
+  back(
+    "/admins",
+    checked,
+    `Passwort für ${email} neu gesetzt.${
+      revoked === 0
+        ? " Es war keine Sitzung offen."
+        : ` ${revoked === 1 ? "1 Sitzung wurde" : `${revoked} Sitzungen wurden`} beendet.`
+    }`
   );
 }
 

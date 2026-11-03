@@ -1,5 +1,6 @@
 /**
- * Small pixel glyphs for row action buttons (8×8 grid drawn at 2×, `currentColor`). Decorative:
+ * Small pixel glyphs for row action buttons and the password toggle (8×8 grid drawn at 2×,
+ * `currentColor`). Decorative:
  * the button carries the label (aria-label + title).
  */
 const GLYPHS = {
@@ -68,6 +69,28 @@ const GLYPHS = {
     ".######.",
     "........",
     ".######.",
+  ],
+  /** Show a hidden password (toggle off). */
+  eye: [
+    "........",
+    "..####..",
+    ".#....#.",
+    "#..##..#",
+    "#..##..#",
+    ".#....#.",
+    "..####..",
+    "........",
+  ],
+  /** Hide a shown password (toggle on). */
+  eyeOff: [
+    "#.......",
+    ".#.###..",
+    ".##...#.",
+    "#..#...#",
+    "#..##..#",
+    ".#...#..",
+    "..#####.",
+    ".......#",
   ],
 } as const;
 

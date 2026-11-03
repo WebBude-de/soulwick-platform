@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { login } from "@/app/actions";
+import { PasswordField } from "@/components/password-field";
 
 export const metadata: Metadata = { title: "Anmelden" };
 
@@ -57,16 +58,12 @@ export default async function LoginPage({
               type="email"
             />
           </label>
-          <label className="block">
-            <span className="field-label">Passwort</span>
-            <input
-              autoComplete="current-password"
-              className="input w-full"
-              name="password"
-              required
-              type="password"
-            />
-          </label>
+          <PasswordField
+            autoComplete="current-password"
+            label="Passwort"
+            name="password"
+            required
+          />
           <button className="btn btn-primary w-full" type="submit">
             Anmelden
           </button>
