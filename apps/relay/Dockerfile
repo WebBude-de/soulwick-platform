@@ -15,8 +15,10 @@ COPY apps/web/package.json apps/web/
 COPY packages/config/package.json packages/config/
 COPY packages/contracts/package.json packages/contracts/
 COPY packages/db/package.json packages/db/
+COPY packages/logger/package.json packages/logger/
 RUN bun install --frozen-lockfile --ignore-scripts --production --filter @soulwick/relay
 COPY packages/contracts packages/contracts
+COPY packages/logger packages/logger
 COPY apps/relay/package.json apps/relay/
 COPY apps/relay/src apps/relay/src
 
@@ -27,6 +29,7 @@ ENV NODE_ENV=production RELAY_PORT=8790 RELAY_HOST=0.0.0.0
 COPY --from=build /app/package.json /app/bunfig.toml ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/packages/contracts ./packages/contracts
+COPY --from=build /app/packages/logger ./packages/logger
 COPY --from=build /app/apps/relay ./apps/relay
 USER bun
 EXPOSE 8790

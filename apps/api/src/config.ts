@@ -3,6 +3,11 @@ import {
   PROTOCOL_VERSION,
   RELAY_WS_PATH,
 } from "@soulwick/contracts";
+import {
+  DEFAULT_LOG_RETENTION_DAYS,
+  LOG_FORMATS,
+  LOG_THRESHOLDS,
+} from "@soulwick/logger";
 import { z } from "zod";
 
 const bool = z
@@ -42,7 +47,7 @@ const ConfigSchema = z
     NODE_ENV: z
       .enum(["development", "production", "test"])
       .default("development"),
-    PORT: z.coerce.number().int().min(1).max(65_535).default(3101),
+    PORT: z.coerce.number().int().min(1).max(65_535).default(3102),
     DATABASE_URL: z.string().default(""),
 
     /**
@@ -55,7 +60,7 @@ const ConfigSchema = z
     /** Public base URL of this API (issuer of the player JWTs), e.g. https://api.playsoulwick.com. */
     BETTER_AUTH_URL: z
       .url()
-      .default("http://localhost:3101")
+      .default("http://localhost:3102")
       .transform((v) => v.replace(TRAILING_SLASHES, "")),
     /** Lifetime of a player session (login token), fixed from the login. */
     PLAYER_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).default(30),
@@ -161,7 +166,22 @@ const ConfigSchema = z
      */
     SUPPORT_EMAIL: z.union([z.literal(""), z.email()]).default(""),
 
-    LOG_LEVEL: z.enum(["info", "error", "silent"]).default("info"),
+    /** Lowest level written: debug, info, warn, error or silent (tests). */
+    LOG_LEVEL: z.enum(LOG_THRESHOLDS).default("info"),
+    /** pretty (one readable line) or json; empty = pretty, in production json (Dokploy). */
+    LOG_FORMAT: z.union([z.literal(""), z.enum(LOG_FORMATS)]).default(""),
+    /**
+     * Log files logs/<app>/<YYYY-MM-DD>/ under this folder (relative = from the repo root); empty =
+     * <repo-root>/logs outside production and no files in production, "off" = no files.
+     */
+    LOG_DIR: z.string().trim().default(""),
+    /** TESTWERT: day folders of log files kept (today included). */
+    LOG_RETENTION_DAYS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(365)
+      .default(DEFAULT_LOG_RETENTION_DAYS),
 
     /**
      * Shared key of the relay (apps/relay) for GET /internal/relay/...; header `x-relay-key`.

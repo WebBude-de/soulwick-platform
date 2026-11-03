@@ -16,6 +16,7 @@ COPY apps/web/package.json apps/web/
 COPY packages/config/package.json packages/config/
 COPY packages/contracts/package.json packages/contracts/
 COPY packages/db/package.json packages/db/
+COPY packages/logger/package.json packages/logger/
 RUN bun install --frozen-lockfile --ignore-scripts --filter @soulwick/admin
 COPY packages/contracts packages/contracts
 COPY apps/admin apps/admin

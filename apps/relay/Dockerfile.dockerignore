@@ -10,6 +10,7 @@
 !packages/config/package.json
 !packages/db/package.json
 !packages/contracts/**
+!packages/logger/**
 !apps/relay/package.json
 !apps/relay/src/**
 **/node_modules

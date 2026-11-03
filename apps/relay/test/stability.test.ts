@@ -92,7 +92,9 @@ describe("diagnostics", () => {
   function loggedRelay() {
     const lines: { msg: string; fields: Record<string, unknown> }[] = [];
     const logger: Logger = {
+      debug: () => undefined,
       info: (msg, fields = {}) => lines.push({ msg, fields }),
+      warn: (msg, fields = {}) => lines.push({ msg, fields }),
       error: (msg, fields = {}) => lines.push({ msg, fields }),
     };
     let clock = 5_000_000;

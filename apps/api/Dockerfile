@@ -16,12 +16,14 @@ COPY apps/web/package.json apps/web/
 COPY packages/config/package.json packages/config/
 COPY packages/contracts/package.json packages/contracts/
 COPY packages/db/package.json packages/db/
+COPY packages/logger/package.json packages/logger/
 # The API and its workspace packages, including the Prisma CLI (devDependency of @soulwick/db)
 # that applies the migrations on start.
 RUN bun install --frozen-lockfile --ignore-scripts --filter @soulwick/api --filter @soulwick/db
 COPY packages/config packages/config
 COPY packages/contracts packages/contracts
 COPY packages/db packages/db
+COPY packages/logger packages/logger
 COPY apps/api apps/api
 # prisma.config.ts reads DATABASE_URL; neither step connects. The diff run makes the CLI fetch its
 # schema engine now (install ran with --ignore-scripts), so `migrate deploy` needs no download later.

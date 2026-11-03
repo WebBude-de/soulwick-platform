@@ -21,12 +21,12 @@ import {
   WorldLimitResponse,
   WorldList,
 } from "@soulwick/contracts";
+import { silentLogger } from "@soulwick/logger";
 import { runHousekeeping } from "../src/services/housekeeping.ts";
 import { createTestContext, type TestContext } from "./helpers.ts";
 
 const MINUTE_MS = 60_000;
 const DAY_MS = 86_400_000;
-const silentLogger = { info: () => undefined, error: () => undefined };
 
 /** Shared clock offset: the API's `now` (backups, archive, caps); sessions keep the wall clock. */
 let offsetMs = 0;

@@ -1,20 +1,28 @@
+import { RELAY_WS_PATH } from "@soulwick/contracts";
 import { loadConfig } from "./config.ts";
-import { createLogger } from "./logger.ts";
+import { createLogger, initLogging } from "./logger.ts";
 import { startRelayServer } from "./server.ts";
 
-// Local development: `bun run dev:relay` loads the root .env.local (shared values) and
-// apps/relay/.env.local on top. In Docker/Dokploy the variables are set directly.
+// Local development: `bun run dev:relay` loads the root .env (shared values) and
+// apps/relay/.env on top. In Docker/Dokploy the variables are set directly.
 const config = loadConfig(process.env, process.argv.slice(2));
+// Console plus (outside production) logs/relay/<day>/; buffered lines are written out on exit.
+const logOutput = initLogging(config);
+process.on("exit", () => logOutput.close());
 const logger = createLogger(config.LOG_LEVEL);
 const relay = startRelayServer(config, { logger });
 
+// The pretty console turns this line into the start block (▲ Soulwick Relay, Local, Logs, ✓ Ready).
 logger.info("listening", {
   port: relay.port,
+  url: `ws://localhost:${relay.port}${RELAY_WS_PATH}`,
   protocolVersion: config.PROTOCOL_VERSION,
   clientRouting: config.CLIENT_ROUTING,
   api: config.API_INTERNAL_URL || undefined,
   simLatencyMs: config.RELAY_SIM_LATENCY_MS || undefined,
   simLossPercent: config.RELAY_SIM_LOSS || undefined,
+  logDir: logOutput.appDir ?? undefined,
+  readyMs: Math.round(performance.now()),
 });
 
 // Graceful shutdown: rooms get `room_closed` (shutdown), sockets close with 1001.

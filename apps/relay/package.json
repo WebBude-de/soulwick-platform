@@ -5,13 +5,14 @@
   "type": "module",
   "description": "Soulwick relay: WebSocket lobby with room codes; forwards game packets between host and clients without reading them.",
   "scripts": {
-    "dev": "bun --env-file=../../.env.local --env-file=.env.local --watch src/index.ts",
+    "dev": "bun --env-file=../../.env --env-file=.env --watch src/index.ts",
     "start": "bun src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "bun test"
   },
   "dependencies": {
     "@soulwick/contracts": "workspace:*",
+    "@soulwick/logger": "workspace:*",
     "hono": "^4.13.13",
     "jose": "^6.2.3",
     "zod": "^4.6.7"

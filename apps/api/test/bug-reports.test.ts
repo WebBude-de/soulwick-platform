@@ -8,6 +8,7 @@ import {
   BUG_REPORT_MAX_MARKS,
   DeletionCodeResponse,
 } from "@soulwick/contracts";
+import { silentLogger } from "@soulwick/logger";
 import { sniffImageMime } from "../src/lib/image.ts";
 import { placeholderPng } from "../src/lib/placeholder-png.ts";
 import { runHousekeeping } from "../src/services/housekeeping.ts";
@@ -29,8 +30,6 @@ const WEBP_BASE64 = Buffer.concat([
   Buffer.from("WEBPVP8 "),
   Buffer.alloc(24),
 ]).toString("base64");
-
-const silentLogger = { info: () => undefined, error: () => undefined };
 
 function reportBody(overrides: Record<string, unknown> = {}) {
   return {

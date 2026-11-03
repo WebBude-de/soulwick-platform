@@ -14,6 +14,8 @@ next-env.d.ts
 .DS_Store
 # UI screenshots taken by agents during verification
 .screenshots/
+# Local log files of api and relay (@soulwick/logger, LOG_DIR)
+logs/
 
 # Agent rules that `next dev` writes into each Next app (the repo-wide AGENTS.md is the real one)
 apps/*/AGENTS.md
