@@ -84,6 +84,12 @@ export const brand = {
     }
     return null;
   },
+  /**
+   * Valve's "Sign in through Steam" button image (`login/steam_signin.webp`, converted only
+   * losslessly, see `apps/web/README.md` "Anmeldung"). `null` until delivered: the login page shows
+   * a text button without the Steam logo.
+   */
+  steamSignIn: () => brandAsset("login/steam_signin.webp"),
 };
 
 /**

@@ -200,6 +200,13 @@ und `*.playsoulwick.com`, nicht für `*.dev.playsoulwick.com`. Deshalb `api-dev`
 - **Direkter Zugriff:** Wer die VPS-IP kennt, kann Cloudflare umgehen und `CF-Connecting-IP` selbst
   setzen. Für die Testphase in Ordnung; später die Ports 80/443 per Firewall nur für die
   Cloudflare-Adressbereiche öffnen.
+- **Empfehlung `TRUSTED_PROXY_CIDRS` (API, KF5-Sicherheitsfix, P-039):** Die API glaubt den
+  Weiterleitungs-Headern nur, wenn die Verbindung von einer dieser Adressen kommt. Leer = jede
+  Gegenstelle (bisheriges Verhalten). Eintragen: das Subnetz des Docker-Netzes, über das Traefik die API
+  erreicht (`docker network inspect dokploy-network` → `Subnet`, z. B. `10.0.1.0/24`). Das sperrt
+  Anfragen aus, die nicht über Traefik kommen; gegen den direkten Zugriff auf die VPS-IP an Traefik
+  vorbei hilft erst die Firewall oben (oder Traefiks `forwardedHeaders.trustedIPs` mit den
+  Cloudflare-Bereichen).
 
 ## 3. Geheimnisse
 
@@ -344,8 +351,35 @@ GOOGLE_PLAY_CLIENT_ID=
 GOOGLE_PLAY_CLIENT_SECRET=
 EXTERNAL_AUTH_TIMEOUT_MS=8000
 
+# Spieler-Anmeldung (KF5, P-039): ohne Werte ist der jeweilige Anbieter aus (`/public/config` → loginMethods).
+# WEB_URL = Website (Seiten /login/<code>, /login/magic); in production nur https.
+WEB_URL=${{environment.WEB_URL}}
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+DISCORD_CLIENT_ID=
+DISCORD_CLIENT_SECRET=
+APPLE_CLIENT_ID=
+APPLE_APP_BUNDLE_ID=
+APPLE_TEAM_ID=
+APPLE_KEY_ID=
+APPLE_PRIVATE_KEY=
+STEAM_OPENID_ENABLED=false
+GAME_CENTER_BUNDLE_IDS=
+# Magic Link: off | cloudflare (log nur lokal, in production abgelehnt)
+MAIL_ADAPTER=off
+MAIL_FROM=
+MAIL_CLOUDFLARE_URL=
+MAIL_CLOUDFLARE_KEY=
+# Rate-Limits der Anmeldung (TESTWERTE)
+LOGIN_ATTEMPTS_PER_MINUTE=20
+PASSWORD_FAILURES_PER_USERNAME=10
+MAGIC_LINKS_PER_HOUR=10
+MAGIC_LINKS_PER_ADDRESS_PER_HOUR=3
+
 CORS_ORIGINS=${{environment.WEB_URL}},${{environment.ADMIN_URL}},${{environment.GAME_URL}}
 TRUST_PROXY=true
+# Nur diese Gegenstellen dürfen CF-Connecting-IP/X-Forwarded-For setzen (Docker-Netz von Traefik, siehe §2)
+TRUSTED_PROXY_CIDRS=
 # Rate-Limits (TESTWERTE)
 RATE_LIMIT_PER_MINUTE=120
 LINK_ATTEMPTS_PER_MINUTE=10
@@ -380,6 +414,11 @@ DEFAULT_ADMIN_PASSWORD=<langes-passwort-min-12-zeichen>
 
 - **Steam:** `STEAM_WEB_API_KEY` ist der Publisher-Schlüssel (Steamworks → Users & Permissions → Manage
   Groups), nie ein Benutzer-Schlüssel; `STEAM_APP_ID` ist die eigene AppID (MP10).
+- **Spieler-Anmeldung (KF5):** Weiterleitungs-URI je Anbieter `<API_PUBLIC_URL>/auth/oauth/<provider>/callback`
+  (`google`, `apple`, `discord`, `steam`). Google: OAuth-Client „Webanwendung“, nur Scope `openid`. Discord:
+  App mit Scope `identify`. Apple: Services ID (Return-URL wie oben), Key `.p8` als `APPLE_PRIVATE_KEY`,
+  Team- und Key-ID, Bundle-ID der iOS-App. Magic Link braucht den Cloudflare-Mail-Worker (Vertrag in
+  `apps/api/README.md`) und eine Absender-Domain mit SPF/DKIM.
 - **Google Play:** Client-ID und -Secret aus Play Console → Play Games Services → Konfiguration →
   Anmeldedaten (Typ „Game server“).
 - **eRecht24 (P-025):** `ERECHT24_API_KEY` ist der Projekt-Schlüssel aus dem eRecht24-Projekt-Manager,
@@ -426,6 +465,11 @@ Gildenräume antworten mit `api_unavailable`.
 
 ```dotenv
 API_URL=${{environment.API_INTERNAL_URL}}
+# Öffentliche API-Adresse für die Anmeldeknöpfe auf /login/<code> (Formular-POST im Browser, KF11)
+API_PUBLIC_URL=${{environment.API_PUBLIC_URL}}
+# Besucher-IP für die Per-IP-Grenzen der API: Domain läuft über den Cloudflare-Proxy, davor nur Traefik
+TRUST_CLOUDFLARE=true
+TRUSTED_PROXY_HOPS=1
 SITE_URL=${{environment.WEB_URL}}
 # Live-Funktionen (Spielen/Installieren, Ranglisten, Gildenseiten), je Umgebung verschieden:
 #   development: LIVE_FEATURES=true
@@ -446,6 +490,20 @@ LIVE_FEATURES=<true|false>
   `LIVE_FEATURES` und `GAME_URL` der Laufzeit, ebenfalls ohne Neubau. Bis dahin kann ihre Kopfzeile noch
   den Build-Stand zeigen. Das Build-Argument `LIVE_FEATURES` ist optional (Standard `false`) und in Dokploy
   nicht nötig. Jeder andere Wert als leer, `true`, `1`, `on`, `yes` gilt als aus.
+- **`API_PUBLIC_URL`** (KF11): Die Knöpfe für Google, Apple, Discord und Steam auf `/login/<code>` sind
+  Formulare, die der Browser per POST an `<API_PUBLIC_URL>/auth/oauth/<anbieter>/start` schickt (die API
+  setzt dort ihr Bindungs-Cookie und leitet mit 303 zum Anbieter). `API_URL` ist die interne Adresse und
+  taugt dafür nicht; fehlt `API_PUBLIC_URL`, nimmt die Website `API_URL` (nur lokal richtig). Alle übrigen
+  Aufrufe der Anmeldeseiten (Schlüssel eintauschen, Stand lesen, Magic Link, Bestätigen) laufen
+  serverseitig über `API_URL`. Die Seiten unter `/login` senden `Referrer-Policy: no-referrer`, sind
+  `noindex` und setzen genau ein Cookie: `sw_login_<code>` (httpOnly, Pfad `/login`, läuft mit der
+  Anfrage ab) mit dem Browser-Token der laufenden Anmeldung.
+- **`TRUST_CLOUDFLARE`, `TRUSTED_PROXY_HOPS`** (KF5-Sicherheitsprüfung): Die Website reicht die Adresse
+  des Besuchers als `X-Forwarded-For` an die API weiter (Per-IP-Grenzen von Anmeldung, Magic Link und
+  Konto löschen). Mit `TRUST_CLOUDFLARE=true` zählt `CF-Connecting-IP` (nur bei orange Wolke setzen),
+  sonst der Eintrag in `X-Forwarded-For`, den der äußerste vertrauenswürdige Proxy angehängt hat
+  (`TRUSTED_PROXY_HOPS`, Traefik = 1); weiter links stehende Einträge kann der Besucher fälschen. Damit die
+  API der Website glaubt, muss deren Docker-Netz in `TRUSTED_PROXY_CIDRS` der API stehen (oben).
 - **`GAME_URL`** wirkt nur mit `LIVE_FEATURES=true` (Abschnitt „Web-Spiel“ unten).
 - **Store- und Social-Media-Links** sind keine Variablen, sondern versionierte Dateien der Website:
   `apps/web/content/stores.json` (`steam`, `google_play`, `app_store`) und `apps/web/content/social.json`;
@@ -663,6 +721,10 @@ NODE_ENV=development DEFAULT_ADMIN_PASSWORD="<eigenes-langes-passwort>" bun apps
 Das legt zusätzlich `admin@soulwick.local` und `moderator@soulwick.local` an (vorhandene Zugänge bleiben
 unverändert). Auf einem öffentlichen Server **immer** ein eigenes `DEFAULT_ADMIN_PASSWORD` mitgeben, nie den
 lokalen Standard `soulwick-admin-local`.
+Der Testspieler „Lumen“ bekommt seinen Passwort-Login (`lumen`) auf dem Server nur mit
+`DEV_PLAYER_PASSWORD="<eigenes-langes-passwort>"` (mind. 12 Zeichen); ohne die Variable legt der Seed
+außerhalb einer lokalen Datenbank keinen Passwort-Login an (das lokale `soulwick-player-local` gilt nur
+für `localhost`).
 Der Seed verweigert `NODE_ENV=production`; in `production` nie ausführen.
 
 Danach Web und Admin prüfen: Admin-Login, Ranglisten, `/delete-account`, `/imprint` und `/privacy`

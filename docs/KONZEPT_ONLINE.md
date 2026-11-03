@@ -151,7 +151,10 @@ Alle Anmeldewege liefern **dieselbe Antwort** `{token, expiresAt, player}`; `tok
 | `device` | `POST /auth/device` (Gast, P-028) | Test-Builds und Spieler ohne Steam/Google, jede Umgebung (Schalter `GUEST_AUTH_ENABLED`) | kein Schlüssel; nur Format der Geräte-ID und Rate-Limits je IP |
 | `steam` | `POST /auth/steam` (P14; echter Test mit eigener AppID offen) | ab eigener AppID (MP10) | Ticket bei Steam (`AuthenticateUserTicket`) |
 | `google_play` | `POST /auth/google-play` (P14) | ab Android-Build | Server-Auth-Code bei Google eintauschen |
-| `game_center` | `POST /auth/game-center` (noch nicht gebaut) | mit der iOS-Version (zum Release, D-179) | Signatur von Apple |
+| `game_center` | `POST /auth/game-center` (KF5) | mit der iOS-Version (zum Release, D-179) | Zertifikat nur von `static.gc.apple.com/public-key/`, Kette bis DigiCert Trusted Root G4, Signatur, Bundle-ID (`GAME_CENTER_BUNDLE_IDS`), Alter |
+| `password` | `POST /auth/password` (KF5) | überall | Benutzername + Passwort (argon2id); anlegen mit `PUT /me/logins/password` |
+| `apple` | `POST /auth/apple/nonce` + `POST /auth/apple` (iOS-App), Browser `/auth/oauth/apple/*` (KF5) | iOS Pflicht (D-188), Web | Identity-Token gegen Apples Schlüssel mit Server-Nonce bzw. Code-Tausch; Refresh-Token für den Widerruf |
+| `google`, `discord`, `steam` (OpenID), `email` (Magic Link) | Web-Anmeldung `POST /auth/web-login` + Website `/login/<code>#k=…` (`k` einmal gegen `browserToken` eingelöst; KF5, P-039) | Browser, aus jedem Build | OAuth-Code mit `state` (Google zusätzlich PKCE), Steam `check_authentication`, Einmal-Link; danach tippt der Mensch im Browser den Code aus dem Spiel ein (`POST /auth/web-login/confirm`) |
 
 ### 3.1 Entwicklung (Geräte-ID)
 
@@ -183,7 +186,7 @@ Wie die Gastkonten bei Among Us: Das Spiel erzeugt beim ersten Start eine zufäl
 2. `POST /auth/game-center` mit diesen Werten.
 3. API prüft: `publicKeyURL` liegt auf einer Apple-Domain, Zertifikat laden (cachen), Signatur über `teamPlayerID` + Bundle-ID + `timestamp` (uint64, Big Endian) + `salt` prüfen, `timestamp` nicht älter als wenige Minuten (TESTWERT).
 4. Identität `game_center` (Wert `teamPlayerID`) → Session (P-027).
-5. Solange nur Game Center und Play Games angeboten werden (kein Social-Login), ist „Sign in with Apple“ voraussichtlich nicht nötig (CP0 Frage 8, OFFEN).
+5. Sign in with Apple ist mit den Social-Logins auf iOS Pflicht (D-188 (2)); gebaut in KF5 (`POST /auth/apple`).
 
 ### 3.4a Konto-Profil: ein Charakter je Konto (ENTSCHIEDEN, D-152, P-034; Grenzen TESTWERT)
 

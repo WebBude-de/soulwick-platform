@@ -36,6 +36,7 @@ describe("versions and environments (P16)", () => {
         relayUrl: null,
         supportEmail: null,
         guestAuth: true,
+        loginMethods: ["device", "password"],
       });
     });
   });
@@ -66,6 +67,7 @@ describe("versions and environments (P16)", () => {
         relayUrl: "wss://play.dev.example.test/v1",
         supportEmail: "support@example.test",
         guestAuth: true,
+        loginMethods: ["device", "password"],
       });
     });
   });

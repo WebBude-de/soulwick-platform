@@ -7,8 +7,8 @@ import {
   type AccountDeletionVerifyResponse,
   DeletionCode,
 } from "@soulwick/contracts";
-import { headers } from "next/headers";
 import { apiPost } from "@/lib/api";
+import { forwardedFor } from "@/lib/client-ip";
 import {
   CONFIRM_FIELD,
   DELETION_LIMITS,
@@ -186,16 +186,4 @@ function readPreview(formData: FormData) {
     guilds,
   };
   return preview;
-}
-
-/**
- * The API rate-limits per client IP. The website calls it from its own server, so the visitor's
- * address is passed on; otherwise all visitors would share the website's limit.
- */
-async function forwardedFor(): Promise<Record<string, string>> {
-  const incoming = await headers();
-  const ip =
-    incoming.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    incoming.get("x-real-ip")?.trim();
-  return ip ? { "x-forwarded-for": ip } : {};
 }

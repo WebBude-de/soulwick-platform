@@ -1,22 +1,39 @@
 import { timingSafeEqual } from "node:crypto";
 import {
+  AppleNativeAuthRequest,
+  type AppleNonceResponse,
   DevAuthRequest,
   DeviceAuthRequest,
+  GameCenterAuthRequest,
   GooglePlayAuthRequest,
   type IdentityProvider,
+  PasswordLoginRequest,
   SteamAuthRequest,
 } from "@soulwick/contracts";
 import { Hono } from "hono";
-import { clientIp } from "../lib/client-ip.ts";
+import { clientIp, proxyTrust } from "../lib/client-ip.ts";
 import { ApiError } from "../lib/errors.ts";
+import { createLogger } from "../lib/logger.ts";
 import { fixedWindowCounter, rateLimit } from "../lib/rate-limit.ts";
-import { parseBody } from "../lib/validate.ts";
+import { iso, parseBody } from "../lib/validate.ts";
 import { requirePlayer } from "../middleware/auth.ts";
+import {
+  isAppleNativeConfigured,
+  issueAppleNonce,
+  verifyAppleNative,
+} from "../services/apple.ts";
+import { isGameCenterConfigured } from "../services/game-center.ts";
 import { isGooglePlayConfigured } from "../services/google-play.ts";
 import { identityExists } from "../services/identities.ts";
-import { issuePlayerJwt, signInPlayer } from "../services/sessions.ts";
+import { verifyPasswordLogin } from "../services/logins.ts";
+import {
+  issuePlayerJwt,
+  signInPlayer,
+  signInWithLogin,
+} from "../services/sessions.ts";
 import { isSteamConfigured } from "../services/steam.ts";
 import type { AppEnv, Deps } from "../types.ts";
+import { webLoginRoutes } from "./web-login.ts";
 
 const notConfigured = (provider: IdentityProvider) =>
   new ApiError(
@@ -35,6 +52,8 @@ function safeEqual(a: string, b: string): boolean {
 const JWKS_MAX_AGE_SECONDS = 300;
 
 const HOUR_MS = 3_600_000;
+/** TESTWERT: window of PASSWORD_FAILURES_PER_USERNAME. */
+const PASSWORD_FAILURE_WINDOW_MS = 15 * 60_000;
 
 /**
  * Player logins and tokens (P-027). The logins are thin routes over the Better Auth plugin
@@ -44,6 +63,8 @@ const HOUR_MS = 3_600_000;
  */
 export function authRoutes(deps: Deps) {
   const app = new Hono<AppEnv>();
+  const logger = createLogger(deps.config.LOG_LEVEL);
+  const now = () => deps.now?.() ?? new Date();
 
   /**
    * Test phase login: player name + random device id. Only active with DEV_AUTH_ENABLED=true and
@@ -89,7 +110,7 @@ export function authRoutes(deps: Deps) {
     "/device",
     rateLimit({
       limit: deps.config.GUEST_LOGINS_PER_MINUTE,
-      trustProxy: deps.config.TRUST_PROXY,
+      trustProxy: proxyTrust(deps.config),
       name: "auth-device",
     }),
     async (c) => {
@@ -101,7 +122,7 @@ export function authRoutes(deps: Deps) {
         );
       }
       const body = await parseBody(c, DeviceAuthRequest);
-      const ip = clientIp(c, deps.config.TRUST_PROXY);
+      const ip = clientIp(c, proxyTrust(deps.config));
       const isNew = !(await identityExists(deps.db, "device", body.deviceId));
       if (isNew) {
         const retryAfter = newGuestAccounts.blockedFor(ip);
@@ -167,17 +188,107 @@ export function authRoutes(deps: Deps) {
     );
   });
 
+  const loginLimit = (name: string) =>
+    rateLimit({
+      limit: deps.config.LOGIN_ATTEMPTS_PER_MINUTE,
+      trustProxy: proxyTrust(deps.config),
+      name,
+    });
+
   /**
-   * Game Center login, planned with iOS (contract GameCenterAuthRequest, KONZEPT_ONLINE.md §3.4).
-   * Until then 501 `not_implemented`.
+   * Game Center login of the iOS app (contract GameCenterAuthRequest, KONZEPT_ONLINE.md §3.4):
+   * signature checked with Apple's certificate. 501 until GAME_CENTER_BUNDLE_IDS is set.
    */
-  app.post("/game-center", () => {
-    throw new ApiError(
-      501,
-      "not_implemented",
-      "Game Center login is not available yet"
+  app.post("/game-center", loginLimit("auth-game-center"), async (c) => {
+    if (!isGameCenterConfigured(deps.config)) {
+      throw notConfigured("game_center");
+    }
+    const body = await parseBody(c, GameCenterAuthRequest);
+    const login = await deps.gameCenter.verify(body, now());
+    return c.json(
+      await signInWithLogin(deps, {
+        ...login,
+        name: body.name,
+        appearance: body.appearance,
+      })
     );
   });
+
+  /** Failed password logins per username (P-036 (5)); the IP limit comes on top. */
+  const passwordFailures = fixedWindowCounter({
+    limit: deps.config.PASSWORD_FAILURES_PER_USERNAME,
+    windowMs: PASSWORD_FAILURE_WINDOW_MS,
+  });
+
+  /**
+   * Username + password (KF5). Unknown username and wrong password answer the same 401
+   * `invalid_credentials`; after PASSWORD_FAILURES_PER_USERNAME failures the username is locked
+   * for the rest of the window (429, same for existing and unknown names).
+   */
+  app.post("/password", loginLimit("auth-password"), async (c) => {
+    const body = await parseBody(c, PasswordLoginRequest);
+    const key = body.username.toLowerCase();
+    const retryAfter = passwordFailures.blockedFor(key);
+    if (retryAfter !== null) {
+      c.header("Retry-After", String(retryAfter));
+      throw new ApiError(429, "rate_limited", "Too many failed logins");
+    }
+    const login = await verifyPasswordLogin(
+      deps.db,
+      body.username,
+      body.password
+    );
+    if (!login) {
+      passwordFailures.hit(key);
+      throw new ApiError(
+        401,
+        "invalid_credentials",
+        "Username or password wrong"
+      );
+    }
+    return c.json(await signInWithLogin(deps, login));
+  });
+
+  /** One-time nonce for Sign in with Apple in the iOS app (required by POST /auth/apple). */
+  app.post("/apple/nonce", loginLimit("auth-apple-nonce"), async (c) => {
+    if (!isAppleNativeConfigured(deps.config)) {
+      throw notConfigured("apple");
+    }
+    const { nonce, expiresAt } = await issueAppleNonce(
+      deps.db,
+      deps.config,
+      now()
+    );
+    const body: AppleNonceResponse = { nonce, expiresAt: iso(expiresAt) };
+    c.header("cache-control", "no-store");
+    return c.json(body, 201);
+  });
+
+  /**
+   * Sign in with Apple in the iOS app (D-188 (2)): identity token checked against Apple's keys,
+   * the authorization code gives the refresh token that is revoked when the account is deleted.
+   */
+  app.post("/apple", loginLimit("auth-apple"), async (c) => {
+    const body = await parseBody(c, AppleNativeAuthRequest);
+    const { sub, account } = await verifyAppleNative(
+      deps,
+      deps.appleKeys,
+      { ...body, now: now() },
+      logger
+    );
+    return c.json(
+      await signInWithLogin(deps, {
+        provider: "apple",
+        providerUserId: sub,
+        account: { providerId: "apple", accountId: sub, ...account },
+        name: body.name,
+        appearance: body.appearance,
+      })
+    );
+  });
+
+  // Web login from the game, browser flows and magic links (KF5): routes/web-login.ts.
+  app.route("/", webLoginRoutes(deps));
 
   /**
    * Short-lived player JWT for `hello.token` at the relay (contract `AuthTokenResponse`). Players

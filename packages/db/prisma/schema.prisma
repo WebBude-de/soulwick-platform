@@ -37,14 +37,42 @@ enum GuildRole {
   @@map("guild_role")
 }
 
-/// Where a player identity comes from (P-014, crossplay accounts). More providers follow CP0/CP1.
+/// Where a player identity comes from (P-014, crossplay accounts; KF5, P-037: `password`,
+/// `email`, `google`, `apple`, `discord`). `steam` covers the Steam ticket and Steam OpenID alike.
 enum IdentityProvider {
   steam
   device
   google_play
   game_center
+  password
+  email
+  google
+  apple
+  discord
 
   @@map("identity_provider")
+}
+
+/// Purpose of a web login request (KF5, P-039): sign in to an account or add a login to one.
+enum WebLoginIntent {
+  sign_in
+  link
+
+  @@map("web_login_intent")
+}
+
+/// State of a web login request (KF5, P-039). `awaiting_confirm` = the browser proved a login and
+/// the player has to type the game's code there; `collected` = the game picked up its session.
+/// `confirm_merge` is unused since the KF5 security fix (merges are confirmed in the same step).
+enum WebLoginStatus {
+  pending
+  confirm_merge
+  awaiting_confirm
+  completed
+  failed
+  collected
+
+  @@map("web_login_status")
 }
 
 /// How an account was deleted (deletion log, P-026).
@@ -111,6 +139,10 @@ model Player {
   cloudWorlds      CloudWorld[]
   /// Talents, equipped spells and seen flags of the account (D-194, KF3b); deleted with the account.
   accountState     AccountState?
+  /// Web login requests that add a login to this account (KF5); detached when it is deleted.
+  webLoginTargets  WebLoginRequest[]  @relation("WebLoginTarget")
+  /// Web login requests that ended on this account.
+  webLoginResults  WebLoginRequest[]  @relation("WebLoginResult")
 
   @@map("players")
 }
@@ -125,8 +157,12 @@ model PlayerIdentity {
   providerUserId String           @map("provider_user_id")
   createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   lastUsedAt     DateTime         @default(now()) @map("last_used_at") @db.Timestamptz(6)
+  /// P-037: the Better Auth account row with the secret of this identity (password hash of
+  /// `password`; `google`, `apple`, `discord`). Created, moved and deleted together with it.
+  authAccountId  String?          @unique(map: "player_identities_auth_account_id_unique") @map("auth_account_id") @db.Uuid
 
-  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  player      Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  authAccount Account? @relation(fields: [authAccountId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerUserId], map: "player_identities_provider_user_uq")
   @@index([playerId], map: "player_identities_player_id_idx")
@@ -242,8 +278,11 @@ model Session {
   @@map("auth_sessions")
 }
 
-/// Better Auth account: `provider_id = 'credential'` holds the argon2id hash of an admin password
-/// (Bun.password, same PHC strings as the former admin_users.password_hash).
+/// Better Auth account: `provider_id = 'credential'` holds the argon2id hash of a password
+/// (Bun.password, same PHC strings as the former admin_users.password_hash). Rows of players
+/// belong to exactly one player identity (P-037): `credential` for `password`, `google`, `apple`,
+/// `discord` with `account_id` = the provider's user id. Only Apple keeps a (encrypted) refresh
+/// token, to revoke it when the account is deleted (P-039).
 model Account {
   id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   accountId             String    @map("account_id")
@@ -258,8 +297,12 @@ model Account {
   password              String?
   createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  /// OAuth client the tokens were issued to (Apple: Services ID on the web, bundle id in the
+  /// iOS app); revoking a token needs the same client (P-039).
+  clientId              String?   @map("client_id")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  identity PlayerIdentity?
 
   @@index([userId], map: "auth_accounts_user_id_idx")
   @@map("auth_accounts")
@@ -668,4 +711,74 @@ model CloudWorldBackup {
   @@index([cloudWorldId, createdAt], map: "cloud_world_backups_world_created_at_idx")
   @@index([expiresAt], map: "cloud_world_backups_expires_at_idx")
   @@map("cloud_world_backups")
+}
+
+// ---------------------------------------------------------------------------
+// Player logins on the web (KF5, P-036, P-039)
+// ---------------------------------------------------------------------------
+
+/// A web login started by the game (or the website's server): the game opens
+/// `<WEB_URL>/login/<code>`, the player proves a login in the browser (OAuth, Steam OpenID, magic
+/// link), the game collects the session with the poll secret. Only HMACs of code and secrets are
+/// stored. Lives WEB_LOGIN_TTL_SECONDS (TESTWERT); expired rows go in the housekeeping.
+model WebLoginRequest {
+  id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  codeHash          String            @unique(map: "web_login_requests_code_hash_unique") @map("code_hash")
+  pollSecretHash    String            @map("poll_secret_hash")
+  /// HMAC of the browser secret (`#k=` in the URL the game opens); claimed once for a token.
+  browserSecretHash String?           @map("browser_secret_hash")
+  /// When `k` was traded for the browser token (then `k` is worthless).
+  browserClaimedAt  DateTime?         @map("browser_claimed_at") @db.Timestamptz(6)
+  /// HMAC of the browser token the website uses for this request (claim, OAuth start, magic link).
+  browserTokenHash  String?           @map("browser_token_hash")
+  /// HMAC of the code the game shows and the player types to confirm.
+  userCodeHash      String?           @map("user_code_hash")
+  /// Wrong typed codes; at WEB_LOGIN_CONFIRM_MAX_ATTEMPTS the request fails.
+  confirmAttempts   Int               @default(0) @map("confirm_attempts")
+  intent            WebLoginIntent
+  /// `link`: the account that gets the new login; null after that account was deleted.
+  playerId          String?           @map("player_id") @db.Uuid
+  status            WebLoginStatus    @default(pending)
+  /// Provider of the proven login (set when the browser finished).
+  provider          IdentityProvider?
+  /// The account the game signs in to when it collects the session.
+  resultPlayerId    String?           @map("result_player_id") @db.Uuid
+  /// true = two accounts with progress were merged after the confirmation in the browser.
+  merged            Boolean           @default(false)
+  /// The account that was absorbed into the result (link with an empty account, or a merge).
+  removedPlayerId   String?           @map("removed_player_id") @db.Uuid
+  /// Stable error code of a failed request (e.g. `banned`, `merge_blocked_banned`).
+  error             String?
+  /// `awaiting_confirm`: HMAC of the secret the browser needs to confirm.
+  confirmSecretHash String?           @map("confirm_secret_hash")
+  /// `awaiting_confirm`: the proven login, applied once the browser confirms (secrets encrypted).
+  pendingLogin      Json?             @map("pending_login")
+  /// Language of mails sent for this request (`en`, `de`).
+  locale            String            @default("en")
+  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt         DateTime          @map("expires_at") @db.Timestamptz(6)
+  completedAt       DateTime?         @map("completed_at") @db.Timestamptz(6)
+
+  player       Player? @relation("WebLoginTarget", fields: [playerId], references: [id], onDelete: SetNull)
+  resultPlayer Player? @relation("WebLoginResult", fields: [resultPlayerId], references: [id], onDelete: SetNull)
+
+  @@index([expiresAt], map: "web_login_requests_expires_at_idx")
+  @@map("web_login_requests")
+}
+
+/// Provider tokens to revoke (Apple requires it when an account is deleted or Sign in with Apple
+/// is unlinked; P-039). Written in the same transaction as the deletion, sent right after it and
+/// retried by the housekeeping; the token is encrypted with a key derived from BETTER_AUTH_SECRET.
+model OAuthTokenRevocation {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider      String
+  clientId      String   @map("client_id")
+  token         String
+  tokenType     String   @map("token_type")
+  attempts      Int      @default(0)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  nextAttemptAt DateTime @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
+
+  @@index([nextAttemptAt], map: "oauth_token_revocations_next_attempt_at_idx")
+  @@map("oauth_token_revocations")
 }

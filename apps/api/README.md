@@ -118,7 +118,22 @@ Der Seed **verweigert `NODE_ENV=production`**. Im Docker-Image ist er nur für d
 | `STEAM_WEB_API_KEY`, `STEAM_APP_ID` | nein | – | Steam-Login (Publisher-Schlüssel); ohne beide antwortet `/auth/steam` mit `501 provider_not_configured` |
 | `STEAM_TICKET_IDENTITY` | nein | `soulwick` | Identity-String, den das Spiel an `GetAuthTicketForWebApi` übergibt |
 | `GOOGLE_PLAY_CLIENT_ID`, `GOOGLE_PLAY_CLIENT_SECRET` | nein | – | Web-OAuth-Client für Play Games Services (Server-Auth-Code); ohne beide antwortet `/auth/google-play` mit 501 |
-| `EXTERNAL_AUTH_TIMEOUT_MS` | nein | `8000` | TESTWERT: Zeitlimit je Aufruf bei Steam/Google |
+| `EXTERNAL_AUTH_TIMEOUT_MS` | nein | `8000` | TESTWERT: Zeitlimit je Aufruf bei Steam/Google/Apple/Discord und beim Mail-Worker |
+| `WEB_URL` | nein | `http://localhost:3100` | Öffentliche Website (KF5): das Spiel öffnet `<WEB_URL>/login/<code>`, Magic Links zeigen auf `<WEB_URL>/login/magic`, die Browser-Abläufe enden auf `<WEB_URL>/login/…`; in production `https://…` Pflicht |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | nein | – | Google-Anmeldung im Browser (OAuth-Client „Webanwendung“, Weiterleitungs-URI `<BETTER_AUTH_URL>/auth/oauth/google/callback`); nur zusammen; leer = aus |
+| `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` | nein | – | Discord-Anmeldung im Browser (OAuth2-App, Redirect `<BETTER_AUTH_URL>/auth/oauth/discord/callback`); nur zusammen; leer = aus |
+| `APPLE_CLIENT_ID` | nein | – | Sign in with Apple im Browser: Services ID (Return URL `<BETTER_AUTH_URL>/auth/oauth/apple/callback`); braucht den Schlüssel unten |
+| `APPLE_APP_BUNDLE_ID` | nein | – | Sign in with Apple in der iOS-App (`POST /auth/apple`, Zielgruppe des Identity-Tokens); leer = aus |
+| `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` | nein | – | Schlüssel für Sign in with Apple (`.p8`, PEM; `\n` statt Zeilenumbrüchen erlaubt); nur zusammen; damit signiert die API das Client-Secret, holt Refresh-Tokens und widerruft sie beim Löschen |
+| `STEAM_OPENID_ENABLED` | nein | `false` | Steam-Anmeldung im Browser über OpenID 2.0 (kein Schlüssel nötig; dieselbe `steam`-Identität wie das Ticket) |
+| `GAME_CENTER_BUNDLE_IDS` | nein | leer | Bundle-IDs der iOS-App für `POST /auth/game-center`, kommagetrennt; leer = `501 provider_not_configured` |
+| `MAIL_ADAPTER` | nein | `off` | Mailversand der Magic Links (D-196): `off` (keine Magic Links, 501), `log` (nur Entwicklung: die Mail steht im API-Log), `cloudflare` (HTTPS an den Mail-Worker) |
+| `MAIL_FROM` | bei `cloudflare` | leer | Absender, z. B. `Soulwick <login@playsoulwick.com>` |
+| `MAIL_CLOUDFLARE_URL`, `MAIL_CLOUDFLARE_KEY` | bei `cloudflare` | leer | Adresse und Schlüssel (≥ 32 Zeichen, `Authorization: Bearer`) des Cloudflare-Mail-Workers; Vertrag siehe „Anmeldung für Spieler“ |
+| `LOGIN_ATTEMPTS_PER_MINUTE` | nein | `20` | TESTWERT: Anmeldeversuche je IP und Minute (`/auth/password`, `/auth/apple`, `/auth/game-center`, `/auth/web-login`, Browser-Abläufe, Magic-Link-Bestätigung, `/me/logins`) |
+| `PASSWORD_FAILURES_PER_USERNAME` | nein | `10` | TESTWERT: Fehlversuche je Benutzername in 15 min, danach `429` (gleich für bekannte und unbekannte Namen) |
+| `MAGIC_LINKS_PER_HOUR` | nein | `10` | TESTWERT: Magic-Link-Mails je IP und Stunde (`429`) |
+| `MAGIC_LINKS_PER_ADDRESS_PER_HOUR` | nein | `3` | TESTWERT: Magic-Link-Mails je Adresse und Stunde; darüber still nicht gesendet (gleiche Antwort) |
 | `CORS_ORIGINS` | nein | leer | Erlaubte Browser-Origins, kommagetrennt |
 | `RATE_LIMIT_PER_MINUTE` | nein | `120` | TESTWERT: Anfragen je IP und Minute (Admin-Login: 10) |
 | `LINK_ATTEMPTS_PER_MINUTE` | nein | `10` | TESTWERT: `POST /me/link` je IP und Minute (Verknüpfungscodes nicht erratbar) |
@@ -128,6 +143,7 @@ Der Seed **verweigert `NODE_ENV=production`**. Im Docker-Image ist er nur für d
 | `WORLD_WRITES_PER_HOUR` | nein | `120` | TESTWERT: Schreibzugriffe auf Cloud-Welten (`PUT`, `DELETE`, Wiederherstellen, aus dem Archiv holen unter `/me/worlds`) je Konto und Stunde (D-188, P-038) |
 | `BUG_REPORT_RETENTION_DAYS` | nein | `90` | TESTWERT: Bug-Meldungen werden so viele Tage nach dem Eingang automatisch gelöscht (beim Start der API und dann alle 24 h) |
 | `TRUST_PROXY` | nein | `true` | Client-IP aus `X-Forwarded-For` (hinter Dokploy/Traefik); lokal `false` (`.env.example`) |
+| `TRUSTED_PROXY_CIDRS` | nein | leer | Nur Verbindungen aus diesen Adressen/CIDRs (kommagetrennt) dürfen `CF-Connecting-IP`/`X-Forwarded-For` setzen; leer = jede Gegenstelle. Empfehlung: Docker-Netz von Traefik (`infra/DOKPLOY.md`) |
 | `MIN_SECONDS_PER_ROOM` | nein | `8` | TESTWERT: schnellere Runs werden markiert |
 | `KNOWN_GAME_VERSIONS` | nein | leer | Bekannte Spielversionen, kommagetrennt; leer = keine Prüfung |
 | `MIN_GAME_VERSION` | nein | leer | Älteste Spielversion mit Online-Funktionen (z. B. `1.0.0`), in `/health` und `/public/config`; leer = keine Grenze (P16) |
@@ -145,6 +161,53 @@ Der Seed **verweigert `NODE_ENV=production`**. Im Docker-Image ist er nur für d
 | `ERECHT24_PLUGIN_KEY` | nein | leer | Plugin-/Entwickler-Schlüssel von eRecht24 (Header `eRecht24-plugin-key`); wie bei DapItUp Pflicht für den Abruf |
 | `DEFAULT_ADMIN_EMAIL` | nein | leer | Basis-Seed (`db:seed`, jeder Container-Start): E-Mail des Start-Admins; nur angelegt, solange es die Adresse nicht gibt, nie überschrieben |
 | `DEFAULT_ADMIN_PASSWORD` | nein | leer (Dev-Seed: `soulwick-admin-local`) | Basis-Seed: Passwort des Start-Admins (≥ 12 Zeichen; in production nicht der lokale Standard); nach dem ersten Login unter „Mein Konto“ ändern und die Variable entfernen. Dev-Seed: Passwort neu angelegter Zugänge `admin@soulwick.local` und `moderator@soulwick.local` |
+
+## Anmeldung für Spieler (KF5, D-188, P-036, P-037, P-039)
+
+Verträge: `packages/contracts/src/login.ts` (dazu `IdentityProvider` und `IdentitySummary.label` in
+`identity.ts`, `LoginMethod` und `PublicConfig.loginMethods` in `common.ts`). Welche Arten eine
+Umgebung anbietet, meldet `GET /public/config` (`loginMethods`); ohne ihre Variablen ist eine Art aus.
+
+- **Konto-Modell (P-037):** `player_identities` ist die einzige Liste der Anmeldungen. Passwort-Hash
+  (`credential`) und die Zeilen von Google, Apple, Discord liegen in `auth_accounts`, verbunden über
+  `player_identities.auth_account_id`; die per Magic Link bewiesene Adresse steht in `auth_users.email`
+  des Spielers. Nichts wird über eine gleiche E-Mail verknüpft; Social-Logins fragen nur die
+  Nutzer-ID ab (Google `openid`, Discord `identify`, Apple ohne Scope) und speichern keine Namen
+  oder Adressen.
+- **Benutzername + Passwort:** `PUT /me/logins/password` (anlegen oder ändern, die Sitzung ist der
+  Nachweis), `POST /auth/password`. Benutzername privat, 3–24 Zeichen `a-z 0-9 . _ -`, Passwort ≥ 10.
+- **Web-Anmeldung aus dem Spiel:** `POST /auth/web-login` (`intent` `sign_in` oder mit Sitzung
+  `link`) → `code`, `userCode` (zeigt das Spiel), `browserSecret`, `pollSecret`, `url`
+  (`<WEB_URL>/login/<code>#k=<browserSecret>`); das Spiel fragt `POST /auth/web-login/poll` alle 2 s
+  und bekommt die Sitzung genau einmal. Die Website löst `k` einmal ein (`POST /auth/web-login/claim`
+  → `browserToken`; danach ist `k` wertlos), liest `GET /auth/web-login/:code` mit Header
+  `x-browser-token` (Kontodaten nur mit `?confirm=`), startet Anbieter per Formular-Post
+  `POST /auth/oauth/:provider/start` (`code`, `browserToken`; `google`, `apple`, `discord`,
+  `steam` = Steam OpenID) oder sendet `POST /auth/magic-link` mit `browserToken`. Rückrufe an
+  die API leiten auf `<WEB_URL>/login/<code>?confirm=…` (bzw. `?error=…`). **Abgeschlossen wird erst mit
+  `POST /auth/web-login/confirm {code, confirmSecret, typedCode}`:** Der Mensch im Browser tippt den Code
+  aus dem Spiel ein (5 Fehlversuche, dann verfällt die Anfrage). Dieselbe Bestätigung deckt das
+  Aufnehmen eines leeren Kontos und das Zusammenführen zweier Konten mit Fortschritt ab; die Seite zeigt
+  vorher, mit welchem Konto das Spiel angemeldet wird (P-039, Sicherheitsfix 03.11.2026).
+- **Magic Link:** Mail mit `<WEB_URL>/login/magic?token=…` (15 min, einmal), die sagt, dass ein
+  ANDERES Gerät angemeldet wird; die Seite zeigt `GET /auth/magic-link/preview`, löst per Knopf
+  `POST /auth/magic-link/verify` aus (Mail-Scanner öffnen nur Links) und fragt danach den Code aus dem
+  Spiel ab wie oben.
+- **Apple in der iOS-App:** zuerst `POST /auth/apple/nonce` (einmalig, 5 min), SHA-256 davon in die
+  Apple-Anfrage, dann `POST /auth/apple` bzw. `POST /me/logins` mit `identityToken` und `nonce`.
+- **Im Spiel hinzufügen:** `POST /me/logins` mit Steam-Ticket, Play-Games-Code, Apple-Identity-Token,
+  Game-Center-Signatur oder Geräte-ID eines Gastkontos; leere Konten gehen still auf, sonst
+  `409 account_has_progress` bis `confirmMerge: true` (wie `POST /me/link`).
+- **Apple:** Refresh-Tokens liegen verschlüsselt (AES-256-GCM, Schlüssel aus `BETTER_AUTH_SECRET`)
+  in `auth_accounts`; Löschen des Kontos oder Trennen von Apple stellt sie in
+  `oauth_token_revocations` ein, die API widerruft sie sofort und wiederholt Fehlschläge im
+  Housekeeping.
+- **Mail-Worker (`MAIL_ADAPTER=cloudflare`):** `POST <MAIL_CLOUDFLARE_URL>` mit
+  `Authorization: Bearer <MAIL_CLOUDFLARE_KEY>` und JSON `{ from, to, subject, text, html }`; jede
+  2xx-Antwort heißt angenommen. Lokal reicht `MAIL_ADAPTER=log` (Link im API-Log).
+- **Dev-Seed:** Lumen hat Benutzername `lumen` mit Passwort `soulwick-player-local` und die Adresse
+  `lumen@soulwick.test`. Das Passwort gilt nur bei einer Datenbank auf `localhost`; auf einem Server
+  braucht der Passwort-Login `DEV_PLAYER_PASSWORD` (≥ 12 Zeichen), sonst wird er nicht angelegt.
 
 ## Befehle
 
@@ -174,9 +237,11 @@ Betrieb auf dem Server: [infra/DOKPLOY.md](../../infra/DOKPLOY.md).
 
 Spieler (Header `Authorization: Bearer <token>`):
 
-- `GET /health` (mit `minGameVersion`, `protocolVersion`), `GET /public/config` (`apiVersion`, `minGameVersion`, `protocolVersion`, `relayUrl`, `supportEmail`, `guestAuth`)
-- `POST /auth/dev`, `POST /auth/device` (Gast, P-028), `POST /auth/steam`, `POST /auth/google-play`, `POST /auth/game-center` (noch 501):
+- `GET /health` (mit `minGameVersion`, `protocolVersion`), `GET /public/config` (`apiVersion`, `minGameVersion`, `protocolVersion`, `relayUrl`, `supportEmail`, `guestAuth`, `loginMethods`)
+- `POST /auth/dev`, `POST /auth/device` (Gast, P-028), `POST /auth/steam`, `POST /auth/google-play`, `POST /auth/game-center`,
+  `POST /auth/password`, `POST /auth/apple` (iOS-App):
   Antwort `{token, expiresAt, player}`, `token` = Better-Auth-Session-Token (30 Tage) für `Authorization: Bearer`
+- Web-Anmeldung und „Anmeldung hinzufügen“ (KF5): siehe Abschnitt „Anmeldung für Spieler“
 - `GET /auth/token` (Bearer, nur Spieler): `{token, expiresAt}`, JWT für `hello.token` am Relay (EdDSA,
   15 min, Claims `sub` = Spieler-ID, `name`, `iat`, `exp`, `iss`, `aud` = `soulwick-relay`);
   `GET /auth/jwks` (öffentlich): Schlüssel dazu

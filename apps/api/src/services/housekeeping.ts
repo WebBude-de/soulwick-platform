@@ -1,8 +1,10 @@
 import type { Config } from "../config.ts";
 import type { Logger } from "../lib/logger.ts";
+import { sendRevocations } from "./apple.ts";
 import { deleteExpiredBugReports } from "./bug-reports.ts";
 import type { Db } from "./db-types.ts";
 import { deleteOldNameChanges } from "./profile.ts";
+import { deleteExpiredWebLogins } from "./web-login.ts";
 import { deleteExpiredWorldData } from "./worlds.ts";
 
 /** How often the cleanup runs after the one at start-up. */
@@ -11,19 +13,23 @@ export const HOUSEKEEPING_INTERVAL_MS = 24 * 3_600_000;
 /**
  * One cleanup pass: deletes bug reports past BUG_REPORT_RETENTION_DAYS (P-033), name changes
  * past NAME_HISTORY_RETENTION_DAYS (P-034) and expired cloud world backups and archived worlds
- * (WORLD_BACKUP_RETENTION_DAYS, WORLD_ARCHIVE_RETENTION_DAYS; P-038). Errors are logged,
+ * (WORLD_BACKUP_RETENTION_DAYS, WORLD_ARCHIVE_RETENTION_DAYS; P-038), expired web login
+ * requests, OAuth states and magic links, and retries due Apple token revocations (KF5,
+ * P-039). Errors are logged,
  * never thrown, so a database hiccup does not stop the API; the next pass catches up.
  */
 export async function runHousekeeping(deps: {
   db: Db;
   config: Config;
   logger: Logger;
+  fetch?: typeof fetch;
   now?: () => Date;
 }): Promise<{
   bugReports: number;
   nameChanges: number;
   worldBackups: number;
   worlds: number;
+  webLogins: number;
 } | null> {
   const now = deps.now?.() ?? new Date();
   try {
@@ -34,6 +40,9 @@ export async function runHousekeeping(deps: {
     );
     const nameChanges = await deleteOldNameChanges(deps.db, now);
     const worlds = await deleteExpiredWorldData(deps.db, now);
+    // Expired web login requests, OAuth states and magic links (KF5); due Apple revocations.
+    const webLogins = await deleteExpiredWebLogins(deps.db, now);
+    await sendRevocations(deps);
     if (
       bugReports > 0 ||
       nameChanges > 0 ||
@@ -52,6 +61,7 @@ export async function runHousekeeping(deps: {
       nameChanges,
       worldBackups: worlds.backups,
       worlds: worlds.worlds,
+      webLogins,
     };
   } catch (err) {
     deps.logger.error("housekeeping_failed", {

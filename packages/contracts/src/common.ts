@@ -131,6 +131,33 @@ export const PaginationQuery = z.object({
 export type PaginationQuery = z.infer<typeof PaginationQuery>;
 
 /**
+ * Login methods of a player (KF5, P-036, P-039), as reported by `GET /public/config`
+ * (`loginMethods`): only methods that are configured in this environment are listed.
+ * - `device` guest login per device (POST /auth/device), `password` username + password
+ *   (POST /auth/password), `email` magic link (needs a mail adapter);
+ * - `google`, `apple`, `discord`, `steam` (Steam OpenID): browser flows of the web login
+ *   (POST /auth/oauth/:provider/start, website page `/login/<code>`);
+ * - `steam_ticket` (POST /auth/steam), `google_play` (POST /auth/google-play), `apple_native`
+ *   (POST /auth/apple, Sign in with Apple on iOS), `game_center` (POST /auth/game-center): logins
+ *   inside the game on the respective platform.
+ * New values may be added; clients ignore values they do not know.
+ */
+export const LoginMethod = z.enum([
+  "device",
+  "password",
+  "email",
+  "google",
+  "apple",
+  "discord",
+  "steam",
+  "steam_ticket",
+  "google_play",
+  "apple_native",
+  "game_center",
+]);
+export type LoginMethod = z.infer<typeof LoginMethod>;
+
+/**
  * GET /public/config: what a game build needs to know about its environment (P16, P-018).
  * Cached for 60 s.
  */
@@ -152,5 +179,10 @@ export const PublicConfig = z.object({
    * Optional for older API builds (missing = treat as false).
    */
   guestAuth: z.boolean().optional(),
+  /**
+   * Login methods configured in this environment (KF5). Optional for older API builds (missing =
+   * only the methods the game knew before). Values may be added; ignore unknown ones.
+   */
+  loginMethods: z.array(LoginMethod).optional(),
 });
 export type PublicConfig = z.infer<typeof PublicConfig>;

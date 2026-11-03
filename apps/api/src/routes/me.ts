@@ -1,5 +1,7 @@
 import {
   ACCOUNT_STATE_MAX_BODY_BYTES,
+  AddLoginRequest,
+  type AddLoginResponse,
   AddXpRequest,
   type DeletionCodeResponse,
   type IdentityList,
@@ -10,10 +12,12 @@ import {
   MAX_GUILDS_PER_PLAYER,
   type MyGuildList,
   PutAccountStateRequest,
+  SetPasswordLoginRequest,
   UpdateProfileRequest,
 } from "@soulwick/contracts";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
+import { proxyTrust } from "../lib/client-ip.ts";
 import { ApiError } from "../lib/errors.ts";
 import { createLogger } from "../lib/logger.ts";
 import { rateLimit } from "../lib/rate-limit.ts";
@@ -26,12 +30,15 @@ import {
 } from "../services/account-deletion.ts";
 import { createLinkCode, redeemLinkCode } from "../services/account-link.ts";
 import { getAccountState, putAccountState } from "../services/account-state.ts";
+import { sendRevocationsSoon } from "../services/apple.ts";
 import { listMyGuilds, toPlayerSelf } from "../services/guilds.ts";
 import {
   listIdentitySummaries,
   unlinkProvider,
 } from "../services/identities.ts";
+import { addLogin, setPasswordLogin } from "../services/logins.ts";
 import { updateProfile } from "../services/profile.ts";
+import { proveLogin } from "../services/prove-login.ts";
 import { issuePlayerSession } from "../services/sessions.ts";
 import { addXp } from "../services/xp.ts";
 import type { AppEnv, Deps } from "../types.ts";
@@ -81,6 +88,7 @@ export function meRoutes(deps: Deps) {
       wasBanned: result.wasBanned,
       guildDisbanded: result.guilds?.some((g) => g.disbanded) ?? false,
     });
+    sendRevocationsSoon(deps);
     return c.body(null, 204);
   });
 
@@ -157,12 +165,80 @@ export function meRoutes(deps: Deps) {
   app.delete("/identities/:provider", async (c) => {
     const provider = parseParam(c, "provider", IdentityProvider);
     const player = c.get("player");
-    await unlinkProvider(deps.db, player.id, provider);
+    const { revocations } = await unlinkProvider(deps.db, player.id, provider);
+    if (revocations > 0) {
+      sendRevocationsSoon(deps);
+    }
     const body: IdentityList = {
       items: await listIdentitySummaries(deps.db, player.id),
     };
     return c.json(body);
   });
+
+  // --- adding logins (KF5, P-036 (2)) ------------------------------------------------------------
+
+  /** Adds or changes the password login of the own account; the session is the proof. */
+  app.put(
+    "/logins/password",
+    rateLimit({
+      // `username_taken` tells whether a username exists: keep that slow.
+      limit: deps.config.LOGIN_ATTEMPTS_PER_MINUTE,
+      trustProxy: proxyTrust(deps.config),
+      name: "me-logins-password",
+    }),
+    async (c) => {
+      const body = await parseBody(c, SetPasswordLoginRequest);
+      const player = c.get("player");
+      await setPasswordLogin(deps.db, {
+        playerId: player.id,
+        username: body.username,
+        password: body.password,
+        now: now(),
+      });
+      const response: IdentityList = {
+        items: await listIdentitySummaries(deps.db, player.id),
+      };
+      return c.json(response);
+    }
+  );
+
+  /**
+   * Proves a further login inside the game and adds it (Steam ticket, Play Games, Apple, Game
+   * Center, the device id of a guest account); an account that already has it is merged by
+   * D-122/D-188 (409 `account_has_progress` until `confirmMerge`). See AddLoginRequest.
+   */
+  app.post(
+    "/logins",
+    rateLimit({
+      limit: deps.config.LOGIN_ATTEMPTS_PER_MINUTE,
+      trustProxy: proxyTrust(deps.config),
+      name: "me-logins",
+    }),
+    async (c) => {
+      const body = await parseBody(c, AddLoginRequest);
+      const caller = c.get("player");
+      const login = await proveLogin(deps, body, logger);
+      const result = await addLogin(deps.db, {
+        playerId: caller.id,
+        login,
+        confirmMerge: body.confirmMerge,
+        now: now(),
+      });
+      logger.info("login_added", {
+        provider: login.provider,
+        merged: result.merged,
+        removedPlayerId: result.removedPlayerId ?? undefined,
+      });
+      const session = await issuePlayerSession(deps, result.remaining);
+      const response: AddLoginResponse = {
+        ...session,
+        merged: result.merged,
+        removedPlayerId: result.removedPlayerId,
+        identities: await listIdentitySummaries(deps.db, result.remaining.id),
+      };
+      return c.json(response);
+    }
+  );
 
   app.post("/link-code", async (c) => {
     const { code, expiresAt } = await createLinkCode(
@@ -180,7 +256,7 @@ export function meRoutes(deps: Deps) {
     rateLimit({
       // Codes have 31^6 values; guessing must stay slow.
       limit: deps.config.LINK_ATTEMPTS_PER_MINUTE,
-      trustProxy: deps.config.TRUST_PROXY,
+      trustProxy: proxyTrust(deps.config),
       name: "me-link",
     }),
     async (c) => {

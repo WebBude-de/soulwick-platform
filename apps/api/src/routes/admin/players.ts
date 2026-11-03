@@ -28,6 +28,7 @@ import {
 import { requireRole } from "../../middleware/auth.ts";
 import { adminDeletePlayer } from "../../services/account-deletion.ts";
 import { listAdminRuns } from "../../services/admin-runs.ts";
+import { sendRevocationsSoon } from "../../services/apple.ts";
 import { writeAudit } from "../../services/audit.ts";
 import { activeBanWhere, isBanActive } from "../../services/bans.ts";
 import { findMemberships } from "../../services/guilds.ts";
@@ -318,6 +319,7 @@ export function adminPlayerRoutes(deps: Deps) {
       wasBanned: result.wasBanned,
       guildDisbanded: result.guilds?.some((g) => g.disbanded) ?? false,
     });
+    sendRevocationsSoon(deps);
     return c.json(result);
   });
 

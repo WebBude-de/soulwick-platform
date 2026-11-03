@@ -6,7 +6,7 @@ import {
 } from "@soulwick/contracts";
 import { Hono, type MiddlewareHandler } from "hono";
 import { bodyLimit } from "hono/body-limit";
-import { clientIp } from "../lib/client-ip.ts";
+import { clientIp, proxyTrust } from "../lib/client-ip.ts";
 import { ApiError } from "../lib/errors.ts";
 import { decodeImage } from "../lib/image.ts";
 import { fixedWindowCounter } from "../lib/rate-limit.ts";
@@ -40,7 +40,7 @@ export function bugReportRoutes(deps: Deps) {
    */
   const uploadLimit: MiddlewareHandler<AppEnv> = async (c, next) => {
     const playerKey = c.get("player").id;
-    const ipKey = clientIp(c, deps.config.TRUST_PROXY);
+    const ipKey = clientIp(c, proxyTrust(deps.config));
     const retryAfter = Math.max(
       perPlayer.blockedFor(playerKey) ?? 0,
       perIp.blockedFor(ipKey) ?? 0

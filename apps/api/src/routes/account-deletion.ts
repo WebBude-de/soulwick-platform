@@ -5,6 +5,7 @@ import {
   type AccountDeletionVerifyResponse,
 } from "@soulwick/contracts";
 import { Hono } from "hono";
+import { proxyTrust } from "../lib/client-ip.ts";
 import { createLogger } from "../lib/logger.ts";
 import { rateLimit } from "../lib/rate-limit.ts";
 import { hmacSecret } from "../lib/secrets.ts";
@@ -13,6 +14,7 @@ import {
   confirmAccountDeletion,
   verifyDeletionCode,
 } from "../services/account-deletion.ts";
+import { sendRevocationsSoon } from "../services/apple.ts";
 import type { AppEnv, Deps } from "../types.ts";
 
 const HOUR_MS = 3_600_000;
@@ -33,7 +35,7 @@ export function accountDeletionRoutes(deps: Deps) {
     rateLimit({
       limit: deps.config.DELETION_REQUESTS_PER_HOUR,
       windowMs: HOUR_MS,
-      trustProxy: deps.config.TRUST_PROXY,
+      trustProxy: proxyTrust(deps.config),
       name: "account-deletion-verify",
     }),
     async (c) => {
@@ -67,6 +69,7 @@ export function accountDeletionRoutes(deps: Deps) {
       wasBanned: result.wasBanned,
       guildDisbanded: result.guilds?.some((g) => g.disbanded) ?? false,
     });
+    sendRevocationsSoon(deps);
     const response: AccountDeletionConfirmResponse = {
       deleted: true,
       deletedAt: iso(at),

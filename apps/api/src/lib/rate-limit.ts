@@ -1,5 +1,5 @@
 import type { Context, MiddlewareHandler } from "hono";
-import { clientIp } from "./client-ip.ts";
+import { clientIp, type ProxyTrust } from "./client-ip.ts";
 
 interface Bucket {
   count: number;
@@ -57,7 +57,7 @@ export function fixedWindowCounter(opts: { limit: number; windowMs: number }) {
 export function rateLimit(opts: {
   limit: number;
   windowMs?: number;
-  trustProxy: boolean;
+  trustProxy: ProxyTrust;
   /** Separate buckets for separate limiters. */
   name?: string;
   /** Requests for which this returns true are not counted (e.g. the relay's internal calls). */

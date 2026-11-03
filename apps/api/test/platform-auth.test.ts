@@ -371,10 +371,10 @@ describe("platform login (P14)", () => {
     });
   });
 
-  it("game center is planned: 501 not_implemented", async () => {
+  it("game center without GAME_CENTER_BUNDLE_IDS: 501 provider_not_configured (KF5)", async () => {
     const res = await ctx.req("POST", "/auth/game-center", { body: {} });
     expect(res.status).toBe(501);
-    expect(res.json.error).toBe("not_implemented");
+    expect(res.json.error).toBe("provider_not_configured");
   });
 });
 

@@ -15,12 +15,22 @@ import { AuthResponse } from "./player.ts";
  * P-014). Every login route answers with the same `AuthResponse` as `/auth/dev` and `/auth/steam`.
  */
 
-/** Where an identity comes from. One Soulwick account can have several identities (D-121). */
+/**
+ * Where an identity comes from. One Soulwick account can have several identities (D-121). Since
+ * KF5 (P-037) also `password` (username + password), `email` (magic link), `google`, `apple`,
+ * `discord`; `steam` is both the Steam ticket and Steam OpenID in the browser (same Steam id).
+ * Older game builds show unknown providers neutrally.
+ */
 export const IdentityProvider = z.enum([
   "steam",
   "device",
   "google_play",
   "game_center",
+  "password",
+  "email",
+  "google",
+  "apple",
+  "discord",
 ]);
 export type IdentityProvider = z.infer<typeof IdentityProvider>;
 
@@ -43,10 +53,13 @@ export const GooglePlayAuthRequest = z.object({
 export type GooglePlayAuthRequest = z.infer<typeof GooglePlayAuthRequest>;
 
 /**
- * POST /auth/game-center (planned with iOS; the route answers 501 `not_implemented` until then).
- * Values from GKLocalPlayer `fetchItems(forIdentityVerificationSignature:)`; the server checks
- * that `publicKeyUrl` is an Apple domain, verifies the signature over
- * playerId + bundleId + timestamp (uint64 big endian) + salt and the age of `timestamp`.
+ * POST /auth/game-center (KF5): values from GKLocalPlayer
+ * `fetchItems(forIdentityVerificationSignature:)`. The server checks that `publicKeyUrl` is an
+ * https URL on an apple.com host, loads that certificate, verifies the signature over
+ * playerId + bundleId + timestamp (uint64 big endian) + salt, the bundle id
+ * (GAME_CENTER_BUNDLE_IDS) and the age of `timestamp` (GAME_CENTER_MAX_AGE_SECONDS). Answer
+ * `AuthResponse`. Errors: 501 `provider_not_configured`, 401 `invalid_game_center_signature`,
+ * 502 `game_center_unavailable` (certificate not loadable), 403 `banned`, 429 `rate_limited`.
  */
 export const GameCenterAuthRequest = z.object({
   publicKeyUrl: z.url(),
@@ -60,6 +73,8 @@ export const GameCenterAuthRequest = z.object({
   playerId: z.string().trim().min(1).max(128),
   bundleId: z.string().trim().min(1).max(255),
   name: PlayerName.optional(),
+  /** Character used when the account is created (P-034). */
+  appearance: PlayerAppearance.optional(),
 });
 export type GameCenterAuthRequest = z.infer<typeof GameCenterAuthRequest>;
 
@@ -70,8 +85,17 @@ export const IdentitySummary = z.object({
   /** Row id of the identity (not the provider user id). */
   id: Uuid,
   provider: IdentityProvider,
-  /** Last characters of the provider user id for recognition, e.g. "***0001". */
+  /**
+   * Last characters of the provider user id for recognition, e.g. "***0001"; for `email` the
+   * masked address ("lu***@example.org").
+   */
   maskedId: z.string(),
+  /**
+   * What the owner recognises the login by (KF5): the username of `password`, the masked address
+   * of `email`; null for the other providers. Never shown to other players. Optional for older
+   * API builds.
+   */
+  label: z.string().nullable().optional(),
   createdAt: IsoDateTime,
   lastUsedAt: IsoDateTime,
 });

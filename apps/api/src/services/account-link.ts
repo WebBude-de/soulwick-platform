@@ -16,12 +16,17 @@ import { findActiveBan } from "./bans.ts";
 import type { Tx } from "./db-types.ts";
 import { findMemberships, higherRole, removeMember } from "./guilds.ts";
 import { findIdentities } from "./identities.ts";
+import {
+  clearPlayerEmail,
+  ensurePlayerUser,
+  realEmailOf,
+} from "./player-users.ts";
 import { mergeWorlds, type WorldMergeCounts, worldProgress } from "./worlds.ts";
 import { mergeXp } from "./xp.ts";
 
 const CODE_ATTEMPTS = 5;
 /** Merging touches several tables; Prisma's default of 5 s is tight on a busy database. */
-const MERGE_TIMEOUT_MS = 15_000;
+export const MERGE_TIMEOUT_MS = 15_000;
 
 export function generateLinkCode(): string {
   let code = "";
@@ -84,7 +89,7 @@ export async function createLinkCode(
 }
 
 /** The merge summary plus whether a cloud world counts as progress (D-188). */
-async function summarize(
+export async function summarize(
   tx: Tx,
   player: Player,
   now: Date
@@ -180,17 +185,63 @@ async function mergeGuildMemberships(
  * D-122, D-188: an account is empty when it has no guild, no runs, no XP and no cloud world with
  * more than WORLD_EMPTY_PLAY_SECONDS play time.
  */
-const hasProgress = (s: { summary: AccountSummary; worldsProgress: boolean }) =>
+export const hasProgress = (s: {
+  summary: AccountSummary;
+  worldsProgress: boolean;
+}) =>
   s.summary.guild !== null ||
   s.summary.runCount > 0 ||
   (s.summary.xp ?? 0) > 0 ||
   s.worldsProgress;
 
 /**
+ * P-037: the Better Auth rows of the dropped account's identities (password hash, OAuth rows)
+ * move to the user row of the kept account together with the identities. The dropped account's
+ * e-mail moves only if the kept account has none; otherwise it goes with the dropped account.
+ */
+async function moveAuthRows(tx: Tx, keepId: string, dropId: string) {
+  const dropUser = await tx.user.findUnique({ where: { playerId: dropId } });
+  if (!dropUser) {
+    return;
+  }
+  const keepUser = await ensurePlayerUser(tx, keepId);
+  const dropEmail = realEmailOf(dropUser);
+  const emailIdentity = await tx.playerIdentity.findFirst({
+    where: { playerId: dropId, provider: "email" },
+  });
+  if (dropEmail && emailIdentity) {
+    if (realEmailOf(keepUser)) {
+      await tx.playerIdentity.delete({ where: { id: emailIdentity.id } });
+    } else {
+      await clearPlayerEmail(tx, dropId);
+      await tx.user.update({
+        where: { id: keepUser.id },
+        data: { email: dropEmail, emailVerified: true },
+      });
+      await tx.playerIdentity.update({
+        where: { id: emailIdentity.id },
+        data: { providerUserId: keepUser.id },
+      });
+    }
+  }
+  const linked = await tx.playerIdentity.findMany({
+    where: { playerId: dropId, authAccountId: { not: null } },
+    select: { authAccountId: true },
+  });
+  const ids = linked.flatMap((i) => (i.authAccountId ? [i.authAccountId] : []));
+  if (ids.length > 0) {
+    await tx.account.updateMany({
+      where: { id: { in: ids }, userId: dropUser.id },
+      data: { userId: keepUser.id },
+    });
+  }
+}
+
+/**
  * Moves everything of `dropId` onto `keepId` and deletes `dropId` (D-122). Runs inside the
  * caller's transaction with both player rows locked.
  * - identities and ban history move over (an open deletion code of the dropped account goes with
- *   it; P-026);
+ *   it; P-026), with their Better Auth rows and the e-mail address (`moveAuthRows`, P-037);
  * - guilds (D-147): keep's memberships stay. Each membership of the dropped account moves to keep
  *   including the role (a founder stays founder, it is the same person) while keep stays within
  *   MAX_GUILDS_PER_PLAYER (oldest membership first); in a guild both are in, one row with the
@@ -210,6 +261,7 @@ async function absorbAccount(
   drop: Player,
   now: Date
 ): Promise<{ guilds: GuildMergeCounts; worlds: WorldMergeCounts }> {
+  await moveAuthRows(tx, keep.id, drop.id);
   await tx.playerIdentity.updateMany({
     where: { playerId: drop.id },
     data: { playerId: keep.id },
@@ -269,13 +321,111 @@ export interface LinkResult {
   worlds: WorldMergeCounts;
 }
 
+export interface MergePlan {
+  /** Both accounts have progress: a real merge that needs a confirmation. */
+  bothHaveProgress: boolean;
+  drop: Player;
+  dropSummary: AccountSummary;
+  keep: Player;
+  keepSummary: AccountSummary;
+}
+
 /**
- * POST /me/link (D-121, D-122), one transaction. `callerId` redeems the code of another account.
- * - empty caller account → absorbed into the code owner; empty owner account → absorbed into the
+ * Which account stays when `owner` (holds the proof) and `caller` (brought it) are joined
+ * (D-122/D-188): empty caller → owner stays; caller with progress and empty owner → caller
+ * stays; both with progress → the older one (`created_at`, tie: owner). Reads only; the web
+ * login shows this plan on the confirmation page before anything is written.
+ */
+export async function planMerge(
+  tx: Tx,
+  owner: Player,
+  caller: Player,
+  now: Date
+): Promise<MergePlan> {
+  const ownerSummary = await summarize(tx, owner, now);
+  const callerSummary = await summarize(tx, caller, now);
+  const plan = (keepOwner: boolean, bothHaveProgress: boolean): MergePlan => ({
+    keep: keepOwner ? owner : caller,
+    drop: keepOwner ? caller : owner,
+    keepSummary: (keepOwner ? ownerSummary : callerSummary).summary,
+    dropSummary: (keepOwner ? callerSummary : ownerSummary).summary,
+    bothHaveProgress,
+  });
+  if (!hasProgress(callerSummary)) {
+    return plan(true, false);
+  }
+  if (!hasProgress(ownerSummary)) {
+    return plan(false, false);
+  }
+  return plan(owner.createdAt.getTime() <= caller.createdAt.getTime(), true);
+}
+
+/**
+ * Joins two accounts of one person by the rules of D-121/D-122/D-188, inside the caller's
+ * transaction. `ownerId` is the account that already holds the proof (link code, login),
+ * `callerId` the account of the session that brought it.
+ * - empty caller account → absorbed into the owner; empty owner account → absorbed into the
  *   caller; both empty → the caller's account is absorbed (the usual "second device" case);
  * - both with progress → 409 `account_has_progress` with both summaries unless `confirmMerge`;
- *   then the older account (`created_at`, tie: code owner) remains;
+ *   then the older account (`created_at`, tie: owner) remains;
  * - either account banned → 409 `merge_blocked_banned` (an admin checks manually).
+ * Throws before writing anything, so a caller may catch `account_has_progress` and go on.
+ */
+export async function mergeAccountsInTx(
+  tx: Tx,
+  input: { ownerId: string; callerId: string; confirmMerge: boolean; now: Date }
+): Promise<LinkResult> {
+  const { ownerId, callerId, confirmMerge, now } = input;
+  // Fixed lock order (by id) so two crossing link attempts cannot deadlock.
+  const ids = [ownerId, callerId].toSorted();
+  await tx.$queryRaw`select id from players where id in (${ids[0]}::uuid, ${ids[1]}::uuid) order by id for update`;
+  const owner = await tx.player.findUnique({ where: { id: ownerId } });
+  const caller = await tx.player.findUnique({ where: { id: callerId } });
+  if (!(owner && caller)) {
+    throw new ApiError(404, "account_gone", "The account does not exist");
+  }
+
+  if (
+    (await findActiveBan(tx, owner.id, now)) ||
+    (await findActiveBan(tx, caller.id, now))
+  ) {
+    throw new ApiError(
+      409,
+      "merge_blocked_banned",
+      "One of the accounts is banned; the accounts cannot be linked"
+    );
+  }
+
+  const plan = await planMerge(tx, owner, caller, now);
+  if (plan.bothHaveProgress && !confirmMerge) {
+    throw new ApiError(
+      409,
+      "account_has_progress",
+      "Both accounts have progress; confirm the merge",
+      { remaining: plan.keepSummary, removed: plan.dropSummary }
+    );
+  }
+  const { keep, drop } = plan;
+  const merged = plan.bothHaveProgress;
+
+  const { guilds, worlds } = await absorbAccount(tx, keep, drop, now);
+  const remaining = await tx.player.findUniqueOrThrow({
+    where: { id: keep.id },
+  });
+  return {
+    remaining,
+    removedPlayerId: drop.id,
+    removedCaller: drop.id === caller.id,
+    merged,
+    guilds,
+    worlds,
+  };
+}
+
+/**
+ * POST /me/link (D-121, D-122), one transaction. `callerId` redeems the code of another account;
+ * the rules are those of `mergeAccountsInTx` with the code owner as owner. Unknown code 404
+ * `link_code_not_found`, expired 410 `link_code_expired`, own code 409 `already_linked`.
  */
 export async function redeemLinkCode(
   db: Db,
@@ -306,71 +456,26 @@ export async function redeemLinkCode(
           "This code belongs to your own account"
         );
       }
-
-      // Fixed lock order (by id) so two crossing link attempts cannot deadlock.
-      const ids = [row.playerId, callerId].toSorted();
-      await tx.$queryRaw`select id from players where id in (${ids[0]}::uuid, ${ids[1]}::uuid) order by id for update`;
-      const owner = await tx.player.findUnique({ where: { id: row.playerId } });
-      const caller = await tx.player.findUnique({ where: { id: callerId } });
-      if (!(owner && caller)) {
-        throw new ApiError(404, "link_code_not_found", "Unknown link code");
-      }
-
-      if (
-        (await findActiveBan(tx, owner.id, now)) ||
-        (await findActiveBan(tx, caller.id, now))
-      ) {
-        throw new ApiError(
-          409,
-          "merge_blocked_banned",
-          "One of the accounts is banned; the accounts cannot be linked"
-        );
-      }
-
-      const ownerSummary = await summarize(tx, owner, now);
-      const callerSummary = await summarize(tx, caller, now);
-      let keep: Player;
-      let drop: Player;
-      let merged = false;
-      if (!hasProgress(callerSummary)) {
-        keep = owner;
-        drop = caller;
-      } else if (hasProgress(ownerSummary)) {
-        const ownerIsOlder =
-          owner.createdAt.getTime() <= caller.createdAt.getTime();
-        keep = ownerIsOlder ? owner : caller;
-        drop = ownerIsOlder ? caller : owner;
-        if (!confirmMerge) {
-          throw new ApiError(
-            409,
-            "account_has_progress",
-            "Both accounts have progress; confirm the merge",
-            {
-              remaining: (ownerIsOlder ? ownerSummary : callerSummary).summary,
-              removed: (ownerIsOlder ? callerSummary : ownerSummary).summary,
-            }
+      let result: LinkResult;
+      try {
+        result = await mergeAccountsInTx(tx, {
+          ownerId: row.playerId,
+          callerId,
+          confirmMerge,
+          now,
+        });
+      } catch (err) {
+        if (err instanceof ApiError && err.code === "account_gone") {
+          throw withCause(
+            new ApiError(404, "link_code_not_found", "Unknown link code"),
+            err
           );
         }
-        merged = true;
-      } else {
-        keep = caller;
-        drop = owner;
+        throw err;
       }
-
-      const { guilds, worlds } = await absorbAccount(tx, keep, drop, now);
       // The owner's code is used up (gone with the owner if the owner was absorbed).
       await tx.linkCode.deleteMany({ where: { id: row.id } });
-      const remaining = await tx.player.findUniqueOrThrow({
-        where: { id: keep.id },
-      });
-      return {
-        remaining,
-        removedPlayerId: drop.id,
-        removedCaller: drop.id === caller.id,
-        merged,
-        guilds,
-        worlds,
-      };
+      return result;
     },
     { timeout: MERGE_TIMEOUT_MS }
   );

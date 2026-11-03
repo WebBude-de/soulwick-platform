@@ -9,6 +9,7 @@ import {
 } from "@soulwick/contracts";
 import type { Prisma } from "@soulwick/db";
 import { Hono, type MiddlewareHandler } from "hono";
+import { proxyTrust } from "../../lib/client-ip.ts";
 import { ApiError } from "../../lib/errors.ts";
 import { fixedWindowCounter, rateLimit } from "../../lib/rate-limit.ts";
 import { timeRangeFilter } from "../../lib/time-range.ts";
@@ -54,7 +55,7 @@ export function adminRoutes(deps: Deps) {
     "/auth/login",
     rateLimit({
       limit: 10,
-      trustProxy: deps.config.TRUST_PROXY,
+      trustProxy: proxyTrust(deps.config),
       name: "admin-login",
     }),
     async (c) => {
@@ -77,7 +78,7 @@ export function adminRoutes(deps: Deps) {
   // --- own account ("Mein Konto"): every role, only for itself ------------------------------
   const ownAccountLimit = rateLimit({
     limit: OWN_ACCOUNT_REQUESTS_PER_MINUTE,
-    trustProxy: deps.config.TRUST_PROXY,
+    trustProxy: proxyTrust(deps.config),
     name: "admin-own-account",
   });
   const wrongPasswords = fixedWindowCounter({
@@ -199,7 +200,7 @@ export function adminRoutes(deps: Deps) {
     "/:id/password",
     rateLimit({
       limit: SET_PASSWORD_REQUESTS_PER_MINUTE,
-      trustProxy: deps.config.TRUST_PROXY,
+      trustProxy: proxyTrust(deps.config),
       name: "admin-set-password",
     }),
     async (c) => {

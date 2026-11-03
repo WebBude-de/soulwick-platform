@@ -9,6 +9,7 @@ import { notFound } from "../lib/errors.ts";
 import { iso, parseParam } from "../lib/validate.ts";
 import { activeBanWhere } from "../services/bans.ts";
 import { memberCount } from "../services/guilds.ts";
+import { loginMethods } from "../services/login-methods.ts";
 import type { AppEnv, Deps } from "../types.ts";
 
 /** Unauthenticated read-only endpoints for the public website. */
@@ -18,7 +19,7 @@ export function publicRoutes(deps: Deps) {
   /**
    * Environment facts for game builds (P16): version gate, protocol and relay URL; plus the
    * support address the website shows for account deletion without the game (P-026); whether the
-   * guest login is open (P-028).
+   * guest login is open (P-028); the login methods configured here (KF5).
    */
   app.get("/config", (c) => {
     const {
@@ -35,6 +36,7 @@ export function publicRoutes(deps: Deps) {
       relayUrl: RELAY_PUBLIC_URL || null,
       supportEmail: SUPPORT_EMAIL || null,
       guestAuth: GUEST_AUTH_ENABLED,
+      loginMethods: loginMethods(deps),
     };
     c.header("Cache-Control", "public, max-age=60");
     return c.json(body);

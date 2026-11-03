@@ -118,6 +118,10 @@ export const testConfig = (overrides: Record<string, string> = {}): Config =>
     BUG_REPORTS_PER_HOUR: "100000",
     BUG_REPORTS_PER_IP_PER_HOUR: "100000",
     WORLD_WRITES_PER_HOUR: "100000",
+    LOGIN_ATTEMPTS_PER_MINUTE: "100000",
+    PASSWORD_FAILURES_PER_USERNAME: "100000",
+    MAGIC_LINKS_PER_HOUR: "100000",
+    MAGIC_LINKS_PER_ADDRESS_PER_HOUR: "100000",
     KNOWN_GAME_VERSIONS: "0.9.0,1.0.0",
     MIN_SECONDS_PER_ROOM: "8",
     LOG_LEVEL: process.env.TEST_LOG_LEVEL ?? "silent",
@@ -137,7 +141,7 @@ interface ReqOpts {
  */
 export async function createTestContext(
   configOverrides: Record<string, string> = {},
-  deps: Pick<BaseDeps, "fetch" | "now"> = {}
+  deps: Pick<BaseDeps, "fetch" | "now" | "gameCenterCas"> = {}
 ) {
   const base = baseDatabaseUrl();
   const dbName = `soulwick_test_${randomBytes(4).toString("hex")}`;
