@@ -37,6 +37,7 @@ export type {
   GuildProgress,
   Jwks,
   LinkCode,
+  OAuthTokenRevocation,
   Player,
   PlayerIdentity,
   PlayerNameChange,
@@ -45,6 +46,7 @@ export type {
   RunPlayer,
   Session,
   User,
+  WebLoginRequest,
 } from "../generated/prisma/client";
 export { Prisma, PrismaClient } from "../generated/prisma/client";
 export * from "../generated/prisma/enums";

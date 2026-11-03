@@ -14,6 +14,14 @@ und in der Relay-Umgebung gemeinsam erhöhen.
 Verknüpfungscodes und das Zusammenführen von Konten (D-121, D-122) sowie die automatische
 Kontolöschung mit Einmal-Löschcode (P14, P15, P-026); das Löschprotokoll für das Admin-Panel steht in
 `src/admin.ts`.
+`src/login.ts` enthält die Spieler-Anmeldungen aus KF5 (D-188, P-036, P-037, P-039): Benutzername +
+Passwort (`PlayerUsername`, `PasswordLoginRequest`, `SetPasswordLoginRequest`), die Web-Anmeldung aus
+dem Spiel (`WebLoginStartRequest`/`Response`, `WebLoginPollResponse`, `WebLoginInfo`,
+`WebLoginConfirmMergeRequest`, Browser-Abläufe `OAuthStartQuery`/`OAuthCallbackQuery` für Google,
+Apple, Discord und Steam OpenID), Magic Links (`MagicLinkRequest`, `MagicLinkPreview`,
+`MagicLinkVerifyRequest`), Sign in with Apple in der iOS-App (`AppleNativeAuthRequest`) und
+„Anmeldung hinzufügen“ im Spiel (`AddLoginRequest`/`AddLoginResponse`); welche Arten eine Umgebung
+anbietet, meldet `PublicConfig.loginMethods` (`LoginMethod` in `src/common.ts`).
 Das Konto-Profil (ein Charakter je Konto, P-034) steht in `src/common.ts` (`PlayerAppearance`,
 `PlayerCharacter`) und `src/player.ts` (`UpdateProfileRequest` für `PATCH /me`).
 `src/xp.ts` enthält Konto-XP und Level (D-188, KF3): die Level-Kurve `xpForLevel` / `levelForXp` /

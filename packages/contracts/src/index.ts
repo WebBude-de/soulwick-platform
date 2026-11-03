@@ -7,6 +7,7 @@ export * from "./identity.ts";
 export * from "./leaderboard.ts";
 export * from "./legal.ts";
 export * from "./lobby.ts";
+export * from "./login.ts";
 export * from "./player.ts";
 export * from "./rank.ts";
 export * from "./run.ts";
