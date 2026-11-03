@@ -26,13 +26,13 @@ export interface BrandImage {
   width: number;
 }
 
-/** Wick, the mascot (D-175). No art yet: `WickFigure` draws a placeholder until these exist. */
+/** Flint, the mascot (D-175). No art yet: `WickFigure` draws a placeholder until these exist. */
 export interface WickArt {
-  /** Large illustration for "Meet Wick" (`wick/wick_hero.webp`, transparent). */
+  /** Large illustration for "Meet Flint" (`wick/wick_hero.webp`, transparent). */
   hero: string | null;
   /** Idle strip, 6 frames of 32×32 (`wick/wick_idle_6f.webp`). */
   idle: string | null;
-  /** Wick together with the chicken (`wick/wick_chicken.webp`, transparent). */
+  /** Flint together with the chicken (`wick/wick_chicken.webp`, transparent). */
   withChicken: string | null;
 }
 

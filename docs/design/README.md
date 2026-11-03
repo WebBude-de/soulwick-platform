@@ -22,13 +22,13 @@
 | `web/landing_mobile_de.png` (390 × 10349) | Startseite Mobil, ganze Seite | geliefert; alte Positionierung, nur Inspiration |
 | `web/landing_desktop_de_hero.png` (1280 × 760), `web/landing_mobile_de_top.png` (390 × 900) | Ausschnitte Hero und Mobil oben | geliefert; alte Positionierung, nur Inspiration |
 | [web/KONZEPT_WEB.md](web/KONZEPT_WEB.md) | Website-Konzept: Zweck, Ton, Erzählung der Startseite, Seiten, Neuigkeiten, Mockup-Wünsche, offene Fragen | **gültig** (D-173 bis D-179), maßgeblich für Erzählung und Seitenaufbau |
-| [web/BRIEFING_WEB.md](web/BRIEFING_WEB.md) | Grafik-Briefing Website: Wick, Dorf bei Tag, Teilen-Bilder (Open Graph) | offen (Lieferung durch das Projektmitglied) |
+| [web/BRIEFING_WEB.md](web/BRIEFING_WEB.md) | Grafik-Briefing Website: Flint, Dorf bei Tag, Teilen-Bilder (Open Graph) | offen (Lieferung durch das Projektmitglied) |
 | [admin/README.md](admin/README.md) | Admin-Design: Umfang, Regeln, umgesetzter Stand (Admin Design v2) und Abweichungen von TOKENS.md | kein Handoff, keine Mockups |
 
 ## Wer schreibt was
 
 - **Projektmitglied:** legt die Ausgabe von Claude Design hier ab (Handoff, Mockups) und das Asset-Paket unter `apps/<app>/public/`; beantwortet die offenen Fragen der Konzepte.
-- **Agenten (`web-dev`, `admin-dev`):** lesen das gültige Konzept bzw. den Handoff ihrer App und TOKENS.md und bauen danach; sie ändern Handoffs und Mockups **nie**. Abweichungen und fehlende Grafiken stehen im Bericht; Grafikwünsche für die Website kommen in [web/BRIEFING_WEB.md](web/BRIEFING_WEB.md) (ältere Website-Grafiken: `soulwick/docs/design/sprites/SPRITES_V5.md` §8).
+- **Agenten (`web-dev`, `admin-dev`):** lesen das gültige Konzept bzw. den Handoff ihrer App und TOKENS.md und bauen danach; sie ändern Handoffs und Mockups **nie**. Abweichungen und fehlende Grafiken stehen im Bericht; Grafikwünsche für die Website kommen in [web/BRIEFING_WEB.md](web/BRIEFING_WEB.md) (ältere Website-Grafiken: `soulwick/docs/design/sprites/delivered/SPRITES_V5.md` §8).
 - **Integrator:** pflegt diese README, `TOKENS.md` und die Konzepte; trägt gelieferte Mockups in die Tabellen ein.
 
 ## Bezug zum Spiel

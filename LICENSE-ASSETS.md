@@ -23,7 +23,7 @@ verwenden – unter den Bedingungen der GPL.
 | Musik und Klänge | `apps/web/public/audio/` |
 | Bilder für Doku und GitHub (Mockups, Banner) | `docs/design/`, `.github/assets/` |
 | Logo und der Name **„Soulwick“** als Kennzeichen des Spiels | überall |
-| Die Figuren **Wick** (das Docht-Wesen) und **das Huhn**, ihr Aussehen und ihre Namen | überall |
+| Die Figuren **Flint** (das Docht-Wesen) und **das Huhn**, ihr Aussehen und ihre Namen | überall |
 
 Viele dieser Dateien sind Kopien aus dem Spiel-Repo (`bun apps/web/scripts/sync-*.ts`) und gehören
 dort ebenfalls zu den Inhalten
@@ -80,7 +80,7 @@ projects under the terms of the GPL.
 | Music and sound | `apps/web/public/audio/` |
 | Images for docs and GitHub (mockups, banners) | `docs/design/`, `.github/assets/` |
 | The logo and the name **"Soulwick"** as the name of the game | everywhere |
-| The characters **Wick** (the little wick creature) and **the chicken**, their look and their names | everywhere |
+| The characters **Flint** (the little wick creature) and **the chicken**, their look and their names | everywhere |
 
 Many of these files are copies from the game repository (`bun apps/web/scripts/sync-*.ts`) and are
 content there as well

@@ -1,7 +1,8 @@
 import type { CSSProperties } from "react";
 
 /**
- * Wick, the mascot (D-175): a tiny wick creature, a small living candle with a flame on its head.
+ * Flint, the mascot (D-175, named in D-198): a tiny wick creature, a small living candle with a
+ * flame on its head. Files, classes and art paths keep the old name `wick`.
  *
  * Until the real art exists (`public/brand/wick/wick_idle_6f.webp`, see
  * `docs/design/web/BRIEFING_WEB.md`) this draws a placeholder in pixel rects. Both share one
@@ -115,7 +116,7 @@ function Rects({ list }: { list: Run[] }) {
 }
 
 export interface WickFigureProps {
-  /** Accessible name; without it Wick is decorative. */
+  /** Accessible name; without it Flint is decorative. */
   alt?: string;
   className?: string;
   /** Integer scale, or a CSS value such as `"var(--px)"`. Default: `--px` (2 on phones, 3 from md). */

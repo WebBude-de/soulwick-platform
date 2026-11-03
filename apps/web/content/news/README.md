@@ -32,7 +32,7 @@ content/news/
   Zitate mit `> `, `**fett**`, `*kursiv*`, Links `[Text](https://…)` oder `[Text](/news)`. Mehr
   (Bilder, Tabellen, HTML) wird bewusst nicht unterstützt.
 - **Ton:** Spielersprache wie auf der Startseite, Deutsch in Du-Form, keine Technik-Begriffe.
-  Was zum Release im Spiel ist (Koop, Wunsch-Bosse, Wick, Dorf, Gilden, Ranglisten, Outfits),
+  Was zum Release im Spiel ist (Koop, Wunsch-Bosse, Flint, Dorf, Gilden, Ranglisten, Outfits),
   wird beschrieben, wie es dann ist, ohne „kommt“ oder „in Arbeit“; „danach“ nur für Späteres
   (Party-Modus, neue Inhalte). Zum Release ist Soulwick im Browser, auf Steam, Android und iOS
   spielbar. Keine Preise, keine Termine, die nicht feststehen (D-173 bis

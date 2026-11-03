@@ -17,7 +17,7 @@ interface HeroProps {
   play: GameLinks | null;
   /** Steam store page from `content/stores.json` (wishlist before the release), else `null`. */
   steamUrl: string | null;
-  /** Delivered Wick strip, `null` = placeholder. */
+  /** Delivered Flint strip, `null` = placeholder. */
   wickSrc: string | null;
 }
 
@@ -30,11 +30,11 @@ const FRIENDS: Spot[] = [
   [58, 74],
   [73, 82],
 ];
-/** Light offset above Wick's feet, in art pixels: the middle of the flame. */
+/** Light offset above Flint's feet, in art pixels: the middle of the flame. */
 const WICK_LIGHT = 20;
 /** Wall torches (centre in % of the stage width). */
 const TORCHES = [22, 80];
-/** What hides in the dark until Wick's light finds it. */
+/** What hides in the dark until Flint's light finds it. */
 const LURKERS: { id: SpriteId; at: Spot; flip?: boolean }[] = [
   { id: "skeleton_idle_4f", at: [14, 50] },
   { id: "archer_idle_4f", at: [88, 48], flip: true },
@@ -55,8 +55,8 @@ const at = ([x, y]: Spot) =>
   ({ "--x": x, "--y": y }) as CSSProperties & Record<string, number>;
 
 /**
- * The light holes cut into the darkness: Wick's (moving), one per friend, one per torch.
- * Rendered once on the server; only `--wx`/`--wy` change while Wick moves.
+ * The light holes cut into the darkness: Flint's (moving), one per friend, one per torch.
+ * Rendered once on the server; only `--wx`/`--wy` change while Flint moves.
  */
 const HOLES = [
   `radial-gradient(circle var(--lr) at var(--wx) calc(var(--wy) - var(--px) * ${WICK_LIGHT}px), transparent 0 26%, rgb(0 0 0 / 0.55) 58%, #000 100%)`,
@@ -71,7 +71,7 @@ const HOLES = [
 ].join(", ");
 
 /**
- * Walkers on the ground strip under the hero: monsters chase the four figures, who chase Wick,
+ * Walkers on the ground strip under the hero: monsters chase the four figures, who chase Flint,
  * who chases the chicken. Back to front; the shadow only joins in the Konami easter egg.
  */
 const CHASERS: { id: SpriteId; className?: string }[] = [
@@ -132,7 +132,7 @@ export function Hero({ play, platforms, steamUrl, wickSrc }: HeroProps) {
             <span className="hero-eyes" key={spot.join("-")} style={at(spot)} />
           ))}
         </div>
-        {/* Outside the faded scene: on wide screens Wick follows the mouse over the headline. */}
+        {/* Outside the faded scene: on wide screens Flint follows the mouse over the headline. */}
         <span aria-hidden="true" className="hero-wick">
           <span className="hero-wick-body wick-glow">
             <WickFigure src={wickSrc} />

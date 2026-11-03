@@ -1,7 +1,7 @@
 ---
 title: Where we're headed
 date: 2026-10-17
-summary: Co-op with friends, bosses you wish for, Wick and your village – that's Soulwick at release. After that comes a party mode.
+summary: Co-op with friends, bosses you wish for, Flint and your village – that's Soulwick at release. After that comes a party mode.
 ---
 
 Soulwick has a clear direction now: **the pixel roguelite you rush into with your friends.** Every run different, every boss a clip.
@@ -18,15 +18,15 @@ You play in the browser, on Steam, on Android or on iPhone and iPad, all from da
 
 After a boss fight you describe your own nightmare boss at the campfire. "A giant zombie that throws gravestones"? A few rooms later it's standing in front of you, built by an AI in the game's style. Exactly the kind of moment you want to show your friends.
 
-## Say hi to Wick
+## Say hi to Flint
 
-Wick is a tiny wick creature with a flame on its head and your companion from your very first step. The chicken comes along, of course.
+Flint is a tiny living candle with a flame on its head and your companion from your very first step. The chicken comes along, of course.
 
 ## Your village and your guild
 
 - Build up your village: gold from the dungeon goes into the forge, the trading post and your home
 - Decorate it, bring your friends over or drop by their village
-- Outfits for you, Wick and your village: only looks, never power
+- Outfits for you, Flint and your village: only looks, never power
 - Found a guild with a shared treasury and climb the leaderboards together
 
 ## And after that

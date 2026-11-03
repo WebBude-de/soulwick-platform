@@ -2,10 +2,10 @@ import { Sprite } from "@/components/ui/sprite";
 import type { SpriteId } from "@/lib/sprite-manifest";
 
 /**
- * The four playable figures of the game (`soulwick/characters/*.tres`): the default figure and
- * Ember, Moss and Frost, with their own art from `art/characters/` (synced by
- * `scripts/sync-sprites.ts`). The page shows them without names: the default figure's in-game
- * name collides with the mascot Wick (KONZEPT_WEB §6).
+ * The four playable figures of the game (`soulwick/characters/*.tres`): Wick (the default figure,
+ * sprite id `player`, game code id `wick`), Ember, Moss and Frost, with their own art from
+ * `art/characters/` (synced by `scripts/sync-sprites.ts`). The mascot and companion is Flint
+ * (D-198); its components still live in `components/wick/*` under their old name.
  */
 export const FIGURES = ["player", "ember", "moss", "frost"] as const;
 

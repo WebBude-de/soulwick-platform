@@ -1,6 +1,6 @@
 /*
- * Wick, the mascot (D-175), a small living candle: placeholder animation (squash, flicker,
- * blink), its glow and the clickable Wick with a speech bubble. Everything stops under prefers-reduced-motion.
+ * Flint, the mascot (D-175), a small living candle: placeholder animation (squash, flicker,
+ * blink), its glow and the clickable Flint with a speech bubble. Everything stops under prefers-reduced-motion.
  */
 .wick {
   --s: var(--px);
@@ -49,7 +49,7 @@
   }
 }
 
-/* Warm light around Wick: a soft radial pool that breathes with the flame. */
+/* Warm light around Flint: a soft radial pool that breathes with the flame. */
 .wick-glow {
   position: relative;
   display: inline-block;
@@ -87,7 +87,7 @@
   }
 }
 
-/* Sparks rising from the flame (hero and "Meet Wick"). */
+/* Sparks rising from the flame (hero and "Meet Flint"). */
 .wick-sparks {
   position: absolute;
   top: 34%;
@@ -140,7 +140,7 @@
   }
 }
 
-/* Clickable Wick ("Meet Wick", news): hops, flares and says something. */
+/* Clickable Flint ("Meet Flint", news): hops, flares and says something. */
 .wick-button {
   position: relative;
   display: inline-block;

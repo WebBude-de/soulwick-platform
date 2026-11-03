@@ -1,7 +1,7 @@
 {
   "siteName": "Soulwick",
   "tagline": "Schnapp dir deine Freunde. Bring Licht ins Dunkel.",
-  "description": "Soulwick ist das Pixel-Roguelite, in das du mit Freunden reinrennst. Jeder Run anders, jeder Boss ein Clip – und deinen eigenen kannst du dir wünschen. Koop für bis zu vier, ein endloser Dungeon, ein gemütliches Dorf und Wick, dein Begleiter.",
+  "description": "Soulwick ist das Pixel-Roguelite, in das du mit Freunden reinrennst. Jeder Run anders, jeder Boss ein Clip – und deinen eigenen kannst du dir wünschen. Koop für bis zu vier, ein endloser Dungeon, ein gemütliches Dorf und Flint, dein Begleiter.",
   "skipToContent": "Zum Inhalt springen",
   "nav": {
     "label": "Hauptnavigation",
@@ -49,16 +49,16 @@
   },
   "notFound": {
     "title": "Hier endet der Dungeon",
-    "text": "Diese Seite gibt es nicht oder sie ist in den Abgrund gefallen. Fahr mit der Maus über die Figur, dann steht sie wieder auf.",
+    "text": "Diese Seite gibt es nicht oder sie ist in den Abgrund gefallen. Fahr mit der Maus über Wick, dann steht er wieder auf.",
     "back": "Zurück zum Dorf",
-    "spriteAlt": "Spielfigur liegt am Boden"
+    "spriteAlt": "Wick liegt am Boden"
   },
   "fun": {
     "chickenLabel": "Huhn – anklicken",
     "chickenSays": ["Gak!", "Gaaak!", "Bok bok!"],
     "chickenPanic": "GAAAK!!",
     "slimeHit": "Schleimkönigin treffen",
-    "wickLabel": "Wick – anklicken",
+    "wickLabel": "Flint – anklicken",
     "wickSays": ["Hi!", "Komm mit!", "Licht an!", "Wo ist das Huhn?"]
   }
 }
