@@ -17,12 +17,23 @@ import { STEAM_OPENID_URL } from "../src/services/steam-openid.ts";
 import { authIntegrityIssues } from "./auth-integrity.ts";
 import { byUrl, fakeFetch, json, unsignedJwt } from "./fake-fetch.ts";
 import { createTestContext, type TestContext } from "./helpers.ts";
+import {
+  browserFlow,
+  completeFlow,
+  confirmWebLogin,
+  oauthStart,
+  pollWebLogin,
+  startWebLogin,
+  webLoginInfo,
+} from "./web-login-flow.ts";
 
 const GOOGLE_CLIENT = "test-web-client.apps.googleusercontent.com";
 const APPLE_SERVICES_ID = "test.soulwick.web";
 const WEB = "http://web.test";
 /** Link code alphabet without 0/O, 1/I/L. */
 const CODE_FORMAT = /^[ABCDEFGHJKMNPQRSTUVWXYZ2-9]{8}$/;
+const USER_CODE_FORMAT =
+  /^[ABCDEFGHJKMNPQRSTUVWXYZ2-9]{3}-[ABCDEFGHJKMNPQRSTUVWXYZ2-9]{3}$/;
 /** Obviously fake ids. */
 const STEAM_ID = "76561190000000077";
 const DISCORD_ID = "100000000000000042";
@@ -46,6 +57,8 @@ const googleToken = (sub: string, extra: Record<string, unknown> = {}) =>
       ...extra,
     }),
   });
+
+const googleCode = () => ({ code: "google-auth-code" });
 
 describe("web login from the game (KF5)", () => {
   const fake = fakeFetch();
@@ -73,49 +86,7 @@ describe("web login from the game (KF5)", () => {
     fake.state.calls = [];
   });
 
-  async function startRequest(opts: { token?: string; link?: boolean } = {}) {
-    const res = await ctx.req("POST", "/auth/web-login", {
-      token: opts.token,
-      body: opts.link ? { intent: "link" } : {},
-    });
-    expect(res.status).toBe(201);
-    return res.json as { code: string; pollSecret: string; url: string };
-  }
-
-  const poll = (code: string, pollSecret: string) =>
-    ctx.req("POST", "/auth/web-login/poll", { body: { code, pollSecret } });
-
-  /** Runs start + callback like a browser; `answer` builds the provider's callback query. */
-  async function browserFlow(
-    provider: string,
-    code: string,
-    answer: (providerUrl: URL) => Record<string, string>,
-    opts: { dropCookie?: boolean } = {}
-  ) {
-    const start = await ctx.app.request(
-      `/auth/oauth/${provider}/start?code=${code}`
-    );
-    expect(start.status).toBe(302);
-    const providerUrl = new URL(start.headers.get("location") ?? "");
-    const cookie = (start.headers.get("set-cookie") ?? "").split(";")[0] ?? "";
-    const query = new URLSearchParams(answer(providerUrl));
-    const state = providerUrl.searchParams.get("state");
-    if (state && !query.has("state")) {
-      query.set("state", state);
-    }
-    const callback = await ctx.app.request(
-      `/auth/oauth/${provider}/callback?${query}`,
-      { headers: opts.dropCookie ? {} : { cookie } }
-    );
-    expect(callback.status).toBe(302);
-    return {
-      providerUrl,
-      cookie,
-      back: new URL(callback.headers.get("location") ?? ""),
-    };
-  }
-
-  it("lists the configured methods and starts a request with code, poll secret and page URL", async () => {
+  it("lists the configured methods and starts a request with code, secrets, user code and page URL", async () => {
     const config = await ctx.req("GET", "/public/config");
     expect(config.json.loginMethods).toEqual([
       "device",
@@ -125,54 +96,77 @@ describe("web login from the game (KF5)", () => {
       "discord",
       "steam",
     ]);
-    const req = await startRequest();
+    const req = await startWebLogin(ctx);
     expect(req.code).toMatch(CODE_FORMAT);
-    expect(req.url).toBe(`${WEB}/login/${req.code}`);
+    expect(req.userCode).toMatch(USER_CODE_FORMAT);
+    expect(req.url).toBe(`${WEB}/login/${req.code}#k=${req.browserSecret}`);
+    expect(req.url).not.toContain(req.userCode.replace("-", ""));
     expect(req.pollSecret.length).toBeGreaterThan(30);
-    expect((await poll(req.code, req.pollSecret)).json).toEqual({
-      status: "pending",
+    expect((await pollWebLogin(ctx, req)).json).toEqual({ status: "pending" });
+    const info = await webLoginInfo(ctx, req.code, {
+      browserToken: req.browserToken,
     });
-    const info = await ctx.req("GET", `/auth/web-login/${req.code}`);
     expect(info.status).toBe(200);
+    expect(info.json.authorized).toBe(true);
     expect(info.json.status).toBe("pending");
     expect(info.json.intent).toBe("sign_in");
     expect(info.json.methods).toEqual(["google", "apple", "discord", "steam"]);
-    // Formatted and lower-case input works for the code, a wrong poll secret does not.
     const formatted =
       `${req.code.slice(0, 4)}-${req.code.slice(4)}`.toLowerCase();
-    expect((await ctx.req("GET", `/auth/web-login/${formatted}`)).status).toBe(
-      200
-    );
-    const wrong = await poll(req.code, "x".repeat(40));
+    expect(
+      (await webLoginInfo(ctx, formatted, { browserToken: req.browserToken }))
+        .json.authorized
+    ).toBe(true);
+    const wrong = await ctx.req("POST", "/auth/web-login/poll", {
+      body: { code: req.code, pollSecret: "x".repeat(40) },
+    });
     expect(wrong.status).toBe(404);
     expect(wrong.json.error).toBe("web_login_not_found");
   });
 
-  it("Google: PKCE + state, new account, session collected exactly once, no e-mail taken over", async () => {
-    const req = await startRequest();
+  it("Google: PKCE + state, waits for the typed code, then a new account, session collected once", async () => {
+    const req = await startWebLogin(ctx);
     fake.state.handler = byUrl({
       [GOOGLE_OAUTH_TOKEN_URL]: () =>
         googleToken("google-sub-0001", { email: "player@example.org" }),
     });
-    const { providerUrl, back } = await browserFlow("google", req.code, () => ({
-      code: "google-auth-code",
-    }));
-    expect(providerUrl.origin + providerUrl.pathname).toBe(
+    const flow = await browserFlow(ctx, "google", req, googleCode);
+    expect(flow.providerUrl.origin + flow.providerUrl.pathname).toBe(
       "https://accounts.google.com/o/oauth2/v2/auth"
     );
-    expect(providerUrl.searchParams.get("scope")).toBe("openid");
-    expect(providerUrl.searchParams.get("redirect_uri")).toBe(
+    expect(flow.providerUrl.searchParams.get("scope")).toBe("openid");
+    expect(flow.providerUrl.searchParams.get("redirect_uri")).toBe(
       "http://localhost:3102/auth/oauth/google/callback"
     );
-    expect(back.toString()).toBe(`${WEB}/login/${req.code}`);
-    const tokenCall = fake.state.calls[0];
-    const form = new URLSearchParams(tokenCall?.body ?? "");
-    const verifier = form.get("code_verifier") ?? "";
-    expect(createHash("sha256").update(verifier).digest("base64url")).toBe(
-      providerUrl.searchParams.get("code_challenge") ?? ""
+    expect(flow.back.origin + flow.back.pathname).toBe(
+      `${WEB}/login/${req.code}`
     );
+    const form = new URLSearchParams(fake.state.calls[0]?.body ?? "");
+    expect(
+      createHash("sha256")
+        .update(form.get("code_verifier") ?? "")
+        .digest("base64url")
+    ).toBe(flow.providerUrl.searchParams.get("code_challenge") ?? "");
 
-    const collected = await poll(req.code, req.pollSecret);
+    // Proven, not finished: the page shows what confirming does.
+    expect((await pollWebLogin(ctx, req)).json.status).toBe("awaiting_confirm");
+    const page = await ctx.req(
+      "GET",
+      `/auth/web-login/${req.code}?confirm=${flow.confirmSecret}`
+    );
+    expect(page.json.status).toBe("awaiting_confirm");
+    expect(page.json.newAccount).toBe(true);
+    expect(page.json.attemptsLeft).toBe(5);
+
+    const confirmed = await confirmWebLogin(
+      ctx,
+      req.code,
+      flow.confirmSecret ?? "",
+      req.userCode.toLowerCase()
+    );
+    expect(confirmed.status).toBe(200);
+    expect(confirmed.json.status).toBe("completed");
+    const collected = await pollWebLogin(ctx, req);
     expect(collected.json.status).toBe("completed");
     expect(collected.json.result).toBe("signed_in");
     expect(collected.json.provider).toBe("google");
@@ -180,43 +174,46 @@ describe("web login from the game (KF5)", () => {
       token: collected.json.auth.token,
     });
     expect(me.status).toBe(200);
-    expect((await poll(req.code, req.pollSecret)).json.status).toBe("expired");
+    expect((await pollWebLogin(ctx, req)).json.status).toBe("expired");
 
     const user = await ctx.client.query(
       "select email from auth_users where player_id = $1",
       [me.json.id]
     );
     expect(user.rows[0].email).toEndWith("@players.soulwick.invalid");
-    const ids = await ctx.req("GET", "/me/identities", {
-      token: collected.json.auth.token,
-    });
-    expect(ids.json.items.map((i: { provider: string }) => i.provider)).toEqual(
-      ["google"]
-    );
 
-    // Same Google account again: same player.
-    const again = await startRequest();
-    await browserFlow("google", again.code, () => ({ code: "code-2" }));
-    const second = await poll(again.code, again.pollSecret);
-    expect(second.json.auth.player.id).toBe(me.json.id);
+    // Same Google account again: the page names the existing account, same player.
+    const again = await startWebLogin(ctx);
+    const second = await browserFlow(ctx, "google", again, googleCode);
+    const preview = await ctx.req(
+      "GET",
+      `/auth/web-login/${again.code}?confirm=${second.confirmSecret}`
+    );
+    expect(preview.json.account).toEqual({ name: me.json.name, level: 1 });
+    await confirmWebLogin(
+      ctx,
+      again.code,
+      second.confirmSecret ?? "",
+      again.userCode
+    );
+    expect((await pollWebLogin(ctx, again)).json.auth.player.id).toBe(
+      me.json.id
+    );
     expect(await authIntegrityIssues(ctx.client)).toEqual([]);
   });
 
   it("refuses callbacks without the binding cookie or with a used state", async () => {
-    const req = await startRequest();
+    const req = await startWebLogin(ctx);
     fake.state.handler = byUrl({
       [GOOGLE_OAUTH_TOKEN_URL]: () => googleToken("google-sub-0002"),
     });
-    const noCookie = await browserFlow(
-      "google",
-      req.code,
-      () => ({ code: "c" }),
-      { dropCookie: true }
-    );
+    const noCookie = await browserFlow(ctx, "google", req, googleCode, {
+      dropCookie: true,
+    });
     expect(noCookie.back.toString()).toBe(`${WEB}/login?error=invalid_state`);
     expect(fake.state.calls).toHaveLength(0);
 
-    const ok = await browserFlow("google", req.code, () => ({ code: "c" }));
+    const ok = await browserFlow(ctx, "google", req, googleCode);
     const replay = await ctx.app.request(
       `/auth/oauth/google/callback?state=${ok.providerUrl.searchParams.get("state")}&code=c`,
       { headers: { cookie: ok.cookie } }
@@ -227,27 +224,25 @@ describe("web login from the game (KF5)", () => {
   });
 
   it("sends cancelled and provider errors back to the page; the request stays open", async () => {
-    const req = await startRequest();
-    const cancelled = await browserFlow("google", req.code, () => ({
+    const req = await startWebLogin(ctx);
+    const cancelled = await browserFlow(ctx, "google", req, () => ({
       error: "access_denied",
     }));
     expect(cancelled.back.searchParams.get("error")).toBe("cancelled");
 
     fake.state.handler = () => json({ error: "invalid_grant" }, 400);
-    const rejected = await browserFlow("google", req.code, () => ({
-      code: "bad",
-    }));
+    const rejected = await browserFlow(ctx, "google", req, googleCode);
     expect(rejected.back.searchParams.get("error")).toBe("invalid_oauth_code");
 
     fake.state.handler = () => new Response("down", { status: 503 });
-    const down = await browserFlow("google", req.code, () => ({ code: "c" }));
+    const down = await browserFlow(ctx, "google", req, googleCode);
     expect(down.back.searchParams.get("error")).toBe("provider_error");
 
-    expect((await poll(req.code, req.pollSecret)).json.status).toBe("pending");
+    expect((await pollWebLogin(ctx, req)).json.status).toBe("pending");
   });
 
   it("Discord: identify scope only, the user id becomes the identity", async () => {
-    const req = await startRequest();
+    const req = await startWebLogin(ctx);
     fake.state.handler = byUrl({
       [DISCORD_TOKEN_URL]: () => json({ access_token: "discord-access" }),
       [DISCORD_USER_URL]: (call) => {
@@ -255,12 +250,11 @@ describe("web login from the game (KF5)", () => {
         return json({ id: DISCORD_ID, username: "ignored", email: "x@y.z" });
       },
     });
-    const { providerUrl } = await browserFlow("discord", req.code, () => ({
+    const { flow, polled } = await completeFlow(ctx, "discord", req, () => ({
       code: "discord-code",
     }));
-    expect(providerUrl.searchParams.get("scope")).toBe("identify");
-    const done = await poll(req.code, req.pollSecret);
-    expect(done.json.provider).toBe("discord");
+    expect(flow.providerUrl.searchParams.get("scope")).toBe("identify");
+    expect(polled.json.provider).toBe("discord");
     const row = await ctx.client.query(
       `select a.account_id from player_identities i join auth_accounts a on a.id = i.auth_account_id
        where i.provider = 'discord'`
@@ -269,7 +263,7 @@ describe("web login from the game (KF5)", () => {
   });
 
   it("Apple on the web: signed client secret, refresh token stored encrypted for revocation", async () => {
-    const req = await startRequest();
+    const req = await startWebLogin(ctx);
     fake.state.handler = byUrl({
       [APPLE_TOKEN_URL]: (call) => {
         const form = new URLSearchParams(call.body ?? "");
@@ -296,14 +290,12 @@ describe("web login from the game (KF5)", () => {
         });
       },
     });
-    const { providerUrl } = await browserFlow("apple", req.code, () => ({
+    const { flow, polled } = await completeFlow(ctx, "apple", req, () => ({
       code: "apple-code",
     }));
-    expect(providerUrl.searchParams.get("response_mode")).toBe("query");
-    expect(providerUrl.searchParams.has("scope")).toBe(false);
-    expect((await poll(req.code, req.pollSecret)).json.status).toBe(
-      "completed"
-    );
+    expect(flow.providerUrl.searchParams.get("response_mode")).toBe("query");
+    expect(flow.providerUrl.searchParams.has("scope")).toBe(false);
+    expect(polled.json.status).toBe("completed");
     const row = await ctx.client.query(
       "select refresh_token, client_id from auth_accounts where provider_id = 'apple'"
     );
@@ -313,7 +305,7 @@ describe("web login from the game (KF5)", () => {
   });
 
   it("Steam OpenID: check_authentication at Steam, same identity as the ticket", async () => {
-    const req = await startRequest();
+    const req = await startWebLogin(ctx);
     const answer = (providerUrl: URL) => {
       const returnTo = providerUrl.searchParams.get("openid.return_to") ?? "";
       const state = new URL(returnTo).searchParams.get("state") ?? "";
@@ -327,7 +319,8 @@ describe("web login from the game (KF5)", () => {
         "openid.return_to": returnTo,
         "openid.response_nonce": "2026-11-03T12:00:00Zabc",
         "openid.assoc_handle": "1234567890",
-        "openid.signed": "signed,op_endpoint,claimed_id,identity,return_to",
+        "openid.signed":
+          "signed,op_endpoint,claimed_id,identity,return_to,response_nonce,assoc_handle",
         "openid.sig": "c2lnbmF0dXJl",
       };
     };
@@ -341,22 +334,21 @@ describe("web login from the game (KF5)", () => {
         );
       },
     });
-    const ok = await browserFlow("steam", req.code, answer);
-    expect(ok.providerUrl.origin + ok.providerUrl.pathname).toBe(
+    const { flow, polled } = await completeFlow(ctx, "steam", req, answer);
+    expect(flow.providerUrl.origin + flow.providerUrl.pathname).toBe(
       STEAM_OPENID_URL
     );
-    const done = await poll(req.code, req.pollSecret);
-    expect(done.json.provider).toBe("steam");
+    expect(polled.json.provider).toBe("steam");
     const ids = await ctx.req("GET", "/me/identities", {
-      token: done.json.auth.token,
+      token: polled.json.auth.token,
     });
     expect(ids.json.items[0].maskedId).toBe(`***${STEAM_ID.slice(-4)}`);
 
-    const refused = await startRequest();
+    const refused = await startWebLogin(ctx);
     fake.state.handler = () => new Response("is_valid:false\n");
-    const bad = await browserFlow("steam", refused.code, answer);
+    const bad = await browserFlow(ctx, "steam", refused, answer);
     expect(bad.back.searchParams.get("error")).toBe("invalid_steam_openid");
-    const forged = await browserFlow("steam", refused.code, (u) => ({
+    const forged = await browserFlow(ctx, "steam", refused, (u) => ({
       ...answer(u),
       "openid.return_to": "http://evil.test/",
     }));
@@ -370,18 +362,21 @@ describe("web login from the game (KF5)", () => {
     expect(anonymous.status).toBe(401);
 
     const guest = await ctx.login("Docht");
-    const req = await startRequest({ token: guest.token, link: true });
-    const info = await ctx.req("GET", `/auth/web-login/${req.code}`);
-    expect(info.json.account).toEqual({ name: "Docht", level: 1 });
+    const req = await startWebLogin(ctx, { token: guest.token, link: true });
+    const info = await webLoginInfo(ctx, req.code, {
+      browserToken: req.browserToken,
+    });
+    // The browser token shows no account data (only the proving browser sees it).
+    expect(info.json.intent).toBe("link");
+    expect(info.json.account).toBeNull();
     fake.state.handler = byUrl({
       [GOOGLE_OAUTH_TOKEN_URL]: () => googleToken("google-sub-link-1"),
     });
-    await browserFlow("google", req.code, () => ({ code: "c" }));
-    const done = await poll(req.code, req.pollSecret);
-    expect(done.json.status).toBe("completed");
-    expect(done.json.result).toBe("linked");
-    expect(done.json.removedPlayerId).toBeNull();
-    expect(done.json.auth.player.id).toBe(guest.id);
+    const { polled } = await completeFlow(ctx, "google", req, googleCode);
+    expect(polled.json.status).toBe("completed");
+    expect(polled.json.result).toBe("linked");
+    expect(polled.json.removedPlayerId).toBeNull();
+    expect(polled.json.auth.player.id).toBe(guest.id);
     const ids = await ctx.req("GET", "/me/identities", { token: guest.token });
     expect(
       ids.json.items.map((i: { provider: string }) => i.provider).sort()
@@ -389,20 +384,31 @@ describe("web login from the game (KF5)", () => {
     expect(await authIntegrityIssues(ctx.client)).toEqual([]);
   });
 
-  it("link: an empty account with the login is absorbed silently", async () => {
-    // A Google account that signed in once and has no progress.
-    const first = await startRequest();
+  it("link: an empty account with the login is absorbed after the confirmation", async () => {
+    const first = await startWebLogin(ctx);
     fake.state.handler = byUrl({
       [GOOGLE_OAUTH_TOKEN_URL]: () => googleToken("google-sub-empty"),
     });
-    await browserFlow("google", first.code, () => ({ code: "c" }));
-    const empty = (await poll(first.code, first.pollSecret)).json.auth;
+    const empty = (await completeFlow(ctx, "google", first, googleCode)).polled
+      .json.auth;
 
     const guest = await ctx.login();
     await ctx.reportRun(guest.token, { participants: [guest.id] });
-    const req = await startRequest({ token: guest.token, link: true });
-    await browserFlow("google", req.code, () => ({ code: "c" }));
-    const done = await poll(req.code, req.pollSecret);
+    const req = await startWebLogin(ctx, { token: guest.token, link: true });
+    const flow = await browserFlow(ctx, "google", req, googleCode);
+    const page = await ctx.req(
+      "GET",
+      `/auth/web-login/${req.code}?confirm=${flow.confirmSecret}`
+    );
+    expect(page.json.merge.bothHaveProgress).toBe(false);
+    expect(page.json.merge.removed.id).toBe(empty.player.id);
+    await confirmWebLogin(
+      ctx,
+      req.code,
+      flow.confirmSecret ?? "",
+      req.userCode
+    );
+    const done = await pollWebLogin(ctx, req);
     expect(done.json.status).toBe("completed");
     expect(done.json.merged).toBe(false);
     expect(done.json.removedPlayerId).toBe(empty.player.id);
@@ -413,86 +419,74 @@ describe("web login from the game (KF5)", () => {
     expect(await authIntegrityIssues(ctx.client)).toEqual([]);
   });
 
-  it("link: two accounts with progress wait for the browser's confirmation", async () => {
-    const first = await startRequest();
+  it("link: two accounts with progress are merged in the same confirmation", async () => {
+    const first = await startWebLogin(ctx);
     fake.state.handler = byUrl({
       [GOOGLE_OAUTH_TOKEN_URL]: () => googleToken("google-sub-progress"),
     });
-    await browserFlow("google", first.code, () => ({ code: "c" }));
-    const older = (await poll(first.code, first.pollSecret)).json.auth;
+    const older = (await completeFlow(ctx, "google", first, googleCode)).polled
+      .json.auth;
     await ctx.reportRun(older.token, { participants: [older.player.id] });
 
     const guest = await ctx.login("Jungspund");
     await ctx.reportRun(guest.token, { participants: [guest.id] });
-    const req = await startRequest({ token: guest.token, link: true });
-    const flow = await browserFlow("google", req.code, () => ({ code: "c" }));
-    const confirm = flow.back.searchParams.get("confirm") ?? "";
-    expect(confirm.length).toBeGreaterThan(20);
-    expect((await poll(req.code, req.pollSecret)).json.status).toBe(
-      "confirm_merge"
-    );
+    const req = await startWebLogin(ctx, { token: guest.token, link: true });
+    const flow = await browserFlow(ctx, "google", req, googleCode);
+    expect((await pollWebLogin(ctx, req)).json.status).toBe("awaiting_confirm");
 
     const withoutSecret = await ctx.req("GET", `/auth/web-login/${req.code}`);
-    expect(withoutSecret.json.status).toBe("confirm_merge");
+    expect(withoutSecret.json.authorized).toBe(false);
     expect(withoutSecret.json.merge).toBeNull();
-    const withSecret = await ctx.req(
+    const page = await ctx.req(
       "GET",
-      `/auth/web-login/${req.code}?confirm=${confirm}`
+      `/auth/web-login/${req.code}?confirm=${flow.confirmSecret}`
     );
-    expect(withSecret.json.merge.remaining.id).toBe(older.player.id);
-    expect(withSecret.json.merge.removed.id).toBe(guest.id);
+    expect(page.json.merge.bothHaveProgress).toBe(true);
+    expect(page.json.merge.remaining.id).toBe(older.player.id);
+    expect(page.json.merge.removed.id).toBe(guest.id);
+    expect(page.json.account.name).toBe(older.player.name);
 
-    const wrong = await ctx.req("POST", "/auth/web-login/confirm-merge", {
-      body: { code: req.code, confirmSecret: "w".repeat(40) },
-    });
-    expect(wrong.status).toBe(404);
-    const confirmed = await ctx.req("POST", "/auth/web-login/confirm-merge", {
-      body: { code: req.code, confirmSecret: confirm },
-    });
-    expect(confirmed.status).toBe(200);
+    const confirmed = await confirmWebLogin(
+      ctx,
+      req.code,
+      flow.confirmSecret ?? "",
+      req.userCode
+    );
     expect(confirmed.json.status).toBe("completed");
     expect(confirmed.json.merged).toBe(true);
-
-    const done = await poll(req.code, req.pollSecret);
+    const done = await pollWebLogin(ctx, req);
     expect(done.json.merged).toBe(true);
     expect(done.json.removedPlayerId).toBe(guest.id);
     expect(done.json.auth.player.id).toBe(older.player.id);
     expect((await ctx.req("GET", "/me", { token: guest.token })).status).toBe(
       401
     );
-    const ids = await ctx.req("GET", "/me/identities", {
-      token: done.json.auth.token,
-    });
-    expect(
-      ids.json.items.map((i: { provider: string }) => i.provider).sort()
-    ).toEqual(["device", "google"]);
     expect(await authIntegrityIssues(ctx.client)).toEqual([]);
   });
 
   it("sign-in of a banned player fails with reason; finished requests refuse new flows", async () => {
-    const first = await startRequest();
+    const first = await startWebLogin(ctx);
     fake.state.handler = byUrl({
       [GOOGLE_OAUTH_TOKEN_URL]: () => googleToken("google-sub-banned"),
     });
-    await browserFlow("google", first.code, () => ({ code: "c" }));
-    const player = (await poll(first.code, first.pollSecret)).json.auth.player;
+    const player = (await completeFlow(ctx, "google", first, googleCode)).polled
+      .json.auth.player;
     const admin = await ctx.createAdmin();
     await ctx.req("POST", `/admin/players/${player.id}/bans`, {
       token: admin.token,
       body: { reason: "Testsperre", durationDays: 7 },
     });
 
-    const req = await startRequest();
-    await browserFlow("google", req.code, () => ({ code: "c" }));
-    const failed = await poll(req.code, req.pollSecret);
+    const req = await startWebLogin(ctx);
+    const { confirmed } = await completeFlow(ctx, "google", req, googleCode);
+    expect(confirmed.json.ban.reason).toBe("Testsperre");
+    const failed = await pollWebLogin(ctx, req);
     expect(failed.json.status).toBe("failed");
     expect(failed.json.error).toBe("banned");
     expect(failed.json.reason).toBe("Testsperre");
     expect(failed.json.expiresAt).toBeString();
 
-    const again = await ctx.app.request(
-      `/auth/oauth/google/start?code=${req.code}`
-    );
+    const again = await oauthStart(ctx, "google", req.code, req.browserToken);
     expect(new URL(again.headers.get("location") ?? "").search).toBe(
       "?error=web_login_not_pending"
     );
@@ -507,17 +501,21 @@ describe("web login without providers", () => {
   afterAll(() => ctx.close());
 
   it("redirects back with provider_not_configured and offers no methods", async () => {
-    const req = await ctx.req("POST", "/auth/web-login", { body: {} });
-    const start = await ctx.app.request(
-      `/auth/oauth/google/start?code=${req.json.code}`
-    );
+    const req = await startWebLogin(ctx);
+    const start = await oauthStart(ctx, "google", req.code, req.browserToken);
     expect(start.headers.get("location")).toBe(
-      `${WEB}/login/${req.json.code}?error=provider_not_configured`
+      `${WEB}/login/${req.code}?error=provider_not_configured`
     );
-    const info = await ctx.req("GET", `/auth/web-login/${req.json.code}`);
+    const info = await webLoginInfo(ctx, req.code, {
+      browserToken: req.browserToken,
+    });
     expect(info.json.methods).toEqual([]);
     const magic = await ctx.req("POST", "/auth/magic-link", {
-      body: { email: "someone@example.org", code: req.json.code },
+      body: {
+        email: "someone@example.org",
+        code: req.code,
+        browserToken: req.browserToken,
+      },
     });
     expect(magic.status).toBe(501);
     expect(magic.json.error).toBe("provider_not_configured");
@@ -530,12 +528,11 @@ describe("web login without providers", () => {
       { now: () => clock }
     );
     try {
-      const req = await timed.req("POST", "/auth/web-login", { body: {} });
+      const req = await startWebLogin(timed);
       clock = new Date(clock.getTime() + 601_000);
-      const polled = await timed.req("POST", "/auth/web-login/poll", {
-        body: { code: req.json.code, pollSecret: req.json.pollSecret },
+      expect((await pollWebLogin(timed, req)).json).toEqual({
+        status: "expired",
       });
-      expect(polled.json).toEqual({ status: "expired" });
     } finally {
       await timed.close();
     }

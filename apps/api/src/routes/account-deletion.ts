@@ -5,6 +5,7 @@ import {
   type AccountDeletionVerifyResponse,
 } from "@soulwick/contracts";
 import { Hono } from "hono";
+import { proxyTrust } from "../lib/client-ip.ts";
 import { createLogger } from "../lib/logger.ts";
 import { rateLimit } from "../lib/rate-limit.ts";
 import { hmacSecret } from "../lib/secrets.ts";
@@ -34,7 +35,7 @@ export function accountDeletionRoutes(deps: Deps) {
     rateLimit({
       limit: deps.config.DELETION_REQUESTS_PER_HOUR,
       windowMs: HOUR_MS,
-      trustProxy: deps.config.TRUST_PROXY,
+      trustProxy: proxyTrust(deps.config),
       name: "account-deletion-verify",
     }),
     async (c) => {

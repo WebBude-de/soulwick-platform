@@ -6,6 +6,8 @@ export interface FakeCall {
   body: string | null;
   headers: Record<string, string>;
   method: string;
+  /** `redirect` option of the call (`error` = redirects are refused). */
+  redirect: RequestInit["redirect"];
   url: URL;
 }
 
@@ -28,6 +30,7 @@ export function fakeFetch() {
       method: init?.method ?? "GET",
       headers: Object.fromEntries(new Headers(init?.headers).entries()),
       body,
+      redirect: init?.redirect,
     };
     state.calls.push(call);
     return await state.handler(call);

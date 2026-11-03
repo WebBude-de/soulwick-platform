@@ -321,6 +321,45 @@ export interface LinkResult {
   worlds: WorldMergeCounts;
 }
 
+export interface MergePlan {
+  /** Both accounts have progress: a real merge that needs a confirmation. */
+  bothHaveProgress: boolean;
+  drop: Player;
+  dropSummary: AccountSummary;
+  keep: Player;
+  keepSummary: AccountSummary;
+}
+
+/**
+ * Which account stays when `owner` (holds the proof) and `caller` (brought it) are joined
+ * (D-122/D-188): empty caller → owner stays; caller with progress and empty owner → caller
+ * stays; both with progress → the older one (`created_at`, tie: owner). Reads only; the web
+ * login shows this plan on the confirmation page before anything is written.
+ */
+export async function planMerge(
+  tx: Tx,
+  owner: Player,
+  caller: Player,
+  now: Date
+): Promise<MergePlan> {
+  const ownerSummary = await summarize(tx, owner, now);
+  const callerSummary = await summarize(tx, caller, now);
+  const plan = (keepOwner: boolean, bothHaveProgress: boolean): MergePlan => ({
+    keep: keepOwner ? owner : caller,
+    drop: keepOwner ? caller : owner,
+    keepSummary: (keepOwner ? ownerSummary : callerSummary).summary,
+    dropSummary: (keepOwner ? callerSummary : ownerSummary).summary,
+    bothHaveProgress,
+  });
+  if (!hasProgress(callerSummary)) {
+    return plan(true, false);
+  }
+  if (!hasProgress(ownerSummary)) {
+    return plan(false, false);
+  }
+  return plan(owner.createdAt.getTime() <= caller.createdAt.getTime(), true);
+}
+
 /**
  * Joins two accounts of one person by the rules of D-121/D-122/D-188, inside the caller's
  * transaction. `ownerId` is the account that already holds the proof (link code, login),
@@ -357,35 +396,17 @@ export async function mergeAccountsInTx(
     );
   }
 
-  const ownerSummary = await summarize(tx, owner, now);
-  const callerSummary = await summarize(tx, caller, now);
-  let keep: Player;
-  let drop: Player;
-  let merged = false;
-  if (!hasProgress(callerSummary)) {
-    keep = owner;
-    drop = caller;
-  } else if (hasProgress(ownerSummary)) {
-    const ownerIsOlder =
-      owner.createdAt.getTime() <= caller.createdAt.getTime();
-    keep = ownerIsOlder ? owner : caller;
-    drop = ownerIsOlder ? caller : owner;
-    if (!confirmMerge) {
-      throw new ApiError(
-        409,
-        "account_has_progress",
-        "Both accounts have progress; confirm the merge",
-        {
-          remaining: (ownerIsOlder ? ownerSummary : callerSummary).summary,
-          removed: (ownerIsOlder ? callerSummary : ownerSummary).summary,
-        }
-      );
-    }
-    merged = true;
-  } else {
-    keep = caller;
-    drop = owner;
+  const plan = await planMerge(tx, owner, caller, now);
+  if (plan.bothHaveProgress && !confirmMerge) {
+    throw new ApiError(
+      409,
+      "account_has_progress",
+      "Both accounts have progress; confirm the merge",
+      { remaining: plan.keepSummary, removed: plan.dropSummary }
+    );
   }
+  const { keep, drop } = plan;
+  const merged = plan.bothHaveProgress;
 
   const { guilds, worlds } = await absorbAccount(tx, keep, drop, now);
   const remaining = await tx.player.findUniqueOrThrow({

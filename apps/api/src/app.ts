@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { createAuth } from "./auth/auth.ts";
+import { proxyTrust } from "./lib/client-ip.ts";
 import { createErrorHandler } from "./lib/errors.ts";
 import { createLogger, requestLogger } from "./lib/logger.ts";
 import { createMailer } from "./lib/mail.ts";
@@ -47,7 +48,7 @@ export function createApp(base: BaseDeps) {
     c.json({ error: "not_found", message: "Route not found" }, 404)
   );
 
-  app.use("*", requestLogger(logger, config.TRUST_PROXY));
+  app.use("*", requestLogger(logger, proxyTrust(config)));
   app.use("*", secureHeaders());
   // The game client and the server-rendered web/admin apps do not need CORS; only browser
   // origins listed in CORS_ORIGINS may call the API directly.
@@ -72,7 +73,7 @@ export function createApp(base: BaseDeps) {
     "*",
     rateLimit({
       limit: config.RATE_LIMIT_PER_MINUTE,
-      trustProxy: config.TRUST_PROXY,
+      trustProxy: proxyTrust(config),
       // The relay asks for every player from one IP; its keyed calls are not limited per IP.
       skip: (c) =>
         c.req.path.startsWith("/internal/") &&

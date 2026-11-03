@@ -9,7 +9,7 @@ import {
 } from "@soulwick/logger";
 import type { MiddlewareHandler } from "hono";
 import type { Config } from "../config.ts";
-import { clientIp } from "./client-ip.ts";
+import { clientIp, type ProxyTrust } from "./client-ip.ts";
 import { ApiError } from "./errors.ts";
 
 export type { Logger } from "@soulwick/logger";
@@ -53,7 +53,7 @@ function errorCode(error: unknown): string | undefined {
 /** One line per request: 2xx/3xx info, 4xx warn (with the error code), 5xx error. */
 export function requestLogger(
   logger: Logger,
-  trustProxy: boolean
+  trustProxy: ProxyTrust
 ): MiddlewareHandler {
   return async (c, next) => {
     const start = performance.now();

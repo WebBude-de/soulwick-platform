@@ -10,6 +10,7 @@ import {
   LOG_THRESHOLDS,
 } from "@soulwick/logger";
 import { z } from "zod";
+import { cidrMatcher } from "./lib/client-ip.ts";
 
 const bool = z
   .enum(["true", "false", "1", "0", ""])
@@ -192,6 +193,15 @@ const ConfigSchema = z
      * account and hour (D-188, P-038). The game syncs at most every 5 minutes in the village.
      */
     WORLD_WRITES_PER_HOUR: z.coerce.number().int().min(1).default(120),
+    /**
+     * Peers allowed to set the forwarding headers when TRUST_PROXY=true (comma-separated CIDRs or
+     * addresses, e.g. the Cloudflare ranges and the Docker network of Traefik). Empty = every peer
+     * (as before); recommended in production (infra/DOKPLOY.md).
+     */
+    TRUSTED_PROXY_CIDRS: csv.refine((list) => cidrMatcher(list) !== null, {
+      message:
+        "TRUSTED_PROXY_CIDRS must be IP addresses or CIDRs, comma separated",
+    }),
     /** Behind Dokploy/Traefik the client IP comes from X-Forwarded-For. */
     TRUST_PROXY: z
       .enum(["true", "false", "1", "0"])

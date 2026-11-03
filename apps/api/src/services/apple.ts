@@ -1,4 +1,5 @@
 import { createHash, type JsonWebKey } from "node:crypto";
+import { APPLE_NONCE_TTL_SECONDS } from "@soulwick/contracts";
 import type { Config } from "../config.ts";
 import { ApiError, withCause } from "../lib/errors.ts";
 import {
@@ -9,10 +10,17 @@ import {
   verifyRs256,
 } from "../lib/jwt.ts";
 import { createLogger, type Logger } from "../lib/logger.ts";
-import { decryptSecret, encryptSecret } from "../lib/secrets.ts";
+import {
+  decryptSecret,
+  encryptSecret,
+  hashSecret,
+  hmacSecret,
+  randomToken,
+} from "../lib/secrets.ts";
 import { forEachSequential } from "../lib/sequential.ts";
 import type { BaseDeps } from "../types.ts";
 import type { Db, DbOrTx } from "./db-types.ts";
+import { putVerification, takeVerification } from "./verifications.ts";
 
 /**
  * Sign in with Apple (D-188 (2), KF5, P-039): the client secret (an ES256 JWT signed with the
@@ -230,6 +238,30 @@ export async function exchangeAppleCode(
   };
 }
 
+const appleNonceIdentifier = (
+  config: Pick<Config, "BETTER_AUTH_SECRET">,
+  nonce: string
+) => `apple-nonce:${hashSecret(hmacSecret(config), "apple-nonce", nonce)}`;
+
+/**
+ * POST /auth/apple/nonce: a one-time nonce (APPLE_NONCE_TTL_SECONDS), stored only as HMAC. The
+ * app puts SHA-256(nonce) into its Apple request; POST /auth/apple accepts each nonce once.
+ */
+export async function issueAppleNonce(
+  db: Db,
+  config: Pick<Config, "BETTER_AUTH_SECRET">,
+  now: Date
+): Promise<{ nonce: string; expiresAt: Date }> {
+  const nonce = randomToken();
+  const expiresAt = new Date(now.getTime() + APPLE_NONCE_TTL_SECONDS * 1000);
+  await putVerification(db, {
+    identifier: appleNonceIdentifier(config, nonce),
+    value: { issuedAt: now.toISOString() },
+    expiresAt,
+  });
+  return { nonce, expiresAt };
+}
+
 /** What the identity's Better Auth row keeps of an Apple login (refresh token encrypted). */
 export interface AppleAccountData {
   clientId: string;
@@ -242,12 +274,13 @@ export interface AppleAccountData {
  * (soft: a failed exchange only means there is nothing to revoke later). Returns `sub`.
  */
 export async function verifyAppleNative(
-  deps: Pick<BaseDeps, "fetch" | "config">,
+  deps: Pick<BaseDeps, "fetch" | "config" | "db">,
   keys: AppleKeys,
   input: {
     identityToken: string;
     authorizationCode?: string;
-    nonce?: string;
+    /** Raw nonce from POST /auth/apple/nonce; used up here. */
+    nonce: string;
     now: Date;
   },
   logger: Logger
@@ -259,6 +292,15 @@ export async function verifyAppleNative(
       "provider_not_configured",
       "Login via apple is not configured on this server"
     );
+  }
+  // The nonce must be one this server issued and not used yet (replay protection, KF5 fix).
+  const issued = await takeVerification(
+    deps.db,
+    appleNonceIdentifier(config, input.nonce),
+    input.now
+  );
+  if (!issued) {
+    throw invalidToken("nonce unknown or used");
   }
   const sub = await verifyAppleIdentityToken(keys, input.identityToken, {
     audiences: [config.APPLE_APP_BUNDLE_ID],

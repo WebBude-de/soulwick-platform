@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import {
   AppleNativeAuthRequest,
+  type AppleNonceResponse,
   DevAuthRequest,
   DeviceAuthRequest,
   GameCenterAuthRequest,
@@ -10,13 +11,17 @@ import {
   SteamAuthRequest,
 } from "@soulwick/contracts";
 import { Hono } from "hono";
-import { clientIp } from "../lib/client-ip.ts";
+import { clientIp, proxyTrust } from "../lib/client-ip.ts";
 import { ApiError } from "../lib/errors.ts";
 import { createLogger } from "../lib/logger.ts";
 import { fixedWindowCounter, rateLimit } from "../lib/rate-limit.ts";
-import { parseBody } from "../lib/validate.ts";
+import { iso, parseBody } from "../lib/validate.ts";
 import { requirePlayer } from "../middleware/auth.ts";
-import { verifyAppleNative } from "../services/apple.ts";
+import {
+  isAppleNativeConfigured,
+  issueAppleNonce,
+  verifyAppleNative,
+} from "../services/apple.ts";
 import { isGameCenterConfigured } from "../services/game-center.ts";
 import { isGooglePlayConfigured } from "../services/google-play.ts";
 import { identityExists } from "../services/identities.ts";
@@ -105,7 +110,7 @@ export function authRoutes(deps: Deps) {
     "/device",
     rateLimit({
       limit: deps.config.GUEST_LOGINS_PER_MINUTE,
-      trustProxy: deps.config.TRUST_PROXY,
+      trustProxy: proxyTrust(deps.config),
       name: "auth-device",
     }),
     async (c) => {
@@ -117,7 +122,7 @@ export function authRoutes(deps: Deps) {
         );
       }
       const body = await parseBody(c, DeviceAuthRequest);
-      const ip = clientIp(c, deps.config.TRUST_PROXY);
+      const ip = clientIp(c, proxyTrust(deps.config));
       const isNew = !(await identityExists(deps.db, "device", body.deviceId));
       if (isNew) {
         const retryAfter = newGuestAccounts.blockedFor(ip);
@@ -186,7 +191,7 @@ export function authRoutes(deps: Deps) {
   const loginLimit = (name: string) =>
     rateLimit({
       limit: deps.config.LOGIN_ATTEMPTS_PER_MINUTE,
-      trustProxy: deps.config.TRUST_PROXY,
+      trustProxy: proxyTrust(deps.config),
       name,
     });
 
@@ -242,6 +247,21 @@ export function authRoutes(deps: Deps) {
       );
     }
     return c.json(await signInWithLogin(deps, login));
+  });
+
+  /** One-time nonce for Sign in with Apple in the iOS app (required by POST /auth/apple). */
+  app.post("/apple/nonce", loginLimit("auth-apple-nonce"), async (c) => {
+    if (!isAppleNativeConfigured(deps.config)) {
+      throw notConfigured("apple");
+    }
+    const { nonce, expiresAt } = await issueAppleNonce(
+      deps.db,
+      deps.config,
+      now()
+    );
+    const body: AppleNonceResponse = { nonce, expiresAt: iso(expiresAt) };
+    c.header("cache-control", "no-store");
+    return c.json(body, 201);
   });
 
   /**

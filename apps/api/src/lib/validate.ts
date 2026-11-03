@@ -58,6 +58,34 @@ export async function parseOptionalBody<T extends z.ZodType>(
   return validateBody(raw, schema);
 }
 
+/**
+ * A form post (`application/x-www-form-urlencoded`), e.g. a browser form of the website. Only
+ * text fields; files are ignored by the schema.
+ */
+export async function parseForm<T extends z.ZodType>(
+  c: Context,
+  schema: T
+): Promise<z.output<T>> {
+  const type = c.req.header("content-type") ?? "";
+  if (!type.startsWith("application/x-www-form-urlencoded")) {
+    throw new ApiError(
+      415,
+      "unsupported_media_type",
+      "Send the form as application/x-www-form-urlencoded"
+    );
+  }
+  let raw: unknown;
+  try {
+    raw = Object.fromEntries(new URLSearchParams(await c.req.text()));
+  } catch (err) {
+    throw withCause(
+      new ApiError(400, "validation_error", "Invalid form body"),
+      err
+    );
+  }
+  return validateBody(raw, schema);
+}
+
 export function parseQuery<T extends z.ZodType>(
   c: Context,
   schema: T

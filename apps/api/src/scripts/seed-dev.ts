@@ -54,6 +54,7 @@ import { createAdminAccount } from "../services/admin-users.ts";
 import { writeAudit } from "../services/audit.ts";
 import { hashPassword } from "../services/passwords.ts";
 import { ensurePlayerUser } from "../services/player-users.ts";
+import { seedPlayerPassword } from "./seed-player-password.ts";
 
 if (process.env.NODE_ENV === "production") {
   console.error(
@@ -96,7 +97,11 @@ const STEAM_PLAYER = 1;
  */
 const LOGIN_PLAYER = 1;
 const SEED_USERNAME = "lumen";
-const SEED_PLAYER_PASSWORD = "soulwick-player-local";
+/** Null = no password login (not a local database and no DEV_PLAYER_PASSWORD). */
+const SEED_PLAYER_PASSWORD = seedPlayerPassword({
+  DATABASE_URL: process.env.DATABASE_URL,
+  DEV_PLAYER_PASSWORD: process.env.DEV_PLAYER_PASSWORD,
+});
 const SEED_EMAIL = "lumen@soulwick.test";
 
 /**
@@ -895,13 +900,13 @@ async function ensureSeedLogins(tx: Tx, playerId: string): Promise<number> {
     },
   });
   const user = await ensurePlayerUser(tx, playerId);
-  if (!usernameTaken) {
+  if (!usernameTaken && SEED_PLAYER_PASSWORD) {
     const account = await tx.account.create({
       data: {
         userId: user.id,
         providerId: "credential",
         accountId: user.id,
-        password: await hashPassword(SEED_PLAYER_PASSWORD),
+        password: await hashPassword(SEED_PLAYER_PASSWORD.password),
       },
     });
     await tx.playerIdentity.create({
@@ -1310,6 +1315,15 @@ async function seed(tx: Tx): Promise<Summary> {
   return summary;
 }
 
+function playerPasswordInfo(): string {
+  if (!SEED_PLAYER_PASSWORD) {
+    return "no password login (not a local database; set DEV_PLAYER_PASSWORD)";
+  }
+  return SEED_PLAYER_PASSWORD.local
+    ? `username "${SEED_USERNAME}", password "${SEED_PLAYER_PASSWORD.password}"`
+    : `username "${SEED_USERNAME}", password from DEV_PLAYER_PASSWORD`;
+}
+
 const db = createPrisma(process.env.DATABASE_URL ?? "");
 try {
   // Argon2 hashing plus the inserts take longer than Prisma's default 5 s transaction timeout.
@@ -1326,7 +1340,7 @@ try {
       "Dev seed applied.",
       `  Admins:   ${ADMIN_EMAIL} (admin), ${MODERATOR_EMAIL} (moderator), ${summary.newAdmins} new; new accounts get the password ${passwordInfo}, existing ones keep theirs`,
       `  Players:  ${PLAYERS.length} (${summary.newPlayers} new); device ids ${deviceIdOf(1)} ... ${deviceIdOf(PLAYERS.length)}; player ${STEAM_PLAYER} also has the fake Steam id ${FAKE_STEAM_ID}`,
-      `  Logins:   ${PLAYERS[0]?.name}: username "${SEED_USERNAME}", password "${SEED_PLAYER_PASSWORD}", e-mail ${SEED_EMAIL} (${summary.loginsCreated} new)`,
+      `  Logins:   ${PLAYERS[0]?.name}: ${playerPasswordInfo()}, e-mail ${SEED_EMAIL} (${summary.loginsCreated} new)`,
       ...GUILDS.map(
         (g) =>
           `  Guild:    ${g.name} [${g.tag}], invite code ${g.inviteCode}, ${g.members.length} members`

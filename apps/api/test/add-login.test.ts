@@ -11,11 +11,17 @@ import { STEAM_AUTH_URL } from "../src/services/steam.ts";
 import { authIntegrityIssues } from "./auth-integrity.ts";
 import { byUrl, type FakeCall, fakeFetch, json } from "./fake-fetch.ts";
 import { createTestContext, DEV_KEY, type TestContext } from "./helpers.ts";
+import {
+  confirmWebLogin,
+  pollWebLogin,
+  startWebLogin,
+} from "./web-login-flow.ts";
 
 const WORKER = "https://mail-worker.example.test/send";
 const STEAM_ID = "76561190000000099";
 const TICKET = "cafe".repeat(16);
 const PASSWORD = "correct-horse-battery";
+const TOKEN_MARK = "/login/magic?token=";
 const TOKEN_IN_LINK = /\/login\/magic\?token=([\w-]+)/;
 
 describe("add a login in the game (KF5, P-036 (2))", () => {
@@ -63,18 +69,26 @@ describe("add a login in the game (KF5, P-036 (2))", () => {
   }
 
   async function addEmail(token: string, email: string) {
-    const req = await ctx.req("POST", "/auth/web-login", {
-      token,
-      body: { intent: "link" },
-    });
+    const req = await startWebLogin(ctx, { token, link: true });
     await ctx.req("POST", "/auth/magic-link", {
-      body: { email, code: req.json.code },
+      body: { email, code: req.code, browserToken: req.browserToken },
     });
+    // The mail goes out after the answer.
+    for (let i = 0; i < 100 && !lastMail.includes(TOKEN_MARK); i += 1) {
+      await Bun.sleep(10);
+    }
     const link = lastMail.match(TOKEN_IN_LINK)?.[1];
-    await ctx.req("POST", "/auth/magic-link/verify", { body: { token: link } });
-    await ctx.req("POST", "/auth/web-login/poll", {
-      body: { code: req.json.code, pollSecret: req.json.pollSecret },
+    lastMail = "";
+    const verified = await ctx.req("POST", "/auth/magic-link/verify", {
+      body: { token: link },
     });
+    await confirmWebLogin(
+      ctx,
+      req.code,
+      verified.json.confirmSecret,
+      req.userCode
+    );
+    await pollWebLogin(ctx, req);
   }
 
   it("adds a Steam login with the ticket; the same ticket on the same account changes nothing", async () => {
@@ -229,7 +243,11 @@ describe("add a login in the game (KF5, P-036 (2))", () => {
 
     for (const body of [
       { provider: "google_play", serverAuthCode: "4/test-server-auth-code" },
-      { provider: "apple", identityToken: "x".repeat(40) },
+      {
+        provider: "apple",
+        identityToken: "x".repeat(40),
+        nonce: "n".repeat(20),
+      },
     ]) {
       const res = await ctx.req("POST", "/me/logins", {
         token: me.token,

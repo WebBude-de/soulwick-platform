@@ -143,6 +143,7 @@ Der Seed **verweigert `NODE_ENV=production`**. Im Docker-Image ist er nur für d
 | `WORLD_WRITES_PER_HOUR` | nein | `120` | TESTWERT: Schreibzugriffe auf Cloud-Welten (`PUT`, `DELETE`, Wiederherstellen, aus dem Archiv holen unter `/me/worlds`) je Konto und Stunde (D-188, P-038) |
 | `BUG_REPORT_RETENTION_DAYS` | nein | `90` | TESTWERT: Bug-Meldungen werden so viele Tage nach dem Eingang automatisch gelöscht (beim Start der API und dann alle 24 h) |
 | `TRUST_PROXY` | nein | `true` | Client-IP aus `X-Forwarded-For` (hinter Dokploy/Traefik); lokal `false` (`.env.example`) |
+| `TRUSTED_PROXY_CIDRS` | nein | leer | Nur Verbindungen aus diesen Adressen/CIDRs (kommagetrennt) dürfen `CF-Connecting-IP`/`X-Forwarded-For` setzen; leer = jede Gegenstelle. Empfehlung: Docker-Netz von Traefik (`infra/DOKPLOY.md`) |
 | `MIN_SECONDS_PER_ROOM` | nein | `8` | TESTWERT: schnellere Runs werden markiert |
 | `KNOWN_GAME_VERSIONS` | nein | leer | Bekannte Spielversionen, kommagetrennt; leer = keine Prüfung |
 | `MIN_GAME_VERSION` | nein | leer | Älteste Spielversion mit Online-Funktionen (z. B. `1.0.0`), in `/health` und `/public/config`; leer = keine Grenze (P16) |
@@ -176,16 +177,24 @@ Umgebung anbietet, meldet `GET /public/config` (`loginMethods`); ohne ihre Varia
 - **Benutzername + Passwort:** `PUT /me/logins/password` (anlegen oder ändern, die Sitzung ist der
   Nachweis), `POST /auth/password`. Benutzername privat, 3–24 Zeichen `a-z 0-9 . _ -`, Passwort ≥ 10.
 - **Web-Anmeldung aus dem Spiel:** `POST /auth/web-login` (`intent` `sign_in` oder mit Sitzung
-  `link`) → `code`, `pollSecret`, `url` (`<WEB_URL>/login/<code>`); das Spiel fragt
-  `POST /auth/web-login/poll` alle 2 s und bekommt die Sitzung genau einmal. Die Website liest
-  `GET /auth/web-login/:code` und schickt den Browser zu `GET /auth/oauth/:provider/start?code=…`
-  (`google`, `apple`, `discord`, `steam` = Steam OpenID) oder sendet `POST /auth/magic-link`.
-  Rückrufe an die API (`/auth/oauth/:provider/callback`) leiten auf `<WEB_URL>/login/<code>` zurück
-  (`?error=…` bzw. `?confirm=…`). Haben beide Konten Fortschritt, bestätigt **der Browser** das
-  Zusammenführen (`POST /auth/web-login/confirm-merge`), nicht das Spiel.
-- **Magic Link:** Mail mit `<WEB_URL>/login/magic?token=…` (15 min, einmal) und dem Code der Anfrage;
-  die Seite zeigt `GET /auth/magic-link/preview` und löst erst per Knopf `POST /auth/magic-link/verify`
-  aus (Mail-Scanner öffnen nur Links).
+  `link`) → `code`, `userCode` (zeigt das Spiel), `browserSecret`, `pollSecret`, `url`
+  (`<WEB_URL>/login/<code>#k=<browserSecret>`); das Spiel fragt `POST /auth/web-login/poll` alle 2 s
+  und bekommt die Sitzung genau einmal. Die Website löst `k` einmal ein (`POST /auth/web-login/claim`
+  → `browserToken`; danach ist `k` wertlos), liest `GET /auth/web-login/:code` mit Header
+  `x-browser-token` (Kontodaten nur mit `?confirm=`), startet Anbieter per Formular-Post
+  `POST /auth/oauth/:provider/start` (`code`, `browserToken`; `google`, `apple`, `discord`,
+  `steam` = Steam OpenID) oder sendet `POST /auth/magic-link` mit `browserToken`. Rückrufe an
+  die API leiten auf `<WEB_URL>/login/<code>?confirm=…` (bzw. `?error=…`). **Abgeschlossen wird erst mit
+  `POST /auth/web-login/confirm {code, confirmSecret, typedCode}`:** Der Mensch im Browser tippt den Code
+  aus dem Spiel ein (5 Fehlversuche, dann verfällt die Anfrage). Dieselbe Bestätigung deckt das
+  Aufnehmen eines leeren Kontos und das Zusammenführen zweier Konten mit Fortschritt ab; die Seite zeigt
+  vorher, mit welchem Konto das Spiel angemeldet wird (P-039, Sicherheitsfix 03.11.2026).
+- **Magic Link:** Mail mit `<WEB_URL>/login/magic?token=…` (15 min, einmal), die sagt, dass ein
+  ANDERES Gerät angemeldet wird; die Seite zeigt `GET /auth/magic-link/preview`, löst per Knopf
+  `POST /auth/magic-link/verify` aus (Mail-Scanner öffnen nur Links) und fragt danach den Code aus dem
+  Spiel ab wie oben.
+- **Apple in der iOS-App:** zuerst `POST /auth/apple/nonce` (einmalig, 5 min), SHA-256 davon in die
+  Apple-Anfrage, dann `POST /auth/apple` bzw. `POST /me/logins` mit `identityToken` und `nonce`.
 - **Im Spiel hinzufügen:** `POST /me/logins` mit Steam-Ticket, Play-Games-Code, Apple-Identity-Token,
   Game-Center-Signatur oder Geräte-ID eines Gastkontos; leere Konten gehen still auf, sonst
   `409 account_has_progress` bis `confirmMerge: true` (wie `POST /me/link`).
@@ -197,7 +206,8 @@ Umgebung anbietet, meldet `GET /public/config` (`loginMethods`); ohne ihre Varia
   `Authorization: Bearer <MAIL_CLOUDFLARE_KEY>` und JSON `{ from, to, subject, text, html }`; jede
   2xx-Antwort heißt angenommen. Lokal reicht `MAIL_ADAPTER=log` (Link im API-Log).
 - **Dev-Seed:** Lumen hat Benutzername `lumen` mit Passwort `soulwick-player-local` und die Adresse
-  `lumen@soulwick.test`.
+  `lumen@soulwick.test`. Das Passwort gilt nur bei einer Datenbank auf `localhost`; auf einem Server
+  braucht der Passwort-Login `DEV_PLAYER_PASSWORD` (≥ 12 Zeichen), sonst wird er nicht angelegt.
 
 ## Befehle
 

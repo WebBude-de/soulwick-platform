@@ -17,6 +17,7 @@ import {
 } from "@soulwick/contracts";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
+import { proxyTrust } from "../lib/client-ip.ts";
 import { ApiError } from "../lib/errors.ts";
 import { createLogger } from "../lib/logger.ts";
 import { rateLimit } from "../lib/rate-limit.ts";
@@ -177,20 +178,29 @@ export function meRoutes(deps: Deps) {
   // --- adding logins (KF5, P-036 (2)) ------------------------------------------------------------
 
   /** Adds or changes the password login of the own account; the session is the proof. */
-  app.put("/logins/password", async (c) => {
-    const body = await parseBody(c, SetPasswordLoginRequest);
-    const player = c.get("player");
-    await setPasswordLogin(deps.db, {
-      playerId: player.id,
-      username: body.username,
-      password: body.password,
-      now: now(),
-    });
-    const response: IdentityList = {
-      items: await listIdentitySummaries(deps.db, player.id),
-    };
-    return c.json(response);
-  });
+  app.put(
+    "/logins/password",
+    rateLimit({
+      // `username_taken` tells whether a username exists: keep that slow.
+      limit: deps.config.LOGIN_ATTEMPTS_PER_MINUTE,
+      trustProxy: proxyTrust(deps.config),
+      name: "me-logins-password",
+    }),
+    async (c) => {
+      const body = await parseBody(c, SetPasswordLoginRequest);
+      const player = c.get("player");
+      await setPasswordLogin(deps.db, {
+        playerId: player.id,
+        username: body.username,
+        password: body.password,
+        now: now(),
+      });
+      const response: IdentityList = {
+        items: await listIdentitySummaries(deps.db, player.id),
+      };
+      return c.json(response);
+    }
+  );
 
   /**
    * Proves a further login inside the game and adds it (Steam ticket, Play Games, Apple, Game
@@ -201,7 +211,7 @@ export function meRoutes(deps: Deps) {
     "/logins",
     rateLimit({
       limit: deps.config.LOGIN_ATTEMPTS_PER_MINUTE,
-      trustProxy: deps.config.TRUST_PROXY,
+      trustProxy: proxyTrust(deps.config),
       name: "me-logins",
     }),
     async (c) => {
@@ -246,7 +256,7 @@ export function meRoutes(deps: Deps) {
     rateLimit({
       // Codes have 31^6 values; guessing must stay slow.
       limit: deps.config.LINK_ATTEMPTS_PER_MINUTE,
-      trustProxy: deps.config.TRUST_PROXY,
+      trustProxy: proxyTrust(deps.config),
       name: "me-link",
     }),
     async (c) => {

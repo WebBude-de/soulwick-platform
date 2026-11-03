@@ -14,6 +14,14 @@ import type { VerifiedLogin } from "./logins.ts";
 export const STEAM_OPENID_URL = "https://steamcommunity.com/openid/login";
 const OPENID_NS = "http://specs.openid.net/auth/2.0";
 const IDENTIFIER_SELECT = "http://specs.openid.net/auth/2.0/identifier_select";
+/** Fields Steam must have signed (`openid.signed`); checked before check_authentication. */
+const SIGNED_FIELDS = [
+  "op_endpoint",
+  "claimed_id",
+  "identity",
+  "return_to",
+  "response_nonce",
+] as const;
 const CLAIMED_ID = /^https:\/\/steamcommunity\.com\/openid\/id\/\d{17}$/;
 
 export const isSteamOpenIdConfigured = (
@@ -55,6 +63,12 @@ export async function verifySteamOpenId(
 ): Promise<VerifiedLogin> {
   if (params["openid.mode"] !== "id_res") {
     throw rejected(`mode ${params["openid.mode"] ?? "missing"}`);
+  }
+  // Steam signs these; an assertion that leaves one out could carry a forged value.
+  const signed = new Set((params["openid.signed"] ?? "").split(","));
+  const unsigned = SIGNED_FIELDS.find((field) => !signed.has(field));
+  if (unsigned) {
+    throw rejected(`not signed: ${unsigned}`);
   }
   if (params["openid.op_endpoint"] !== STEAM_OPENID_URL) {
     throw rejected("op_endpoint");

@@ -13,6 +13,8 @@ export interface BaseDeps {
   db: Db;
   /** Injectable for tests (Steam Web API, Google, eRecht24, relay). */
   fetch?: typeof fetch;
+  /** Tests only: CA certificates (PEM) trusted for Game Center instead of DigiCert's chain. */
+  gameCenterCas?: readonly string[];
   /** Injectable clock for tests. Better Auth checks session expiry against the wall clock. */
   now?: () => Date;
 }

@@ -141,7 +141,7 @@ interface ReqOpts {
  */
 export async function createTestContext(
   configOverrides: Record<string, string> = {},
-  deps: Pick<BaseDeps, "fetch" | "now"> = {}
+  deps: Pick<BaseDeps, "fetch" | "now" | "gameCenterCas"> = {}
 ) {
   const base = baseDatabaseUrl();
   const dbName = `soulwick_test_${randomBytes(4).toString("hex")}`;

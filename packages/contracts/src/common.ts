@@ -136,7 +136,7 @@ export type PaginationQuery = z.infer<typeof PaginationQuery>;
  * - `device` guest login per device (POST /auth/device), `password` username + password
  *   (POST /auth/password), `email` magic link (needs a mail adapter);
  * - `google`, `apple`, `discord`, `steam` (Steam OpenID): browser flows of the web login
- *   (GET /auth/oauth/:provider/start, website page `/login/<code>`);
+ *   (POST /auth/oauth/:provider/start, website page `/login/<code>`);
  * - `steam_ticket` (POST /auth/steam), `google_play` (POST /auth/google-play), `apple_native`
  *   (POST /auth/apple, Sign in with Apple on iOS), `game_center` (POST /auth/game-center): logins
  *   inside the game on the respective platform.

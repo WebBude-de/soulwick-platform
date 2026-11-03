@@ -16,6 +16,13 @@ import {
   unsignedJwt,
 } from "./fake-fetch.ts";
 import { createTestContext, type TestContext } from "./helpers.ts";
+import {
+  completeFlow,
+  confirmWebLogin,
+  pollWebLogin,
+  type StartedWebLogin,
+  startWebLogin,
+} from "./web-login-flow.ts";
 
 const WEB = "http://web.test";
 const WORKER = "https://mail-worker.example.test/send";
@@ -56,60 +63,91 @@ describe("magic link (KF5)", () => {
     });
   });
 
-  async function startRequest(token?: string) {
-    const res = await ctx.req("POST", "/auth/web-login", {
-      token,
-      body: token ? { intent: "link" } : {},
-    });
-    return res.json as { code: string; pollSecret: string };
-  }
+  const startRequest = (token?: string) =>
+    startWebLogin(ctx, token ? { token, link: true } : {});
 
-  async function sendLink(email: string, code: string, locale?: string) {
+  async function sendLink(
+    email: string,
+    req: StartedWebLogin,
+    locale?: string
+  ) {
     const res = await ctx.req("POST", "/auth/magic-link", {
-      body: { email, code, ...(locale ? { locale } : {}) },
+      body: {
+        email,
+        code: req.code,
+        browserToken: req.browserToken,
+        ...(locale ? { locale } : {}),
+      },
     });
     expect(res.status).toBe(202);
     expect(res.json).toEqual({ sent: true });
-    const mail = mails.at(-1);
+    // The mail goes out after the answer: wait for it (or for nothing to come).
+    const before = mails.length;
+    for (let i = 0; i < 50 && mails.length === before; i += 1) {
+      await Bun.sleep(10);
+    }
+    const mail = mails.length > before ? mails.at(-1) : undefined;
     return (mail?.text ?? "").match(TOKEN_IN_LINK)?.[1] ?? null;
   }
 
-  const poll = (code: string, pollSecret: string) =>
-    ctx.req("POST", "/auth/web-login/poll", { body: { code, pollSecret } });
+  /** Link sent, clicked, confirmed with the game's code; returns the game's poll answer. */
+  async function magicFlow(email: string, req: StartedWebLogin) {
+    const token = await sendLink(email, req);
+    const verified = await ctx.req("POST", "/auth/magic-link/verify", {
+      body: { token },
+    });
+    expect(verified.json.status).toBe("awaiting_confirm");
+    const confirmed = await confirmWebLogin(
+      ctx,
+      req.code,
+      verified.json.confirmSecret,
+      req.userCode
+    );
+    expect(confirmed.status).toBe(200);
+    return { verified, confirmed, polled: await pollWebLogin(ctx, req) };
+  }
 
-  it("sends a link with the code, previews without using it, signs in and creates the account", async () => {
+  it("sends a link that names another device, previews without using it, confirms with the game's code", async () => {
     const req = await startRequest();
-    const token = await sendLink(" Lumen.Test@Example.org ", req.code, "de");
+    const token = await sendLink(" Lumen.Test@Example.org ", req, "de");
     expect(token).not.toBeNull();
     const mail = mails[0];
     expect(mail?.to).toBe("lumen.test@example.org");
     expect(mail?.from).toBe("Soulwick <login@example.test>");
-    expect(mail?.subject).toBe("Dein Anmeldelink für Soulwick");
-    expect(mail?.text).toContain(
-      `${req.code.slice(0, 4)}-${req.code.slice(4)}`
-    );
+    expect(mail?.subject).toBe("Ein Spiel bei Soulwick anmelden");
+    expect(mail?.text).toContain("ANDEREN Gerät");
+    // Neither the code of the request nor the game's code is in the mail.
+    expect(mail?.text).not.toContain(req.code);
+    expect(mail?.text).not.toContain(req.userCode);
 
     const preview = await ctx.req(
       "GET",
       `/auth/magic-link/preview?token=${token}`
     );
     expect(preview.status).toBe(200);
-    expect(preview.json.code).toBe(req.code);
     expect(preview.json.intent).toBe("sign_in");
-    expect((await poll(req.code, req.pollSecret)).json.status).toBe("pending");
+    expect((await pollWebLogin(ctx, req)).json.status).toBe("pending");
 
     const verified = await ctx.req("POST", "/auth/magic-link/verify", {
       body: { token },
     });
     expect(verified.status).toBe(200);
-    expect(verified.json.status).toBe("completed");
+    expect(verified.json.status).toBe("awaiting_confirm");
+    expect(verified.json.newAccount).toBe(true);
+    expect((await pollWebLogin(ctx, req)).json.status).toBe("awaiting_confirm");
     const reused = await ctx.req("POST", "/auth/magic-link/verify", {
       body: { token },
     });
     expect(reused.status).toBe(400);
     expect(reused.json.error).toBe("invalid_magic_link");
 
-    const done = await poll(req.code, req.pollSecret);
+    await confirmWebLogin(
+      ctx,
+      req.code,
+      verified.json.confirmSecret,
+      req.userCode
+    );
+    const done = await pollWebLogin(ctx, req);
     expect(done.json.provider).toBe("email");
     const ids = await ctx.req("GET", "/me/identities", {
       token: done.json.auth.token,
@@ -127,23 +165,15 @@ describe("magic link (KF5)", () => {
 
     // The same address again: the same account.
     const again = await startRequest();
-    const token2 = await sendLink("lumen.test@example.org", again.code);
-    await ctx.req("POST", "/auth/magic-link/verify", {
-      body: { token: token2 },
-    });
-    const second = await poll(again.code, again.pollSecret);
-    expect(second.json.auth.player.id).toBe(done.json.auth.player.id);
+    const second = await magicFlow("lumen.test@example.org", again);
+    expect(second.polled.json.auth.player.id).toBe(done.json.auth.player.id);
     expect(await authIntegrityIssues(ctx.client)).toEqual([]);
   });
 
   it("never links through a matching e-mail: Google with the same address stays its own account", async () => {
-    const req = await startRequest();
-    await ctx.req("POST", "/auth/magic-link/verify", {
-      body: { token: await sendLink("same@example.org", req.code) },
-    });
-    const byMail = (await poll(req.code, req.pollSecret)).json.auth.player.id;
+    const byMail = (await magicFlow("same@example.org", await startRequest()))
+      .polled.json.auth.player.id;
 
-    const g = await startRequest();
     fake.state.handler = byUrl({
       [GOOGLE_OAUTH_TOKEN_URL]: () =>
         json({
@@ -157,41 +187,37 @@ describe("magic link (KF5)", () => {
           }),
         }),
     });
-    const start = await ctx.app.request(
-      `/auth/oauth/google/start?code=${g.code}`
-    );
-    const state = new URL(start.headers.get("location") ?? "").searchParams.get(
-      "state"
-    );
-    await ctx.app.request(`/auth/oauth/google/callback?state=${state}&code=c`, {
-      headers: {
-        cookie: (start.headers.get("set-cookie") ?? "").split(";")[0] ?? "",
-      },
-    });
-    const byGoogle = (await poll(g.code, g.pollSecret)).json.auth.player.id;
+    const g = await startRequest();
+    const byGoogle = (
+      await completeFlow(ctx, "google", g, () => ({ code: "c" }))
+    ).polled.json.auth.player.id;
     expect(byGoogle).not.toBe(byMail);
   });
 
   it("adds an e-mail to the game's account; a newer address replaces the old one", async () => {
     const guest = await ctx.login("Postfach");
     const req = await startRequest(guest.token);
-    const token = await sendLink("first@example.org", req.code);
-    expect(mails[0]?.subject).toBe("Confirm your e-mail for Soulwick");
+    const token = await sendLink("first@example.org", req);
+    expect(mails[0]?.subject).toBe("Add your e-mail to a Soulwick account");
     const preview = await ctx.req(
       "GET",
       `/auth/magic-link/preview?token=${token}`
     );
     expect(preview.json.account).toEqual({ name: "Postfach", level: 1 });
-    await ctx.req("POST", "/auth/magic-link/verify", { body: { token } });
-    const done = await poll(req.code, req.pollSecret);
+    const verified = await ctx.req("POST", "/auth/magic-link/verify", {
+      body: { token },
+    });
+    await confirmWebLogin(
+      ctx,
+      req.code,
+      verified.json.confirmSecret,
+      req.userCode
+    );
+    const done = await pollWebLogin(ctx, req);
     expect(done.json.result).toBe("linked");
     expect(done.json.auth.player.id).toBe(guest.id);
 
-    const req2 = await startRequest(guest.token);
-    await ctx.req("POST", "/auth/magic-link/verify", {
-      body: { token: await sendLink("second@example.org", req2.code) },
-    });
-    await poll(req2.code, req2.pollSecret);
+    await magicFlow("second@example.org", await startRequest(guest.token));
     const ids = await ctx.req("GET", "/me/identities", { token: guest.token });
     const emails = ids.json.items.filter(
       (i: { provider: string }) => i.provider === "email"
@@ -200,12 +226,8 @@ describe("magic link (KF5)", () => {
     expect(emails[0].label).toBe("se***@example.org");
 
     // The old address is free: it signs in to a new account now.
-    const other = await startRequest();
-    await ctx.req("POST", "/auth/magic-link/verify", {
-      body: { token: await sendLink("first@example.org", other.code) },
-    });
-    const fresh = await poll(other.code, other.pollSecret);
-    expect(fresh.json.auth.player.id).not.toBe(guest.id);
+    const fresh = await magicFlow("first@example.org", await startRequest());
+    expect(fresh.polled.json.auth.player.id).not.toBe(guest.id);
 
     const unlinked = await ctx.req("DELETE", "/me/identities/email", {
       token: guest.token,
@@ -219,31 +241,23 @@ describe("magic link (KF5)", () => {
     expect(await authIntegrityIssues(ctx.client)).toEqual([]);
   });
 
-  it("a merge found by the magic link returns the confirm secret to the page", async () => {
-    const req = await startRequest();
-    await ctx.req("POST", "/auth/magic-link/verify", {
-      body: { token: await sendLink("merge@example.org", req.code) },
-    });
-    const older = (await poll(req.code, req.pollSecret)).json.auth;
+  it("a merge found by the magic link is shown and done in the same confirmation", async () => {
+    const older = (await magicFlow("merge@example.org", await startRequest()))
+      .polled.json.auth;
     await ctx.reportRun(older.token, { participants: [older.player.id] });
 
     const guest = await ctx.login();
     await ctx.reportRun(guest.token, { participants: [guest.id] });
-    const link = await startRequest(guest.token);
-    const verified = await ctx.req("POST", "/auth/magic-link/verify", {
-      body: { token: await sendLink("merge@example.org", link.code) },
-    });
-    expect(verified.json.status).toBe("confirm_merge");
+    const { verified, confirmed, polled } = await magicFlow(
+      "merge@example.org",
+      await startRequest(guest.token)
+    );
+    expect(verified.json.merge.bothHaveProgress).toBe(true);
     expect(verified.json.merge.remaining.id).toBe(older.player.id);
-    const confirmed = await ctx.req("POST", "/auth/web-login/confirm-merge", {
-      body: { code: link.code, confirmSecret: verified.json.confirmSecret },
-    });
-    expect(confirmed.json.status).toBe("completed");
-    const done = await poll(link.code, link.pollSecret);
-    expect(done.json.auth.player.id).toBe(older.player.id);
-    // One e-mail per account: the address stays with the remaining account.
+    expect(confirmed.json.merged).toBe(true);
+    expect(polled.json.auth.player.id).toBe(older.player.id);
     const ids = await ctx.req("GET", "/me/identities", {
-      token: done.json.auth.token,
+      token: polled.json.auth.token,
     });
     expect(
       ids.json.items.filter((i: { provider: string }) => i.provider === "email")
@@ -254,19 +268,23 @@ describe("magic link (KF5)", () => {
   it("answers the same for admin addresses and above the per-address limit, but sends nothing", async () => {
     const admin = await ctx.createAdmin();
     const req = await startRequest();
-    expect(await sendLink(admin.email, req.code)).toBeNull();
+    expect(await sendLink(admin.email, req)).toBeNull();
     expect(mails).toHaveLength(0);
 
-    expect(await sendLink("limit@example.org", req.code)).not.toBeNull();
-    expect(await sendLink("limit@example.org", req.code)).not.toBeNull();
+    expect(await sendLink("limit@example.org", req)).not.toBeNull();
+    expect(await sendLink("limit@example.org", req)).not.toBeNull();
     mails.length = 0;
-    expect(await sendLink("limit@example.org", req.code)).toBeNull();
+    expect(await sendLink("limit@example.org", req)).toBeNull();
     expect(mails).toHaveLength(0);
   });
 
   it("rejects unknown requests, bad tokens and a failing mail worker", async () => {
     const unknown = await ctx.req("POST", "/auth/magic-link", {
-      body: { email: "a@example.org", code: "ABCDEFGH" },
+      body: {
+        email: "a@example.org",
+        code: "ABCDEFGH",
+        browserToken: "k".repeat(43),
+      },
     });
     expect(unknown.status).toBe(404);
     const bad = await ctx.req("POST", "/auth/magic-link/verify", {
@@ -280,17 +298,25 @@ describe("magic link (KF5)", () => {
     );
     expect(preview.status).toBe(400);
     const invalid = await ctx.req("POST", "/auth/magic-link", {
-      body: { email: "not-an-address", code: "ABCDEFGH" },
+      body: {
+        email: "not-an-address",
+        code: "ABCDEFGH",
+        browserToken: "k".repeat(43),
+      },
     });
     expect(invalid.status).toBe(400);
 
     const req = await startRequest();
     fake.state.handler = () => new Response("down", { status: 500 });
     const down = await ctx.req("POST", "/auth/magic-link", {
-      body: { email: "down@example.org", code: req.code },
+      body: {
+        email: "down@example.org",
+        code: req.code,
+        browserToken: req.browserToken,
+      },
     });
-    expect(down.status).toBe(502);
-    expect(down.json.error).toBe("mail_unavailable");
+    // The answer does not wait for the mail (timing oracle); the failure only goes to the log.
+    expect(down.status).toBe(202);
   });
 });
 
@@ -305,8 +331,12 @@ describe("magic link rate limit per IP", () => {
   afterAll(() => ctx.close());
 
   it("answers 429 above MAGIC_LINKS_PER_HOUR", async () => {
-    const req = await ctx.req("POST", "/auth/web-login", { body: {} });
-    const body = { email: "ip@example.org", code: req.json.code };
+    const req = await startWebLogin(ctx);
+    const body = {
+      email: "ip@example.org",
+      code: req.code,
+      browserToken: req.browserToken,
+    };
     expect((await ctx.req("POST", "/auth/magic-link", { body })).status).toBe(
       202
     );

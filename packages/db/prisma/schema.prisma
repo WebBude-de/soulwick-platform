@@ -61,11 +61,13 @@ enum WebLoginIntent {
   @@map("web_login_intent")
 }
 
-/// State of a web login request (KF5, P-039). `confirm_merge` waits for the browser to confirm a
-/// merge; `collected` = the game picked up its session (the request is used up).
+/// State of a web login request (KF5, P-039). `awaiting_confirm` = the browser proved a login and
+/// the player has to type the game's code there; `collected` = the game picked up its session.
+/// `confirm_merge` is unused since the KF5 security fix (merges are confirmed in the same step).
 enum WebLoginStatus {
   pending
   confirm_merge
+  awaiting_confirm
   completed
   failed
   collected
@@ -723,6 +725,16 @@ model WebLoginRequest {
   id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   codeHash          String            @unique(map: "web_login_requests_code_hash_unique") @map("code_hash")
   pollSecretHash    String            @map("poll_secret_hash")
+  /// HMAC of the browser secret (`#k=` in the URL the game opens); claimed once for a token.
+  browserSecretHash String?           @map("browser_secret_hash")
+  /// When `k` was traded for the browser token (then `k` is worthless).
+  browserClaimedAt  DateTime?         @map("browser_claimed_at") @db.Timestamptz(6)
+  /// HMAC of the browser token the website uses for this request (claim, OAuth start, magic link).
+  browserTokenHash  String?           @map("browser_token_hash")
+  /// HMAC of the code the game shows and the player types to confirm.
+  userCodeHash      String?           @map("user_code_hash")
+  /// Wrong typed codes; at WEB_LOGIN_CONFIRM_MAX_ATTEMPTS the request fails.
+  confirmAttempts   Int               @default(0) @map("confirm_attempts")
   intent            WebLoginIntent
   /// `link`: the account that gets the new login; null after that account was deleted.
   playerId          String?           @map("player_id") @db.Uuid
@@ -737,9 +749,9 @@ model WebLoginRequest {
   removedPlayerId   String?           @map("removed_player_id") @db.Uuid
   /// Stable error code of a failed request (e.g. `banned`, `merge_blocked_banned`).
   error             String?
-  /// `confirm_merge`: HMAC of the secret the browser needs to confirm the merge.
+  /// `awaiting_confirm`: HMAC of the secret the browser needs to confirm.
   confirmSecretHash String?           @map("confirm_secret_hash")
-  /// `confirm_merge`: the proven login, applied once the browser confirms (secrets encrypted).
+  /// `awaiting_confirm`: the proven login, applied once the browser confirms (secrets encrypted).
   pendingLogin      Json?             @map("pending_login")
   /// Language of mails sent for this request (`en`, `de`).
   locale            String            @default("en")
