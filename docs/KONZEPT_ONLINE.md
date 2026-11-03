@@ -151,10 +151,10 @@ Alle Anmeldewege liefern **dieselbe Antwort** `{token, expiresAt, player}`; `tok
 | `device` | `POST /auth/device` (Gast, P-028) | Test-Builds und Spieler ohne Steam/Google, jede Umgebung (Schalter `GUEST_AUTH_ENABLED`) | kein Schlüssel; nur Format der Geräte-ID und Rate-Limits je IP |
 | `steam` | `POST /auth/steam` (P14; echter Test mit eigener AppID offen) | ab eigener AppID (MP10) | Ticket bei Steam (`AuthenticateUserTicket`) |
 | `google_play` | `POST /auth/google-play` (P14) | ab Android-Build | Server-Auth-Code bei Google eintauschen |
-| `game_center` | `POST /auth/game-center` (KF5) | mit der iOS-Version (zum Release, D-179) | Signatur von Apple, Bundle-ID (`GAME_CENTER_BUNDLE_IDS`), Alter |
+| `game_center` | `POST /auth/game-center` (KF5) | mit der iOS-Version (zum Release, D-179) | Zertifikat nur von `static.gc.apple.com/public-key/`, Kette bis DigiCert Trusted Root G4, Signatur, Bundle-ID (`GAME_CENTER_BUNDLE_IDS`), Alter |
 | `password` | `POST /auth/password` (KF5) | überall | Benutzername + Passwort (argon2id); anlegen mit `PUT /me/logins/password` |
-| `apple` | `POST /auth/apple` (iOS-App), Browser `/auth/oauth/apple/*` (KF5) | iOS Pflicht (D-188), Web | Identity-Token gegen Apples Schlüssel bzw. Code-Tausch; Refresh-Token für den Widerruf |
-| `google`, `discord`, `steam` (OpenID), `email` (Magic Link) | Web-Anmeldung `POST /auth/web-login` + Website `/login/<code>` (KF5, P-039) | Browser, aus jedem Build | OAuth-Code mit `state` (Google zusätzlich PKCE), Steam `check_authentication`, Einmal-Link |
+| `apple` | `POST /auth/apple/nonce` + `POST /auth/apple` (iOS-App), Browser `/auth/oauth/apple/*` (KF5) | iOS Pflicht (D-188), Web | Identity-Token gegen Apples Schlüssel mit Server-Nonce bzw. Code-Tausch; Refresh-Token für den Widerruf |
+| `google`, `discord`, `steam` (OpenID), `email` (Magic Link) | Web-Anmeldung `POST /auth/web-login` + Website `/login/<code>#k=…` (`k` einmal gegen `browserToken` eingelöst; KF5, P-039) | Browser, aus jedem Build | OAuth-Code mit `state` (Google zusätzlich PKCE), Steam `check_authentication`, Einmal-Link; danach tippt der Mensch im Browser den Code aus dem Spiel ein (`POST /auth/web-login/confirm`) |
 
 ### 3.1 Entwicklung (Geräte-ID)
 
