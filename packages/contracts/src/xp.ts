@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { IsoDateTime, PlayerLevel, Uuid } from "./common.ts";
 import { GameVersion, MAX_ROOM_PLAYERS, RunEndReason } from "./lobby.ts";
+import { DANGER_MAX, DangerLevel } from "./rank.ts";
 
 /**
- * Account XP and level (D-188, game repo docs/KONZEPT_KONTO_FORTSCHRITT.md §5). XP belong to the
+ * Account XP and level (D-188, game repo docs/KONZEPT.md §4). XP belong to the
  * account (all worlds, solo and co-op, every device) and are cosmetic only (D-176, D-081). The
  * game counts them offline as entries per run (`user://progress.cfg`) and uploads open entries
  * with `POST /me/xp`; a run id counts exactly once per account, so two devices never conflict.
@@ -16,7 +17,10 @@ import { GameVersion, MAX_ROOM_PLAYERS, RunEndReason } from "./lobby.ts";
  * reports only its own player, also in co-op; the host never reports XP for others. The co-op
  * bonus follows the reported `players` (XP are capped and cosmetic, so the server trusts it).
  *
- * All numbers are TESTWERT (D-188). GDScript mirrors: `xpForLevel`, `levelForXp`, `runXp`.
+ * Since D-194 (KF3b) XP grow with the danger level of the run: × (1 + 0.05 · G), see `runXp`;
+ * and the level gives talent points (`account-state.ts`), so it is no longer cosmetic only.
+ *
+ * All numbers are TESTWERT (D-188, D-194). GDScript mirrors: `xpForLevel`, `levelForXp`, `runXp`.
  */
 
 // --- numbers (TESTWERT, D-188 §5.2, §5.3, §5.6) ----------------------------------------------
@@ -33,6 +37,8 @@ export const XP_VALUES = {
 
 /** Co-op bonus on the whole run (2–4 players), in percent; rounded down. */
 export const XP_COOP_BONUS_PERCENT = 20;
+/** Danger bonus per danger level G of the run, in percent (D-194: XP × (1 + 0.05 · G)). */
+export const XP_DANGER_BONUS_PERCENT = 5;
 /** Most XP one run entry can bring (after the co-op bonus). */
 export const XP_MAX_PER_RUN = 2000;
 /** Most XP an account is credited per UTC day of the upload; further entries are `deferred`. */
@@ -109,6 +115,11 @@ export function accountLevel(xp: number): AccountLevel {
 export interface RunXpInput {
   bosses: number;
   champions: number;
+  /**
+   * Danger level the run was played at (the group's level in co-op, KONZEPT §3.2); missing = 0.
+   * Values above DANGER_MAX count as DANGER_MAX.
+   */
+  danger?: number;
   endReason: RunEndReason;
   firstRunOfDay: boolean;
   /** Players in the run including oneself (1–4); 2 or more = co-op bonus. */
@@ -128,7 +139,16 @@ export const XpBreakdown = z.object({
   firstRunOfDay: z.number().int().min(0),
   /** XP_COOP_BONUS_PERCENT of the sum above (rounded down), 0 for solo runs. */
   coopBonus: z.number().int().min(0),
-  /** min(sum + coopBonus, XP_MAX_PER_RUN). */
+  /**
+   * Danger level that counted (0..DANGER_MAX, D-194). Optional for older API builds (missing = 0).
+   */
+  danger: DangerLevel.optional(),
+  /**
+   * XP_DANGER_BONUS_PERCENT · danger percent of (sum + coopBonus), rounded down. Optional for
+   * older API builds (missing = 0).
+   */
+  dangerBonus: z.number().int().min(0).optional(),
+  /** min(sum + coopBonus + dangerBonus, XP_MAX_PER_RUN). */
   total: z.number().int().min(0),
   /** true = the run hit XP_MAX_PER_RUN. */
   capped: z.boolean(),
@@ -138,7 +158,8 @@ export type XpBreakdown = z.infer<typeof XpBreakdown>;
 /**
  * XP of one run (Konzept §5.2): room 5, champion 10, boss 50, 5 per room beyond the account
  * record, portal 20, first run of the day 25; co-op (2+ players) +20 % on the whole run, rounded
- * down; at most XP_MAX_PER_RUN. Integer math only, so GDScript gets the same result.
+ * down; then the danger bonus (D-194): + floor((sum + coopBonus) · 5 · G / 100) with G clamped to
+ * 0..DANGER_MAX; at most XP_MAX_PER_RUN. Integer math only, so GDScript gets the same result.
  */
 export function runXp(input: RunXpInput): XpBreakdown {
   const n = (v: number) => Math.max(0, Math.floor(v));
@@ -159,12 +180,18 @@ export function runXp(input: RunXpInput): XpBreakdown {
     parts.firstRunOfDay;
   const coopBonus =
     input.players >= 2 ? Math.floor((sum * XP_COOP_BONUS_PERCENT) / 100) : 0;
-  const total = Math.min(sum + coopBonus, XP_MAX_PER_RUN);
+  const danger = Math.min(n(input.danger ?? 0), DANGER_MAX);
+  const dangerBonus = Math.floor(
+    ((sum + coopBonus) * XP_DANGER_BONUS_PERCENT * danger) / 100
+  );
+  const uncapped = sum + coopBonus + dangerBonus;
   return {
     ...parts,
     coopBonus,
-    total,
-    capped: sum + coopBonus > XP_MAX_PER_RUN,
+    danger,
+    dangerBonus,
+    total: Math.min(uncapped, XP_MAX_PER_RUN),
+    capped: uncapped > XP_MAX_PER_RUN,
   };
 }
 
@@ -199,6 +226,12 @@ export const XpEntry = z.object({
   endReason: RunEndReason,
   /** Players in the run including oneself: 1 = solo, 2–4 = co-op (+20 %). */
   players: z.number().int().min(1).max(MAX_ROOM_PLAYERS),
+  /**
+   * Danger level the run was played at (D-194, KF3b): the own one solo, the group's in co-op
+   * (KONZEPT §3.2). Optional: missing = 0 (entries of older game builds stay valid). Accepted up
+   * to 1000 so a later, higher cap never rejects a whole upload; the XP bonus stops at DANGER_MAX.
+   */
+  danger: z.number().int().min(0).max(1000).optional(),
 });
 export type XpEntry = z.infer<typeof XpEntry>;
 

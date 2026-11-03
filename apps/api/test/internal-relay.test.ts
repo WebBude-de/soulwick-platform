@@ -34,6 +34,8 @@ describe("internal relay endpoint", () => {
       guildMember: null,
       guildIds: [],
       level: 1,
+      danger: 0,
+      rank: { tier: "spark", step: 1 },
     });
   });
 

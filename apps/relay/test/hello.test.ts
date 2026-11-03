@@ -14,9 +14,13 @@ const hello = (token: string, protocolVersion = 1) => ({
 });
 
 describe("hello", () => {
-  it("welcomes a valid player with name, level and limits", async () => {
+  it("welcomes a valid player with name, level, danger level, rank and limits", async () => {
     const h = createHarness();
-    const s = h.status.add("Lumen", { level: 7 });
+    const s = h.status.add("Lumen", {
+      level: 7,
+      danger: 3,
+      rank: { tier: "candle", step: 1 },
+    });
     const p = h.connect();
     await p.send(hello(await playerToken(s.playerId)));
     expect(p.t.last()).toEqual({
@@ -24,6 +28,8 @@ describe("hello", () => {
       playerId: s.playerId,
       name: "Lumen",
       level: 7,
+      danger: 3,
+      rank: { tier: "candle", step: 1 },
       protocolVersion: 1,
       maxFrameBytes: 65_536,
       maxPlayers: 4,
@@ -32,16 +38,23 @@ describe("hello", () => {
     expect(p.client.closed).toBe(false);
   });
 
-  it("passes the account level into the room peers; an older API without level gives null (D-188)", async () => {
+  it("passes level, danger level and rank into the room peers; an older API without them gives null (D-188, D-194)", async () => {
     const h = createHarness();
     const host = await h.host("Host");
-    const a = await h.player("Ash", { status: { level: 12 } });
+    const rank = { tier: "flame", step: 2 } as const;
+    const a = await h.player("Ash", {
+      status: { level: 12, danger: 7, rank },
+    });
     await a.send({ type: "join", code: host.code });
     const joined = a.t.of("joined")[0];
     expect(joined?.room.peers.map((peer) => peer.level)).toEqual([null, 12]);
+    expect(joined?.room.peers.map((peer) => peer.danger)).toEqual([null, 7]);
+    expect(joined?.room.peers.map((peer) => peer.rank)).toEqual([null, rank]);
     expect(host.t.of("peer_joined")[0]?.peer).toMatchObject({
       name: "Ash",
       level: 12,
+      danger: 7,
+      rank,
     });
   });
 

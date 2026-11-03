@@ -1,7 +1,7 @@
 # KONZEPT Online – Relay, Anmeldung, Deployment und Stores
 
 > **Stand:** 17.10.2026 · **Status:** Architektur **entschieden** (Spiel-Repo D-119, Projektmitglied 14.10.2026), alles Weitere ist **Vorschlag** von Claude oder **OFFEN**. Die Plattform-Seite ist gebaut (Relay P13, Anmeldung P14, Konten P15, Versionen P16, Gast P20); der Betrieb auf dem Server steht noch aus (P2, P17, [../infra/DOKPLOY.md](../infra/DOKPLOY.md)).
-> **Für wen:** Entwickler und Agenten, die Relay, Anmeldung, Deployment und Store-Anbindung bauen. Umsetzung als Pakete: [ROADMAP.md](ROADMAP.md) P13–P17 (Plattform), `soulwick/docs/ROADMAP_CROSSPLAY.md` CP1, CP3, CP7 und `soulwick/docs/ROADMAP_MULTIPLAYER.md` MP2–MP6 (Spiel).
+> **Für wen:** Entwickler und Agenten, die Relay, Anmeldung, Deployment und Store-Anbindung bauen. Umsetzung als Pakete: [ROADMAP.md](ROADMAP.md) P13–P17 (Plattform), `soulwick/docs/ROADMAP.md` CP1, CP3, CP7 und `soulwick/docs/ROADMAP.md` MP2–MP6 (Spiel).
 > **Entscheidungen:** Spiel-Repo D-083, D-084, D-085, D-108, **D-119**; hier [DECISIONS.md](DECISIONS.md) P-008, P-014, **P-016 bis P-018**, **P-027** (Better Auth, Relay-JWT über JWKS, 15.10.2026), **P-031**/**P-032** (mehrere Gilden je Spieler, Gilden-Raum nur für Mitglieder, Gildenkasse nach Gilden-Run; D-147). Bei Widerspruch gilt das Spiel-Repo.
 > **Kennzeichnung:** **ENTSCHIEDEN** = Projektmitglied hat entschieden · **VORSCHLAG** = von Claude ausgearbeitet, vom Team zu bestätigen · **OFFEN** = noch nicht entschieden, nicht still festlegen · **TESTWERT** = Zahl zum Nachjustieren.
 
@@ -58,7 +58,7 @@ Browser  ─┘                       └─ soulwick-postgres
 1. Das Spiel öffnet `wss://play.playsoulwick.com/v1` (lokal `ws://localhost:3103/v1`).
 2. Erste Nachricht innerhalb von 5 s (TESTWERT): `hello` mit Spieler-JWT (`token`, vorher über `GET /auth/token` der API geholt, P-027), `protocolVersion`, `gameVersion`, `platform` (`windows`, `linux`, `macos`, `android`, `ios`). Das Token steht bewusst **nicht** in der URL, damit es in keinem Zugriffsprotokoll landet (VORSCHLAG).
 3. Der Relay prüft die JWT-Signatur selbst gegen die öffentlichen Schlüssel der API (EdDSA, JWKS unter `<API_INTERNAL_URL>/auth/jwks`, Cache 10 min, unbekannte `kid` lädt neu; P-027), dazu `aud` = `soulwick-relay`, das Ablaufdatum und die `protocolVersion`. Fehler → `error` und Verbindungsende. Geprüft wird nur bei `hello`; läuft das JWT (15 min) später ab, bleibt die Verbindung bestehen.
-4. Antwort `welcome` mit `playerId` (`sub` des JWT) und Name und Konto-Level (`level`, D-188) aus der Statusabfrage der API; beides steht auch an jedem Platz im Raum (`RoomPeer`), Stand bei `hello`. Danach `create` oder `join`.
+4. Antwort `welcome` mit `playerId` (`sub` des JWT) und Name Konto-Level (`level`, D-188), Gefahrenstufe (`danger`) und Rang (`rank`, Spiel-Repo D-194, KF3b) aus der Statusabfrage der API; beides steht auch an jedem Platz im Raum (`RoomPeer`), Stand bei `hello`. Danach `create` oder `join`.
 5. Herzschlag: WebSocket-Ping alle 15 s, Verbindung gilt nach 30 s ohne Antwort als getrennt (TESTWERTE).
 
 ### 2.3 Steuer-Nachrichten (JSON, Textrahmen)
@@ -269,10 +269,10 @@ Domains sind ein **VORSCHLAG** (P-018) im Muster von P-008; Einrichtung Schritt 
 
 | Was | Wie |
 | --- | --- |
-| Dienste | `bun run services:up`, `bun dev` (API 3101, Relay 3103, Web 3100, Admin 3102; Postgres 5532; Browser-Version des Spiels 3110; P-035) |
+| Dienste | `bun run services:up`, `bun dev` (API 3102, Relay 3103, Web 3100, Admin 3101; Postgres 5532; Browser-Version des Spiels 3110; P-035) |
 | Vier Spieler auf einem PC | Godot-Editor *Debug → Ausführungsinstanzen anpassen* mit Argument `--player=1..4`; jede Instanz meldet sich per `/auth/dev` mit eigener Geräte-ID an und tritt per Raumcode bei |
 | Gilden | Testdaten aus `bun run db:seed:dev`: „Dochtwächter“ `[DOCHT]` (Code `DOCHT2345`) und „Aschenrunde“ `[ASCHE]` (Code `ASCHE2345`); Seed-Spieler „Lumen“ (`dev-device-00000001`) ist in beiden, Gilden-Raum für ASCHE z. B. mit „Glutfunke“ (`dev-device-00000005`) testen |
-| Handy (Android) | Ein-Klick-Export per USB, `adb reverse tcp:3101 tcp:3101` und `adb reverse tcp:3103 tcp:3103`; das Handy erreicht `localhost` des PCs ohne HTTPS-Umweg (unverschlüsseltes HTTP/WS im Debug-Export erlauben, prüfen) |
+| Handy (Android) | Ein-Klick-Export per USB, `adb reverse tcp:3102 tcp:3102` und `adb reverse tcp:3103 tcp:3103`; das Handy erreicht `localhost` des PCs ohne HTTPS-Umweg (unverschlüsseltes HTTP/WS im Debug-Export erlauben, prüfen) |
 | Steam | Test-AppID 480 mit `steam_appid.txt`, Steam-Client offen; zwei Steam-Konten brauchen zwei Rechner |
 | Schlechtes Netz | Relay-Optionen `--sim-latency` und `--sim-loss`, unter Windows zusätzlich „clumsy“ |
 | Automatisch | Headless-Host und Headless-Client gegen den lokalen Relay als Smoke-Test (`tools/net_smoke.gd` im Spiel-Repo), `bun test` für das Relay-Protokoll |
@@ -338,4 +338,4 @@ Stand der Preise: 14.10.2026, vor dem Bezahlen bei den Anbietern prüfen.
 - Welches Godot-Plugin für Play Games Services v2 (§3.3).
 - Domains und Port des Relays bestätigen (P-018).
 
-**Weiterlesen:** [ROADMAP.md](ROADMAP.md) · [DECISIONS.md](DECISIONS.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [PRD.md](PRD.md) · [TECHSTACK.md](TECHSTACK.md) · [../infra/DOKPLOY.md](../infra/DOKPLOY.md) · [../../soulwick/docs/ROADMAP_CROSSPLAY.md](../../soulwick/docs/ROADMAP_CROSSPLAY.md) · [../../soulwick/docs/ROADMAP_MULTIPLAYER.md](../../soulwick/docs/ROADMAP_MULTIPLAYER.md) · [../../soulwick/docs/DECISIONS.md](../../soulwick/docs/DECISIONS.md)
+**Weiterlesen:** [ROADMAP.md](ROADMAP.md) · [DECISIONS.md](DECISIONS.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [PRD.md](PRD.md) · [TECHSTACK.md](TECHSTACK.md) · [../infra/DOKPLOY.md](../infra/DOKPLOY.md) · [../../soulwick/docs/ROADMAP.md](../../soulwick/docs/ROADMAP.md) · [../../soulwick/docs/DECISIONS.md](../../soulwick/docs/DECISIONS.md)

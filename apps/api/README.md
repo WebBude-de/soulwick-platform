@@ -18,18 +18,23 @@ Handler ist nicht gemountet: Jeder Auth-Pfad ist eine Hono-Route, die `auth.api`
 ```bash
 bun install                                          # im Repo-Wurzelordner
 bun run services:up                                  # lokale Dienste (infra/docker-compose.yml: Postgres soulwick-postgres)
-cp .env.example .env.local                           # gemeinsame Werte (Wurzel): BETTER_AUTH_SECRET, DEV_AUTH_KEY …
-cp apps/api/.env.example apps/api/.env.local         # Werte nur der API
+cp .env.example .env                           # gemeinsame Werte (Wurzel): BETTER_AUTH_SECRET, DEV_AUTH_KEY …
+cp apps/api/.env.example apps/api/.env         # Werte nur der API
 bun run db:deploy                                    # Migrationen anwenden (neue Migration: bun run db:migrate --name <name>)
 bun run db:seed                                      # Basis-Seed: Admin aus DEFAULT_ADMIN_EMAIL/-PASSWORD (siehe unten)
 bun run db:seed:dev                                  # Testdaten (siehe unten)
-bun run dev:api                                      # http://localhost:3101/health
+bun run dev:api                                      # http://localhost:3102/health
 bun run services:down                                # Dienste stoppen (Daten bleiben im Volume)
 ```
 
-Ist Port 5532 belegt, in `infra/.env.local` `DB_PORT=<freier Port>` setzen und den Port in
-`DATABASE_URL` (Wurzel-`.env.local`) anpassen. Benutzer, Passwort und Datenbankname kommen aus
-`POSTGRES_*` in `infra/.env.local` (Standard `soulwick` / `soulwick-local-only` / `soulwick`).
+**Logs lokal:** in der Konsole Zeilen im Stil von Next.js
+(`05:07:35.600 ⚠ GET /admin/me 401 in 1ms  ip=::1 code=unauthorized`), dazu Dateien in
+`logs/api/<YYYY-MM-DD>/` (`all.log` zum Lesen, `all.jsonl` und je Stufe `error.jsonl` …; 7 Tage).
+Mehr sehen: `LOG_LEVEL=debug` in der Wurzel-`.env`. Gemeinsamer Logger: `packages/logger`.
+
+Ist Port 5532 belegt, in `infra/.env` `DB_PORT=<freier Port>` setzen und den Port in
+`DATABASE_URL` (Wurzel-`.env`) anpassen. Benutzer, Passwort und Datenbankname kommen aus
+`POSTGRES_*` in `infra/.env` (Standard `soulwick` / `soulwick-local-only` / `soulwick`).
 
 ## Basis-Seed (Start-Admin)
 
@@ -53,8 +58,10 @@ DapItUp) ist für **jede** Umgebung gedacht und **idempotent**. Er legt den Admi
 `DEFAULT_ADMIN_PASSWORD` aus der Umgebung entfernen (die E-Mail darf stehen bleiben).
 **Notfall** (kein Admin kommt mehr hinein): `DEFAULT_ADMIN_EMAIL` auf eine **neue**, noch nicht
 vorhandene Adresse setzen, `DEFAULT_ADMIN_PASSWORD` dazu, Container neu starten; danach wie oben.
-Sonst legt ein anderer Admin im Panel unter „Admins“ einen Zugang an. Ein Zurücksetzen per E-Mail
-gibt es nicht (kein Mailversand).
+Mit Zugriff auf die Datenbank geht es direkter: `ADMIN_NEW_PASSWORD=<neu> bun run db:admin:password <email>`
+(im Container `bun apps/api/src/scripts/admin-password.ts <email>`). Sonst setzt ein anderer Admin im
+Panel unter „Admins“ das Passwort neu oder legt einen Zugang an. Ein Zurücksetzen per E-Mail gibt es
+nicht (kein Mailversand).
 
 Lokal nutzen Basis-Seed und Dev-Seed dieselben Variablen (`apps/api/.env.example`:
 `admin@soulwick.local` / `soulwick-admin-local`): Beide legen dasselbe Konto an, keiner setzt das
@@ -73,7 +80,8 @@ Admin-Bereich lokal zum Anzeigen brauchen:
 | Runs | 20 Runs (`solo`, `quick`, `guild`) über die aktuelle und die vorige Saison, Seeds `dev-seed-01` … `dev-seed-20`; einer ist markiert (`too_fast`), zwei Spieler teilen sich einen Rang; dazu 15 Runs über die letzten zwei Wochen (`dev-seed-21` … `dev-seed-35`, davon ein Gilden-Run der „Aschenrunde“) für die Admin-Statistik |
 | Notiz | eine Moderations-Notiz des Moderators zu „Sternasche“ (P-023) |
 | Aussehen | Spieler 1–8 bekommen eine feste Figur mit Farben (`appearance`, P-034), 9 und 10 behalten die Standardfigur (`null`); gesetzt wird nur, solange kein Aussehen gespeichert ist |
-| Konto-XP | 218 Runs mit XP (D-188) für Spieler 1–9 (feste Run-IDs `5eed0000-…`, gerechnet wie `POST /me/xp`), damit Level in Gilde, Rangliste und Admin sichtbar sind: Glutfunke Level 11, Lumen 10, Aschkralle 8 … Funkenflug 2; Rauchquarz ohne XP (Level 1). `players.xp` wird bei jedem Lauf als Summe der Einträge neu gesetzt |
+| Konto-XP | 218 Runs mit XP (D-188) für Spieler 1–9 (feste Run-IDs `5eed0000-…`, gerechnet wie `POST /me/xp`), damit Level, Gefahrenstufe und Rang in Gilde, Rangliste und Admin sichtbar sind: Glutfunke Level 12, Lumen 10 (Kerze I) … Funkenflug 2; Rauchquarz ohne XP (Level 1). Jeder Run läuft auf der Gefahrenstufe, die das Konto davor hatte (D-194, XP mit Gefahr-Bonus). `players.xp` wird bei jedem Lauf als Summe der Einträge neu gesetzt |
+| Konto-Zustand | Lumen (KF3b): 3 Talente (6 Punkte), Zauber `light_flash`, 4 Gesehen-Merker; nur angelegt, solange keiner gespeichert ist. Zum Ausprobieren: Login als Lumen, `GET /me/state` |
 | Cloud-Welten | 3 Welten von Lumen (D-188, KF8; feste Welt-IDs `5eed0001-…`): „Glutwald“ (heute gespielt) und eine Welt ohne eigenen Namen aktiv, „Alte Welt“ im Archiv (noch 25 Tage); je Welt eine Sicherung (`merge`). Zum Ausprobieren: Login als Lumen, `GET /me/worlds` |
 | Bug-Meldungen | 4 Meldungen (P-033) von Lumen, Glutfunke, Wachsherz und Aschkralle mit Platzhalter-Screenshots (PNG-Verläufe 480×270, kein echtes Bild), Markierungen, Strichen und Ort; drei Fehler (zwei `new`, eine `seen` vom Moderator) und eine Idee (`kind: idea`, `new`) |
 | Löschprotokoll | 4 Einträge (Website, im Spiel, Admin; zwei davon „war gesperrt“) über die letzten zwei Wochen, ohne Namen (P-026) |
@@ -95,11 +103,11 @@ Der Seed **verweigert `NODE_ENV=production`**. Im Docker-Image ist er nur für d
 
 | Variable | Pflicht | Standard | Bedeutung |
 | --- | --- | --- | --- |
-| `DATABASE_URL` | ja | – | PostgreSQL-Verbindung (lokal `postgres://soulwick:soulwick-local-only@localhost:5532/soulwick`); Wurzel-`.env.local`; auch Prisma CLI und Tests lesen sie dort |
+| `DATABASE_URL` | ja | – | PostgreSQL-Verbindung (lokal `postgres://soulwick:soulwick-local-only@localhost:5532/soulwick`); Wurzel-`.env`; auch Prisma CLI und Tests lesen sie dort |
 | `TEST_DATABASE_URL` | nein | `DATABASE_URL` | Nur Tests: Postgres-Server für die Wegwerf-Datenbanken `soulwick_test_<zufall>` |
 | `BETTER_AUTH_SECRET` | ja | – | Better Auth (P-027): signiert Session-Tokens, verschlüsselt die JWT-Signierschlüssel; daraus abgeleitet der HMAC-Schlüssel für Verknüpfungs- und Löschcodes (≥ 32 Zeichen, je Umgebung, nur API) |
-| `BETTER_AUTH_URL` | nein | `http://localhost:3101` | Öffentliche Basis-URL der API (Aussteller `iss` der Relay-JWTs); in production `https://…` Pflicht |
-| `PORT` | nein | `3101` | HTTP-Port (das Docker-Image setzt 8787) |
+| `BETTER_AUTH_URL` | nein | `http://localhost:3102` | Öffentliche Basis-URL der API (Aussteller `iss` der Relay-JWTs); in production `https://…` Pflicht |
+| `PORT` | nein | `3102` | HTTP-Port (das Docker-Image setzt 8787) |
 | `PLAYER_TOKEN_TTL_DAYS` | nein | `30` | Gültigkeit einer Spieler-Session ab Anmeldung (ohne Verlängern) |
 | `ADMIN_TOKEN_TTL_HOURS` | nein | `8` | Gültigkeit einer Admin-Session ab Anmeldung (ohne Verlängern) |
 | `DEV_AUTH_ENABLED` | nein | `false` | Testphasen-Login `POST /auth/dev` erlauben |
@@ -126,7 +134,10 @@ Der Seed **verweigert `NODE_ENV=production`**. Im Docker-Image ist er nur für d
 | `PROTOCOL_VERSION` | nein | `1` | Netzwerk-Protokollversion der Umgebung; gleicher Wert wie beim Relay derselben Umgebung (P16) |
 | `RELAY_PUBLIC_URL` | nein | leer | Öffentliche WebSocket-URL des Relays (z. B. `wss://play-dev.playsoulwick.com`, ohne Pfad wird `/v1` ergänzt) für `/public/config`; leer = kein Relay gemeldet |
 | `SUPPORT_EMAIL` | nein | leer | Support-Adresse für Kontolöschung ohne Spielzugang; über `GET /public/config` als `supportEmail` (leer = `null`, Website zeigt nichts; P-026) |
-| `LOG_LEVEL` | nein | `info` | `info`, `error` oder `silent` |
+| `LOG_LEVEL` | nein | `info` | `debug`, `info`, `warn`, `error` oder `silent`; Anfragen mit 2xx/3xx auf `info`, 4xx auf `warn` (mit Fehlercode `code`), 5xx auf `error` |
+| `LOG_FORMAT` | nein | `pretty`, in `production` `json` | `pretty` = eine lesbare Zeile (Farben nur im Terminal, `NO_COLOR` schaltet sie ab), `json` = eine JSON-Zeile je Eintrag |
+| `LOG_DIR` | nein | lokal `<repo>/logs`, in `production` keine Dateien | Log-Dateien unter `<LOG_DIR>/api/<YYYY-MM-DD>/`: `all.jsonl`, `all.log` (lesbar) und je Stufe `debug/info/warn/error.jsonl`; `off` = keine Dateien |
+| `LOG_RETENTION_DAYS` | nein | `7` | TESTWERT: so viele Tagesordner bleiben (heute mitgezählt), ältere löscht der Wechsel auf einen neuen Tag |
 | `RELAY_INTERNAL_KEY` | nein | leer | Gemeinsamer Schlüssel mit dem Relay (≥ 32 Zeichen) für `GET /internal/relay/players/:playerId/status` (Header `x-relay-key`, liefert Name, Sperre, Gilde) und für die Gegenrichtung (Live-Räume, P-024); leer = Endpunkt aus (404) |
 | `RELAY_INTERNAL_URL` | nein | leer | Interne Adresse des Relays derselben Umgebung (z. B. `http://soulwick-relay:8790`, lokal `http://localhost:3103`) für `/admin/relay/*` und den Kick nach einer Sperre (P-024); braucht `RELAY_INTERNAL_KEY`; leer = `501 relay_not_configured`, Sperren ohne Relay-Kick |
 | `RELAY_INTERNAL_TIMEOUT_MS` | nein | `3000` | TESTWERT: Zeitlimit je Aufruf an den Relay |
@@ -148,6 +159,7 @@ Der Seed **verweigert `NODE_ENV=production`**. Im Docker-Image ist er nur für d
 | `bun run db:generate` | Prisma-Client erzeugen (läuft vor `typecheck` und `build` automatisch) |
 | `bun run db:seed` (oder `bun run --cwd apps/api seed`) | Basis-Seed: Start-Admin aus `DEFAULT_ADMIN_EMAIL`/`DEFAULT_ADMIN_PASSWORD`, nur wenn die Adresse fehlt (idempotent, jede Umgebung) |
 | `bun run db:seed:dev` (oder `bun run --cwd apps/api seed:dev`) | Entwicklungsdaten einspielen (idempotent, nicht in Produktion) |
+| `ADMIN_NEW_PASSWORD=<neu> bun run db:admin:password <email>` (oder `bun run --cwd apps/api admin:password`) | Notfall: Passwort eines Admin-Kontos direkt in der Datenbank setzen (mind. 12 Zeichen, nur aus der Variable, nie als Argument), beendet dessen Sitzungen, Protokoll `admin.password_reset` mit `source: "script"`; ohne E-Mail listet es die Admin-Konten (E-Mail, Rolle, deaktiviert). Sonst setzt ein Admin im Panel unter „Admins“ das Passwort neu (`POST /admin/admins/:id/password`) |
 
 Lint und Formatierung laufen für das ganze Repo aus dem Root: `bun run fix`, `bun run check`. Einen
 Build-Schritt gibt es nicht: Die API startet direkt aus der Quelle (`bun src/index.ts`).
@@ -174,7 +186,16 @@ Spieler (Header `Authorization: Bearer <token>`):
   `credited` / `duplicate` / `flagged` / `deferred` und `account` mit `xp`, `level`; Rechnung mit
   `runXp()` aus dem Vertrag, Deckel 2 000 je Run und 20 000 je UTC-Tag, TESTWERT). `PlayerSelf` trägt
   `xp`, `level`, `levelStartXp`, `nextLevelXp`, `xpToNextLevel`; Gildenmitglieder, Ranglisten-Einträge,
-  Gildenräume und der Relay-Status tragen `level`
+  Gildenräume und der Relay-Status tragen `level`. Seit KF3b (D-194, D-196) trägt `XpEntry` optional
+  `danger` (XP × (1 + 0,05 · G), G bis 30 zählt), und `PlayerSelf`, Gildenmitglieder, Gildenräume und
+  der Relay-Status tragen `danger` und `rank` (Ranglisten: `danger` und `dangerRank`), abgeleitet aus
+  Level und den letzten 5 nicht markierten XP-Einträgen (`rank.ts`)
+- Konto-Zustand (D-194, KF3b; Vertrag `account-state.ts`): `GET /me/state` (Talente, ausgerüstete
+  Zauber, Gesehen-Merker, dazu nur lesend Level, Talentpunkte, Gefahrenstufe, Rang und die letzten Runs),
+  `PUT /me/state` (Talente + Zauber + `changedAt` zusammen: zuletzt geändert gewinnt, Zeitstempel aus der
+  Zukunft auf Serverzeit gekappt; `seen` wird vereinigt; `409 talent_points_exceeded` über Level − 1,
+  `409 seen_limit_reached` über 512 Merker, `413` über 64 KB; TESTWERT). Zusammenführen: die später
+  geänderte Ausstattung bleibt, Merker vereinigt; Löschen löscht den Zustand mit
 - Cloud-Welten (D-188, KF8, P-038; Vertrag `world.ts`): `GET /me/worlds` (aktive Welten und Archiv),
   `GET` / `PUT` / `DELETE /me/worlds/:worldId` (Revision über `baseRevision` oder `If-Match: "<n>"`,
   Antwort mit `ETag`; veralteter Stand → `409 revision_conflict` mit dem Server-Stand, das Spiel mischt

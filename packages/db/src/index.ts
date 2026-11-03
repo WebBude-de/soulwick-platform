@@ -25,6 +25,7 @@ export type DbOrTx = Db | Tx;
 export type {
   Account,
   AccountDeletion,
+  AccountState,
   AuditLog,
   Ban,
   BugReport,

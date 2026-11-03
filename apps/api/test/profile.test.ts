@@ -7,6 +7,7 @@ import {
   MAX_NAME_CHANGES,
   PlayerSelf,
 } from "@soulwick/contracts";
+import { silentLogger } from "@soulwick/logger";
 import { runHousekeeping } from "../src/services/housekeeping.ts";
 import { createTestContext, DEV_KEY, type TestContext } from "./helpers.ts";
 
@@ -270,7 +271,7 @@ describe("account profile", () => {
     await runHousekeeping({
       db: ctx.db,
       config: ctx.config,
-      logger: { info: () => undefined, error: () => undefined },
+      logger: silentLogger,
     });
     const left = await ctx.db.playerNameChange.findMany({
       where: { playerId: p.id },

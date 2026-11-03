@@ -6,6 +6,7 @@ import {
   PlayerName,
   Uuid,
 } from "./common.ts";
+import { AccountDanger } from "./rank.ts";
 import { AccountLevel } from "./xp.ts";
 
 /**
@@ -94,6 +95,12 @@ export const PlayerSelf = z.object({
    * its local level only).
    */
   ...AccountLevel.partial().shape,
+  /**
+   * Danger level and rank of the account (D-194, D-196, KF3b): `danger` (rank.ts `dangerLevel`
+   * from the level and the last runs on the server) and `rank` (`{ tier, step }`). Optional for
+   * older API builds (missing = the game computes them locally).
+   */
+  ...AccountDanger.partial().shape,
 });
 export type PlayerSelf = z.infer<typeof PlayerSelf>;
 

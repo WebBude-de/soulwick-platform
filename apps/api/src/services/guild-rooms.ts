@@ -1,4 +1,5 @@
 import {
+  type AccountDanger,
   type GuildRoom,
   type GuildRoomList,
   levelForXp,
@@ -9,6 +10,7 @@ import type { Logger } from "../lib/logger.ts";
 import type { RelayClient } from "../lib/relay-client.ts";
 import type { DbOrTx } from "./db-types.ts";
 import { requireMember } from "./guilds.ts";
+import { accountDangers } from "./xp.ts";
 
 /** Rooms of this guild that still have a free slot (started ones included, the game decides). */
 function openGuildRooms(
@@ -24,13 +26,14 @@ function openGuildRooms(
 }
 
 interface PlayerLabel {
+  danger: AccountDanger | undefined;
   level: number;
   name: string;
 }
 
 /**
- * Current names and levels from the database; the relay only knows the name from the player's
- * `hello`.
+ * Current names, levels, danger levels and ranks from the database; the relay only knows them
+ * from the player's `hello`.
  */
 async function playerLabels(
   db: DbOrTx,
@@ -46,8 +49,12 @@ async function playerLabels(
     where: { id: { in: ids } },
     select: { id: true, name: true, xp: true },
   });
+  const dangers = await accountDangers(db, rows);
   return new Map(
-    rows.map((r) => [r.id, { name: r.name, level: levelForXp(r.xp) }])
+    rows.map((r) => [
+      r.id,
+      { name: r.name, level: levelForXp(r.xp), danger: dangers.get(r.id) },
+    ])
   );
 }
 
@@ -74,6 +81,8 @@ function toGuildRoom(
       name: nameOf(p),
       host: p.host,
       level: labels.get(p.playerId)?.level ?? null,
+      danger: labels.get(p.playerId)?.danger?.danger ?? null,
+      rank: labels.get(p.playerId)?.danger?.rank ?? null,
     })),
     createdAt: room.createdAt,
     expiresAt: room.expiresAt,

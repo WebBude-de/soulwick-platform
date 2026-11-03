@@ -1,4 +1,5 @@
 import {
+  ACCOUNT_STATE_MAX_BODY_BYTES,
   AddXpRequest,
   type DeletionCodeResponse,
   type IdentityList,
@@ -8,9 +9,11 @@ import {
   type LinkCodeResponse,
   MAX_GUILDS_PER_PLAYER,
   type MyGuildList,
+  PutAccountStateRequest,
   UpdateProfileRequest,
 } from "@soulwick/contracts";
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { ApiError } from "../lib/errors.ts";
 import { createLogger } from "../lib/logger.ts";
 import { rateLimit } from "../lib/rate-limit.ts";
@@ -22,6 +25,7 @@ import {
   deleteOwnAccount,
 } from "../services/account-deletion.ts";
 import { createLinkCode, redeemLinkCode } from "../services/account-link.ts";
+import { getAccountState, putAccountState } from "../services/account-state.ts";
 import { listMyGuilds, toPlayerSelf } from "../services/guilds.ts";
 import {
   listIdentitySummaries,
@@ -94,6 +98,39 @@ export function meRoutes(deps: Deps) {
     });
     return c.json(result);
   });
+
+  /**
+   * Account state (D-194, KF3b): talents, equipped spells and seen flags of the account, with
+   * level, danger level and rank. See AccountState / PutAccountStateRequest.
+   */
+  app.get("/state", async (c) =>
+    c.json(await getAccountState(deps.db, c.get("player")))
+  );
+
+  app.put(
+    "/state",
+    bodyLimit({
+      maxSize: ACCOUNT_STATE_MAX_BODY_BYTES,
+      onError: (c) =>
+        c.json(
+          {
+            error: "payload_too_large",
+            message: `The request body must be at most ${ACCOUNT_STATE_MAX_BODY_BYTES} bytes`,
+          },
+          413
+        ),
+    }),
+    async (c) => {
+      const body = await parseBody(c, PutAccountStateRequest);
+      return c.json(
+        await putAccountState(deps.db, {
+          playerId: c.get("player").id,
+          body,
+          now: now(),
+        })
+      );
+    }
+  );
 
   /** Cloud worlds (D-188, KF8, P-038): routes/worlds.ts. */
   app.route("/worlds", worldRoutes(deps));

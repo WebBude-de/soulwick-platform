@@ -1,6 +1,10 @@
 import {
+  type AccountDanger,
   type AddXpResponse,
+  accountDanger,
   accountLevel,
+  DANGER_RECENT_RUNS,
+  levelForXp,
   runXp,
   XP_FUTURE_TOLERANCE_SECONDS,
   XP_MAX_PER_DAY,
@@ -8,9 +12,9 @@ import {
   type XpEntryResult,
   xpDayOf,
 } from "@soulwick/contracts";
-import type { Prisma } from "@soulwick/db";
+import { Prisma } from "@soulwick/db";
 import type { Config } from "../config.ts";
-import type { Db, Tx } from "./db-types.ts";
+import type { Db, DbOrTx, Tx } from "./db-types.ts";
 import { checkPlausibility } from "./plausibility.ts";
 
 /**
@@ -18,7 +22,8 @@ import { checkPlausibility } from "./plausibility.ts";
  * own runs; this service computes the XP with `runXp` from the contract, grants the account
  * record bonus and the first run of the day from the account's stored entries, applies the
  * plausibility check of run reports and the daily cap, and keeps `players.xp` (the sum of the
- * entries) in step. The level is always derived (`accountLevel`), never stored.
+ * entries) in step. The level is always derived (`accountLevel`), never stored; so are the danger
+ * level and the rank (D-194, KF3b: `accountDangers` from the level and the newest entries).
  */
 
 const DAY_MS = 86_400_000;
@@ -116,6 +121,7 @@ export async function addXp(
         deepestRoom: entry.deepestRoom,
         endReason: entry.endReason,
         players: entry.players,
+        danger: entry.danger ?? 0,
         durationSeconds: entry.durationSeconds,
         gameVersion: entry.gameVersion,
         endedAt,
@@ -156,6 +162,7 @@ export async function addXp(
         endReason: entry.endReason,
         firstRunOfDay,
         players: entry.players,
+        danger: entry.danger ?? 0,
       });
       if (breakdown.total > dailyLeft) {
         return {
@@ -235,4 +242,85 @@ export async function mergeXp(
     where: { id: keepId },
     data: { xp: sum._sum.xp ?? 0 },
   });
+}
+
+// --- danger level and rank (D-194, D-196, KF3b) ----------------------------------------------------
+
+/** One of the newest XP entries of an account (skill part of the danger level). */
+export interface RecentRunRow {
+  danger: number;
+  deepestRoom: number;
+  endedAt: Date;
+  runId: string;
+}
+
+/**
+ * The newest DANGER_RECENT_RUNS XP entries per player, newest first (by `ended_at`, then upload
+ * time). Flagged entries do not count: an implausible run must not move the rank. Every id gets
+ * an entry in the map (empty list without runs).
+ */
+export async function recentRuns(
+  db: DbOrTx,
+  playerIds: readonly string[]
+): Promise<Map<string, RecentRunRow[]>> {
+  const ids = [...new Set(playerIds)];
+  const result = new Map<string, RecentRunRow[]>(ids.map((id) => [id, []]));
+  if (ids.length === 0) {
+    return result;
+  }
+  const rows = await db.$queryRaw<
+    {
+      danger: number;
+      deepest_room: number;
+      ended_at: Date;
+      player_id: string;
+      run_id: string;
+    }[]
+  >`
+    select p.id::text as player_id, e.run_id::text as run_id, e.deepest_room, e.danger, e.ended_at
+    from unnest(array[${Prisma.join(ids.map((id) => Prisma.sql`${id}::uuid`))}]) as p(id)
+    cross join lateral (
+      select x.run_id, x.deepest_room, x.danger, x.ended_at, x.created_at
+      from xp_entries x
+      where x.player_id = p.id and x.flag_reason is null
+      order by x.ended_at desc, x.created_at desc, x.run_id desc
+      limit ${DANGER_RECENT_RUNS}
+    ) e
+    order by p.id, e.ended_at desc, e.created_at desc, e.run_id desc`;
+  for (const row of rows) {
+    result.get(row.player_id)?.push({
+      runId: row.run_id,
+      deepestRoom: Number(row.deepest_room),
+      danger: Number(row.danger),
+      endedAt: new Date(row.ended_at),
+    });
+  }
+  return result;
+}
+
+/** Danger level and rank of an account from its total XP and its newest runs. */
+export const dangerOf = (
+  xp: number,
+  runs: readonly RecentRunRow[]
+): AccountDanger =>
+  accountDanger(
+    levelForXp(xp),
+    runs.map((r) => r.deepestRoom)
+  );
+
+/**
+ * Danger level and rank per player (D-194) for lists (guild members, leaderboards, lobbies): one
+ * query for all of them.
+ */
+export async function accountDangers(
+  db: DbOrTx,
+  players: readonly { id: string; xp: number }[]
+): Promise<Map<string, AccountDanger>> {
+  const runs = await recentRuns(
+    db,
+    players.map((p) => p.id)
+  );
+  return new Map(
+    players.map((p) => [p.id, dangerOf(p.xp, runs.get(p.id) ?? [])])
+  );
 }
