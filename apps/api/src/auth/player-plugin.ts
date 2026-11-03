@@ -10,11 +10,12 @@ import { setSessionCookie } from "better-auth/cookies";
 import { z } from "zod";
 
 /**
- * Better Auth plugin `soulwickPlayerAuth` (P-027): sessions for players without e-mail or
- * password. A player signs in with a platform identity (device id, Steam ticket, Google Play
- * server auth code, P-014); the plugin has the identity verified, finds or creates the player
- * (`players` + `player_identities`, unchanged) and starts a Better Auth session for the player's
- * user row (role `player`, `player_id`).
+ * Better Auth plugin `soulwickPlayerAuth` (P-027): sessions for players. A player signs in with a
+ * platform identity (device id, Steam ticket, Google Play server auth code, P-014); the plugin has
+ * the identity verified, finds or creates the player (`players` + `player_identities`) and starts
+ * a Better Auth session for the player's user row (role `player`, `player_id`). The KF5 logins
+ * (password, magic link, OAuth, Apple, Game Center; services/logins.ts, P-039) verify and resolve
+ * the player themselves and only use `createPlayerSession`.
  *
  * Both endpoints are server-only (callable through `auth.api`, never over HTTP). The thin Hono
  * routes under /auth keep paths, bodies and error codes of the game contract; they validate the

@@ -71,7 +71,8 @@ export function createAuth(
     },
     emailAndPassword: {
       enabled: true,
-      // Admins are created by admins (POST /admin/admins) or the seeds, never by sign-up.
+      // Admins are created by admins (POST /admin/admins) or the seeds, never by sign-up. Player
+      // passwords (KF5) are set and checked by services/logins.ts with the same hasher.
       disableSignUp: true,
       minPasswordLength: 12,
       maxPasswordLength: 256,

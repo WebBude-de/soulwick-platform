@@ -13,6 +13,7 @@ import { findActiveBan } from "./bans.ts";
 import { verifyGooglePlayCode } from "./google-play.ts";
 import { toPlayerSelf } from "./guilds.ts";
 import { loginWithIdentity } from "./identities.ts";
+import { findOrCreatePlayer, type VerifiedLogin } from "./logins.ts";
 import { defaultPlayerName } from "./profile.ts";
 import { verifySteamTicket } from "./steam.ts";
 
@@ -119,6 +120,27 @@ export async function signInPlayer(
     expiresAt: iso(response.expiresAt),
     player: await toPlayerSelf(deps.db, response.player),
   };
+}
+
+/**
+ * Sign-in with a verified KF5 login (password, Apple, Game Center): finds or creates the account
+ * (P-037), refuses banned players with 403 `banned` (reason, end; no session) and starts a
+ * session.
+ */
+export async function signInWithLogin(
+  deps: Deps,
+  login: VerifiedLogin
+): Promise<AuthResponse> {
+  const now = deps.now?.() ?? new Date();
+  const { player } = await findOrCreatePlayer(deps.db, login, now);
+  const ban = await findActiveBan(deps.db, player.id, now);
+  if (ban) {
+    throw new ApiError(403, "banned", ban.reason, {
+      reason: ban.reason,
+      expiresAt: isoOrNull(ban.expiresAt),
+    });
+  }
+  return await issuePlayerSession(deps, player);
 }
 
 /** A new session for an existing player (POST /me/link: the remaining account). */

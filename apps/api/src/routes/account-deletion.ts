@@ -13,6 +13,7 @@ import {
   confirmAccountDeletion,
   verifyDeletionCode,
 } from "../services/account-deletion.ts";
+import { sendRevocationsSoon } from "../services/apple.ts";
 import type { AppEnv, Deps } from "../types.ts";
 
 const HOUR_MS = 3_600_000;
@@ -67,6 +68,7 @@ export function accountDeletionRoutes(deps: Deps) {
       wasBanned: result.wasBanned,
       guildDisbanded: result.guilds?.some((g) => g.disbanded) ?? false,
     });
+    sendRevocationsSoon(deps);
     const response: AccountDeletionConfirmResponse = {
       deleted: true,
       deletedAt: iso(at),

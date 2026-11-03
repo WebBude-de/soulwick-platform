@@ -6,8 +6,11 @@ import type {
   PlayerIdentity,
 } from "@soulwick/db";
 import { ApiError, isUniqueViolation } from "../lib/errors.ts";
+import { maskEmail } from "../lib/mail.ts";
 import { iso } from "../lib/validate.ts";
+import { queueAppleRevocations } from "./apple.ts";
 import type { DbOrTx } from "./db-types.ts";
+import { clearPlayerEmail, realEmailOf } from "./player-users.ts";
 import { appearanceData } from "./profile.ts";
 
 type IdentityRef = Pick<PlayerIdentity, "provider" | "providerUserId">;
@@ -114,11 +117,27 @@ export function maskProviderUserId(providerUserId: string): string {
   return `***${providerUserId.slice(-VISIBLE_ID_CHARS)}`;
 }
 
-export function toIdentitySummary(identity: PlayerIdentity): IdentitySummary {
+/**
+ * One identity for the owner's account panel. `email` = the proven address of the account
+ * (`auth_users.email`, P-037), shown masked; `password` shows its username (the owner's own).
+ */
+export function toIdentitySummary(
+  identity: PlayerIdentity,
+  email: string | null = null
+): IdentitySummary {
+  let maskedId = maskProviderUserId(identity.providerUserId);
+  let label: string | null = null;
+  if (identity.provider === "email") {
+    maskedId = email ? maskEmail(email) : "***";
+    label = maskedId;
+  } else if (identity.provider === "password") {
+    label = identity.providerUserId;
+  }
   return {
     id: identity.id,
     provider: identity.provider,
-    maskedId: maskProviderUserId(identity.providerUserId),
+    maskedId,
+    label,
     createdAt: iso(identity.createdAt),
     lastUsedAt: iso(identity.lastUsedAt),
   };
@@ -128,19 +147,26 @@ export async function listIdentitySummaries(
   db: DbOrTx,
   playerId: string
 ): Promise<IdentitySummary[]> {
-  return (await findIdentities(db, playerId)).map(toIdentitySummary);
+  const identities = await findIdentities(db, playerId);
+  const email = identities.some((i) => i.provider === "email")
+    ? realEmailOf(await db.user.findUnique({ where: { playerId } }))
+    : null;
+  return identities.map((i) => toIdentitySummary(i, email));
 }
 
 /**
  * Unlinks every identity of one provider from the account (D-121). A device that logs in with an
- * unlinked identity afterwards gets a new account. Errors: 404 `identity_not_found`,
- * 409 `last_identity` when nothing would be left.
+ * unlinked identity afterwards gets a new account. The Better Auth rows of those identities go
+ * with them (P-037), Apple refresh tokens are queued for revocation, an unlinked e-mail address
+ * is removed from the account. `revocations` > 0: the caller should send them
+ * (`sendRevocations`). Errors: 404 `identity_not_found`, 409 `last_identity` when nothing
+ * would be left.
  */
 export async function unlinkProvider(
   db: Db,
   playerId: string,
   provider: IdentityProvider
-): Promise<{ removed: number }> {
+): Promise<{ removed: number; revocations: number }> {
   return await db.$transaction(async (tx) => {
     // Lock the account so two parallel unlinks cannot remove the last identities together.
     await tx.$queryRaw`select id from players where id = ${playerId}::uuid for update`;
@@ -160,9 +186,22 @@ export async function unlinkProvider(
         "The last identity of an account cannot be unlinked"
       );
     }
+    const accountIds = matching.flatMap((i) =>
+      i.authAccountId ? [i.authAccountId] : []
+    );
+    const revocations =
+      accountIds.length > 0
+        ? await queueAppleRevocations(tx, { ids: accountIds })
+        : 0;
     const { count } = await tx.playerIdentity.deleteMany({
       where: { playerId, provider },
     });
-    return { removed: count };
+    if (accountIds.length > 0) {
+      await tx.account.deleteMany({ where: { id: { in: accountIds } } });
+    }
+    if (provider === "email") {
+      await clearPlayerEmail(tx, playerId);
+    }
+    return { removed: count, revocations };
   });
 }

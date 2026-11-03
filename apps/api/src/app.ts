@@ -5,6 +5,7 @@ import { secureHeaders } from "hono/secure-headers";
 import { createAuth } from "./auth/auth.ts";
 import { createErrorHandler } from "./lib/errors.ts";
 import { createLogger, requestLogger } from "./lib/logger.ts";
+import { createMailer } from "./lib/mail.ts";
 import { rateLimit } from "./lib/rate-limit.ts";
 import { accountDeletionRoutes } from "./routes/account-deletion.ts";
 import { adminRoutes } from "./routes/admin/index.ts";
@@ -20,6 +21,8 @@ import { legalRoutes } from "./routes/legal.ts";
 import { meRoutes } from "./routes/me.ts";
 import { publicRoutes } from "./routes/public.ts";
 import { runRoutes } from "./routes/runs.ts";
+import { createAppleKeys } from "./services/apple.ts";
+import { createGameCenterVerifier } from "./services/game-center.ts";
 import { playerLoginCallbacks } from "./services/sessions.ts";
 import type { AppEnv, BaseDeps, Deps } from "./types.ts";
 
@@ -28,12 +31,15 @@ import type { AppEnv, BaseDeps, Deps } from "./types.ts";
  * every auth path is an explicit route (`/auth/*`, `/admin/auth/*`) that calls `auth.api`.
  */
 export function createApp(base: BaseDeps) {
+  const logger = createLogger(base.config.LOG_LEVEL);
   const deps: Deps = {
     ...base,
     auth: createAuth(base, playerLoginCallbacks(base)),
+    mailer: createMailer(base.config, { fetch: base.fetch, logger }),
+    appleKeys: createAppleKeys(base),
+    gameCenter: createGameCenterVerifier(base),
   };
   const { config } = deps;
-  const logger = createLogger(config.LOG_LEVEL);
   const app = new Hono<AppEnv>();
 
   app.onError(createErrorHandler(logger));

@@ -19,6 +19,7 @@ import {
 } from "../lib/errors.ts";
 import { forEachSequential } from "../lib/sequential.ts";
 import { signDeletionToken, verifyDeletionToken } from "../lib/tokens.ts";
+import { queueAppleRevocations } from "./apple.ts";
 import { writeAudit } from "./audit.ts";
 import { findActiveBan } from "./bans.ts";
 import { countBugReportsOf } from "./bug-reports.ts";
@@ -199,7 +200,8 @@ export type DeletedAccount = Pick<
  * DELETE /admin/players/:id. Guild membership is removed first (founder role passes on, P-102;
  * the last member disbands the guild); identities, bans, link and deletion codes, notes, bug reports,
  * XP entries, cloud worlds with their backups (D-188), the account state (talents, spells, seen
- * flags; KF3b) and run participation rows go with the
+ * flags; KF3b), the Better Auth user with its sessions, password hash, OAuth rows and e-mail
+ * (KF5; Apple tokens are queued for revocation first) and run participation rows go with the
  * player (ON DELETE CASCADE), so runs stay for guild boards but
  * no longer reference the player. Writes the deletion log row (no name, P-026).
  */
@@ -228,6 +230,15 @@ export async function deletePlayerAccount(
       });
     }
   );
+  // Apple requires revoking its tokens when the account goes (P-039); the rows vanish with the
+  // player, so the tokens are queued first and sent after the commit (`sendRevocations`).
+  const user = await tx.user.findUnique({
+    where: { playerId },
+    select: { id: true },
+  });
+  if (user) {
+    await queueAppleRevocations(tx, { userId: user.id });
+  }
   await tx.player.delete({ where: { id: playerId } });
   await tx.accountDeletion.create({
     data: {

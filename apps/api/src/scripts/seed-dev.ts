@@ -7,7 +7,8 @@
  * screenshots (P-033), a character (appearance, P-034) for players 1-8, account XP from a few
  * runs each (D-188, levels 1 to about 8, each run at the danger level of its time, D-194), three
  * cloud worlds of player 1 (two active, one archived, one backup each; KF8), an account state of
- * player 1 (talents, spell, seen flags; KF3b) and the matching audit entries, so the
+ * player 1 (talents, spell, seen flags; KF3b), a password and an e-mail login of player 1 (KF5)
+ * and the matching audit entries, so the
  * website leaderboards and every admin page show data locally.
  *
  * Idempotent: every record has a fixed key (email, device id, steam id, guild tag, run seed, ban
@@ -51,6 +52,8 @@ import {
 import { placeholderPng, type Rgb } from "../lib/placeholder-png.ts";
 import { createAdminAccount } from "../services/admin-users.ts";
 import { writeAudit } from "../services/audit.ts";
+import { hashPassword } from "../services/passwords.ts";
+import { ensurePlayerUser } from "../services/player-users.ts";
 
 if (process.env.NODE_ENV === "production") {
   console.error(
@@ -86,6 +89,15 @@ const deviceIdOf = (n: number) => `dev-device-${String(n).padStart(8, "0")}`;
  */
 const FAKE_STEAM_ID = "76561190000000001";
 const STEAM_PLAYER = 1;
+
+/**
+ * Logins of KF5 for player 1 (local test data only): username + password for POST /auth/password
+ * and an e-mail on the reserved `.test` domain for magic links (MAIL_ADAPTER=log shows the link).
+ */
+const LOGIN_PLAYER = 1;
+const SEED_USERNAME = "lumen";
+const SEED_PLAYER_PASSWORD = "soulwick-player-local";
+const SEED_EMAIL = "lumen@soulwick.test";
 
 /**
  * Deletion log rows for the admin page "Löschprotokoll" (P-026): fixed ids, no player hash (the
@@ -855,6 +867,8 @@ function seedWorldState(
 interface Summary {
   banCreated: boolean;
   guildsCreated: number;
+  /** Password and e-mail login of player 1 created in this run (KF5). */
+  loginsCreated: number;
   newAdmins: number;
   newBugReports: number;
   newDeletions: number;
@@ -864,6 +878,57 @@ interface Summary {
   newXpEntries: number;
   noteCreated: boolean;
   stateCreated: boolean;
+}
+
+/**
+ * Password and e-mail login of player 1 (KF5, P-037: identity + Better Auth row, the address in
+ * auth_users.email). Each is skipped when it exists or its username/address is taken meanwhile.
+ */
+async function ensureSeedLogins(tx: Tx, playerId: string): Promise<number> {
+  let created = 0;
+  const usernameTaken = await tx.playerIdentity.findUnique({
+    where: {
+      provider_providerUserId: {
+        provider: "password",
+        providerUserId: SEED_USERNAME,
+      },
+    },
+  });
+  const user = await ensurePlayerUser(tx, playerId);
+  if (!usernameTaken) {
+    const account = await tx.account.create({
+      data: {
+        userId: user.id,
+        providerId: "credential",
+        accountId: user.id,
+        password: await hashPassword(SEED_PLAYER_PASSWORD),
+      },
+    });
+    await tx.playerIdentity.create({
+      data: {
+        playerId,
+        provider: "password",
+        providerUserId: SEED_USERNAME,
+        authAccountId: account.id,
+      },
+    });
+    created += 1;
+  }
+  const emailTaken = await tx.user.findUnique({ where: { email: SEED_EMAIL } });
+  const hasEmail = await tx.playerIdentity.findFirst({
+    where: { playerId, provider: "email" },
+  });
+  if (!(emailTaken || hasEmail)) {
+    await tx.user.update({
+      where: { id: user.id },
+      data: { email: SEED_EMAIL, emailVerified: true },
+    });
+    await tx.playerIdentity.create({
+      data: { playerId, provider: "email", providerUserId: user.id },
+    });
+    created += 1;
+  }
+  return created;
 }
 
 /**
@@ -935,6 +1000,7 @@ async function seed(tx: Tx): Promise<Summary> {
     newXpEntries: 0,
     newWorlds: 0,
     stateCreated: false,
+    loginsCreated: 0,
   };
 
   // --- admins --------------------------------------------------------------------------------
@@ -996,6 +1062,8 @@ async function seed(tx: Tx): Promise<Summary> {
     ],
     skipDuplicates: true,
   });
+
+  summary.loginsCreated = await ensureSeedLogins(tx, player(LOGIN_PLAYER).id);
 
   // --- guilds (player 1 is in both, D-147) ---------------------------------------------------
   const guildIds = new Map<string, string>();
@@ -1258,6 +1326,7 @@ try {
       "Dev seed applied.",
       `  Admins:   ${ADMIN_EMAIL} (admin), ${MODERATOR_EMAIL} (moderator), ${summary.newAdmins} new; new accounts get the password ${passwordInfo}, existing ones keep theirs`,
       `  Players:  ${PLAYERS.length} (${summary.newPlayers} new); device ids ${deviceIdOf(1)} ... ${deviceIdOf(PLAYERS.length)}; player ${STEAM_PLAYER} also has the fake Steam id ${FAKE_STEAM_ID}`,
+      `  Logins:   ${PLAYERS[0]?.name}: username "${SEED_USERNAME}", password "${SEED_PLAYER_PASSWORD}", e-mail ${SEED_EMAIL} (${summary.loginsCreated} new)`,
       ...GUILDS.map(
         (g) =>
           `  Guild:    ${g.name} [${g.tag}], invite code ${g.inviteCode}, ${g.members.length} members`

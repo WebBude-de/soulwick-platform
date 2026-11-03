@@ -1,3 +1,4 @@
+import { createPrivateKey } from "node:crypto";
 import {
   BUG_REPORT_RETENTION_DAYS_DEFAULT,
   PROTOCOL_VERSION,
@@ -26,6 +27,16 @@ const csv = z
   );
 
 const TRAILING_SLASHES = /\/+$/;
+
+/** Whether `pem` is an EC P-256 private key (the .p8 key of Sign in with Apple). */
+function isEcPrivateKey(pem: string): boolean {
+  try {
+    const key = createPrivateKey(pem);
+    return key.asymmetricKeyType === "ec";
+  } catch {
+    return false;
+  }
+}
 /** Numeric game versions ("1.0", "1.0.0", "1.0.0.4"), optionally with a "-beta.1" suffix. */
 const COMPARABLE_VERSION = /^\d+(\.\d+){1,3}([-+][0-9A-Za-z.-]+)?$/;
 const WEBSOCKET_URL = /^wss?:\/\//;
@@ -92,6 +103,63 @@ const ConfigSchema = z
     /** Web OAuth client of the Google Cloud project linked to Play Games Services; empty = 501. */
     GOOGLE_PLAY_CLIENT_ID: z.string().trim().default(""),
     GOOGLE_PLAY_CLIENT_SECRET: z.string().trim().default(""),
+
+    /**
+     * Public base URL of the website (KF5): the game opens `<WEB_URL>/login/<code>`, magic links
+     * point to `<WEB_URL>/login/magic`, browser flows end on `<WEB_URL>/login/...`.
+     */
+    WEB_URL: z
+      .url()
+      .default("http://localhost:3100")
+      .transform((v) => v.replace(TRAILING_SLASHES, "")),
+
+    /** Google sign-in on the web (OAuth client of type "Web application"); empty = off. */
+    GOOGLE_CLIENT_ID: z.string().trim().default(""),
+    GOOGLE_CLIENT_SECRET: z.string().trim().default(""),
+    /** Discord sign-in on the web (OAuth2 application); empty = off. */
+    DISCORD_CLIENT_ID: z.string().trim().default(""),
+    DISCORD_CLIENT_SECRET: z.string().trim().default(""),
+    /**
+     * Sign in with Apple. Web (browser flow): Services ID APPLE_CLIENT_ID plus the key below. iOS
+     * app (POST /auth/apple): APPLE_APP_BUNDLE_ID; with the key the API also gets a refresh token
+     * to revoke at account deletion (App Store rule). The key: Team ID, Key ID and the .p8
+     * private key (PEM; `\n` for line breaks is fine).
+     */
+    APPLE_CLIENT_ID: z.string().trim().default(""),
+    APPLE_APP_BUNDLE_ID: z.string().trim().default(""),
+    APPLE_TEAM_ID: z.string().trim().default(""),
+    APPLE_KEY_ID: z.string().trim().default(""),
+    APPLE_PRIVATE_KEY: z
+      .string()
+      .default("")
+      .transform((v) => v.replaceAll("\\n", "\n").trim()),
+    /** Steam OpenID 2.0 sign-in in the browser (no key needed); same `steam` identity as the ticket. */
+    STEAM_OPENID_ENABLED: bool,
+    /** Bundle ids of the iOS app allowed for POST /auth/game-center (comma separated); empty = off. */
+    GAME_CENTER_BUNDLE_IDS: csv,
+
+    /**
+     * Mail adapter for magic links (D-196): `off` (no magic links), `log` (development: the mail
+     * goes to the API log, refused in production), `cloudflare` (HTTPS POST to the mail Worker at
+     * MAIL_CLOUDFLARE_URL with `Authorization: Bearer MAIL_CLOUDFLARE_KEY`).
+     */
+    MAIL_ADAPTER: z.enum(["off", "log", "cloudflare"]).default("off"),
+    /** Sender address of the mails, e.g. "Soulwick <login@playsoulwick.com>". */
+    MAIL_FROM: z.string().trim().default(""),
+    MAIL_CLOUDFLARE_URL: z.union([z.literal(""), z.url()]).default(""),
+    MAIL_CLOUDFLARE_KEY: z.string().trim().default(""),
+
+    /**
+     * TESTWERT: login attempts per IP and minute for POST /auth/password, /auth/apple,
+     * /auth/game-center, /auth/web-login, the browser flows, magic link verify and /me/logins.
+     */
+    LOGIN_ATTEMPTS_PER_MINUTE: z.coerce.number().int().min(1).default(20),
+    /** TESTWERT: failed password logins per username in 15 minutes before 429. */
+    PASSWORD_FAILURES_PER_USERNAME: z.coerce.number().int().min(1).default(10),
+    /** TESTWERT: magic link mails per IP and hour (429 above). */
+    MAGIC_LINKS_PER_HOUR: z.coerce.number().int().min(1).default(10),
+    /** TESTWERT: magic link mails per address and hour (above: silently not sent). */
+    MAGIC_LINKS_PER_ADDRESS_PER_HOUR: z.coerce.number().int().min(1).default(3),
 
     /** TESTWERT: timeout per call to Steam or Google during a login. */
     EXTERNAL_AUTH_TIMEOUT_MS: z.coerce
@@ -235,7 +303,63 @@ const ConfigSchema = z
   .refine((c) => c.RELAY_INTERNAL_URL === "" || c.RELAY_INTERNAL_KEY !== "", {
     message: "RELAY_INTERNAL_URL needs RELAY_INTERNAL_KEY",
     path: ["RELAY_INTERNAL_URL"],
-  });
+  })
+  .refine(
+    (c) => c.NODE_ENV !== "production" || c.WEB_URL.startsWith("https://"),
+    {
+      message: "WEB_URL must be an https URL in production",
+      path: ["WEB_URL"],
+    }
+  )
+  .refine((c) => !c.GOOGLE_CLIENT_ID === !c.GOOGLE_CLIENT_SECRET, {
+    message: "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET go together",
+    path: ["GOOGLE_CLIENT_ID"],
+  })
+  .refine((c) => !c.DISCORD_CLIENT_ID === !c.DISCORD_CLIENT_SECRET, {
+    message: "DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET go together",
+    path: ["DISCORD_CLIENT_ID"],
+  })
+  .refine(
+    (c) =>
+      [c.APPLE_TEAM_ID, c.APPLE_KEY_ID, c.APPLE_PRIVATE_KEY].every(
+        (v) => v === ""
+      ) ||
+      [c.APPLE_TEAM_ID, c.APPLE_KEY_ID, c.APPLE_PRIVATE_KEY].every(
+        (v) => v !== ""
+      ),
+    {
+      message: "APPLE_TEAM_ID, APPLE_KEY_ID and APPLE_PRIVATE_KEY go together",
+      path: ["APPLE_PRIVATE_KEY"],
+    }
+  )
+  .refine(
+    (c) => c.APPLE_PRIVATE_KEY === "" || isEcPrivateKey(c.APPLE_PRIVATE_KEY),
+    {
+      message: "APPLE_PRIVATE_KEY must be the PEM of the .p8 key (EC P-256)",
+      path: ["APPLE_PRIVATE_KEY"],
+    }
+  )
+  .refine((c) => c.APPLE_CLIENT_ID === "" || c.APPLE_PRIVATE_KEY !== "", {
+    message:
+      "APPLE_CLIENT_ID (web) needs APPLE_TEAM_ID, APPLE_KEY_ID and APPLE_PRIVATE_KEY",
+    path: ["APPLE_CLIENT_ID"],
+  })
+  .refine((c) => c.NODE_ENV !== "production" || c.MAIL_ADAPTER !== "log", {
+    message: "MAIL_ADAPTER=log is for development only",
+    path: ["MAIL_ADAPTER"],
+  })
+  .refine(
+    (c) =>
+      c.MAIL_ADAPTER !== "cloudflare" ||
+      (c.MAIL_CLOUDFLARE_URL !== "" &&
+        c.MAIL_CLOUDFLARE_KEY.length >= 32 &&
+        c.MAIL_FROM !== ""),
+    {
+      message:
+        "MAIL_ADAPTER=cloudflare needs MAIL_CLOUDFLARE_URL, MAIL_CLOUDFLARE_KEY (min. 32 characters) and MAIL_FROM",
+      path: ["MAIL_ADAPTER"],
+    }
+  );
 
 export type Config = z.infer<typeof ConfigSchema>;
 
