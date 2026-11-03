@@ -74,6 +74,18 @@ const FILTER_ACTIONS = AuditAction.options.filter((a) =>
   AREAS.some((area) => a.startsWith(area.value))
 );
 
+/** Who wrote the entry: the admin, the emergency password script (`source: "script"`), or a deleted account. */
+const actorLabel = (e: { adminEmail: string | null; details: unknown }) => {
+  if (e.adminEmail) {
+    return e.adminEmail;
+  }
+  const source =
+    typeof e.details === "object" && e.details !== null
+      ? (e.details as { source?: unknown }).source
+      : undefined;
+  return source === "script" ? "Skript" : "(gelöschter Zugang)";
+};
+
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 /** A bare UUID in the details (ban, note, player id): shortened, full id as tooltip. */
 const UUID_VALUE =
@@ -256,9 +268,7 @@ export default async function AuditPage({
                       </Chip>
                     </td>
                     <td className="text-muted">
-                      <Truncate max="max-w-52">
-                        {e.adminEmail ?? "(gelöschter Zugang)"}
-                      </Truncate>
+                      <Truncate max="max-w-52">{actorLabel(e)}</Truncate>
                     </td>
                     <td className="whitespace-nowrap" title={e.targetId ?? ""}>
                       {href ? (

@@ -19,7 +19,7 @@ const SHAPES: { id: SpriteId; factor: number }[] = [
 /**
  * "Wish for a boss" (D-179, part of the release): beat a boss, describe your nightmare at the
  * campfire, fight it a few rooms later. The machine on the right shows invented examples only
- * (no real persons, KONZEPT_KI_BOSS §9); the button brings the next one.
+ * (no real persons, KONZEPT.md §11); the button brings the next one.
  */
 export function Bosses() {
   const t = useTranslations("landing");

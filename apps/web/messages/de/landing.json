@@ -1,12 +1,12 @@
 {
   "meta": {
     "title": "Soulwick – Schnapp dir deine Freunde. Bring Licht ins Dunkel.",
-    "description": "Soulwick ist das Pixel-Roguelite, in das du mit Freunden reinrennst. Jeder Run anders, jeder Boss ein Clip – und deinen eigenen kannst du dir wünschen. Koop für bis zu vier, ein endloser Dungeon, ein gemütliches Dorf und Wick, dein Begleiter."
+    "description": "Soulwick ist das Pixel-Roguelite, in das du mit Freunden reinrennst. Jeder Run anders, jeder Boss ein Clip – und deinen eigenen kannst du dir wünschen. Koop für bis zu vier, ein endloser Dungeon, ein gemütliches Dorf und Flint, dein Begleiter."
   },
   "navLinks": [
     ["Koop", "#koop"],
     ["Bosse", "#bosse"],
-    ["Wick", "#wick"],
+    ["Flint", "#flint"],
     ["Dungeon", "#spiel"],
     ["Dorf", "#dorf"],
     ["Neuigkeiten", "news"],
@@ -54,9 +54,9 @@
       "google_play": "Google Play und das Google Play-Logo sind Marken von Google LLC.",
       "steam": "© {year} Valve Corporation. Steam und das Steam-Logo sind Marken und/oder eingetragene Marken der Valve Corporation in den USA und/oder anderen Ländern."
     },
-    "hintPointer": "Beweg die Maus: Wick leuchtet dir den Weg.",
-    "hintTouch": "Tipp ins Dunkel: Wick fliegt hin.",
-    "walkersLabel": "Monster jagen vier Freunde, die Freunde jagen Wick, Wick jagt das Huhn."
+    "hintPointer": "Beweg die Maus: Flint leuchtet dir den Weg.",
+    "hintTouch": "Tipp ins Dunkel: Flint fliegt hin.",
+    "walkersLabel": "Monster jagen Wick, Glut, Moos und Frost, die vier jagen Flint, Flint jagt das Huhn."
   },
   "coop": {
     "title": "Mit Freunden reinrennen",
@@ -68,7 +68,7 @@
       ],
       [
         "Bis zu vier",
-        "Jeder sucht sich Figur und Farbe aus, jeder hat eigene Upgrades. Das Gold landet in einem Topf."
+        "Jeder sucht sich eine Figur (Wick, Glut, Moos oder Frost) und eine Farbe aus, jeder hat eigene Upgrades. Das Gold landet in einem Topf."
       ],
       [
         "Keiner bleibt liegen",
@@ -81,7 +81,7 @@
     "linkLabel": "Einladungslink",
     "linkCopied": "kopiert",
     "host": "Host",
-    "vitrineAlt": "Ein Koop-Raum: vier Freunde als vier verschiedene Figuren, Wick, der Raumcode und der Einladungslink"
+    "vitrineAlt": "Ein Koop-Raum: vier Freunde als Wick, Glut, Moos und Frost, dazu ihr Begleiter Flint, der Raumcode und der Einladungslink"
   },
   "bosses": {
     "title": "Wünsch dir einen Boss",
@@ -123,18 +123,18 @@
       [
         "Ein Huhn. Aber riesig. Und sauer.",
         "Das Ur-Huhn",
-        "Wick kennt es. Wick hat Angst."
+        "Flint kennt es. Flint hat Angst."
       ]
     ]
   },
   "wick": {
-    "title": "Triff Wick",
-    "lead": "Das ist Wick, dein Begleiter. Ein kleines Docht-Wesen mit einer Flamme auf dem Kopf, das dir ab deinem ersten Schritt ins Dunkel den Weg leuchtet.",
-    "text": "Wo Wick ist, ist das Huhn nicht weit. Warum, weiß keiner. Das Huhn verrät es nicht.",
-    "outfitsTitle": "Outfits für dich, Wick und dein Dorf",
+    "title": "Triff Flint",
+    "lead": "Das ist Flint, dein Begleiter. Ein kleines Docht-Wesen mit einer Flamme auf dem Kopf, das vorausfliegt, dir den Weg ins Dunkel leuchtet und dir ab deinem ersten Schritt alles Neue zeigt.",
+    "text": "Wo Flint ist, ist das Huhn nicht weit. Warum, weiß keiner. Das Huhn verrät es nicht.",
+    "outfitsTitle": "Outfits für dich, Flint und dein Dorf",
     "outfitsText": "Such dir Farben und Looks aus, die zu deiner Truppe passen. Nur fürs Aussehen, nie für Stärke.",
-    "tryPointer": "Na los, klick Wick an.",
-    "tryTouch": "Na los, tipp Wick an."
+    "tryPointer": "Na los, klick Flint an.",
+    "tryTouch": "Na los, tipp Flint an."
   },
   "descent": {
     "title": "Kein Abstieg ist wie der andere",

@@ -9,6 +9,7 @@ import { Prisma } from "@soulwick/db";
 import { iso } from "../lib/validate.ts";
 import { activeBanSql } from "./bans.ts";
 import type { DbOrTx } from "./db-types.ts";
+import { accountDangers } from "./xp.ts";
 
 export function currentSeason(now: Date): string {
   return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
@@ -154,6 +155,13 @@ export async function getLeaderboard(
   }
 
   const rows = await db.$queryRaw<Row[]>(query);
+  // Danger level and rank of the players shown (D-194); the guild board has none.
+  const dangers = await accountDangers(
+    db,
+    rows.flatMap((r) =>
+      r.xp === null ? [] : [{ id: r.entity_id, xp: Number(r.xp) }]
+    )
+  );
   const toEntry = (r: Row): LeaderboardEntry => ({
     rank: Number(r.rank),
     id: r.entity_id,
@@ -165,6 +173,8 @@ export async function getLeaderboard(
     achievedAt: iso(r.created_at),
     memberCount: r.member_count === null ? null : Number(r.member_count),
     level: r.xp === null ? null : levelForXp(Number(r.xp)),
+    danger: dangers.get(r.entity_id)?.danger ?? null,
+    dangerRank: dangers.get(r.entity_id)?.rank ?? null,
   });
 
   const entries = rows.filter((r) => Number(r.pos) <= limit).map(toEntry);

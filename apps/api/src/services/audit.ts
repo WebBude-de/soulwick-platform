@@ -6,7 +6,8 @@ import type { DbOrTx } from "./db-types.ts";
 export async function writeAudit(
   db: DbOrTx,
   entry: {
-    adminId: string;
+    /** Acting admin; null for scripts run on the server (details carry `source`). */
+    adminId: string | null;
     action: AuditAction;
     targetType:
       | "player"

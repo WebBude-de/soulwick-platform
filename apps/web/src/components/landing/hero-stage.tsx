@@ -2,7 +2,7 @@
 
 import { type ReactNode, useEffect, useRef } from "react";
 
-/** Where Wick rests and wanders (feet, in % of the stage). The first point is home. */
+/** Where Flint rests and wanders (feet, in % of the stage). The first point is home. */
 const WANDER: [number, number][] = [
   [50, 52],
   [20, 50],
@@ -12,14 +12,14 @@ const WANDER: [number, number][] = [
   [36, 90],
 ];
 const HOME = WANDER[0] as [number, number];
-/** Wick never flies into the wall or out of the picture. */
+/** Flint never flies into the wall or out of the picture. */
 const BOUNDS = { x: [18, 94], y: [36, 96] } as const;
-/** Beside the copy Wick may fly left over the headline, up to this far (px) from the hero's edge. */
+/** Beside the copy Flint may fly left over the headline, up to this far (px) from the hero's edge. */
 const EDGE_PX = 40;
-/** After the last pointer input Wick waits this long before wandering again. */
+/** After the last pointer input Flint waits this long before wandering again. */
 const IDLE_MS = 4000;
 const WANDER_MS = 3200;
-/** Share of the remaining way Wick covers per frame (soft follow). */
+/** Share of the remaining way Flint covers per frame (soft follow). */
 const EASE = 0.085;
 
 const clamp = (value: number, [min, max]: readonly [number, number]) =>
@@ -31,10 +31,10 @@ interface HeroStageProps {
 }
 
 /**
- * The hero's dark dungeon. Wick (and the light around it) follows the mouse, flies to a tapped
+ * The hero's dark dungeon. Flint (and the light around it) follows the mouse, flies to a tapped
  * spot on touch screens and wanders between the friends and the lurking monsters when nobody
  * plays with it. The whole hero listens: where the dungeon sits beside the copy (wide screens),
- * Wick follows on over the headline instead of jumping home. Writes `--wx`/`--wy` (Wick's feet
+ * Flint follows on over the headline instead of jumping home. Writes `--wx`/`--wy` (Flint's feet
  * in px), `--tilt` and `data-facing` on the stage; CSS does the rest. Nothing moves under
  * `prefers-reduced-motion`, and the loop sleeps while the stage is off screen.
  */
@@ -91,7 +91,7 @@ export function HeroStage({ children, className }: HeroStageProps) {
       }
     };
 
-    /** Pointer as Wick's target (% of the stage) and left bound, `null` outside the play area. */
+    /** Pointer as Flint's target (% of the stage) and left bound, `null` outside the play area. */
     const fromEvent = (
       event: PointerEvent
     ): [x: number, y: number, minX: number] | null => {
@@ -108,7 +108,7 @@ export function HeroStage({ children, className }: HeroStageProps) {
       }
       return [
         ((event.clientX - rect.left) / rect.width) * 100,
-        // The pointer is the light: aim Wick's feet a little below it.
+        // The pointer is the light: aim Flint's feet a little below it.
         ((event.clientY - rect.top) / rect.height) * 100 + 8,
         rect.left > edge
           ? ((edge + EDGE_PX - rect.left) / rect.width) * 100

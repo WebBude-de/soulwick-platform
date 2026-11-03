@@ -5,12 +5,14 @@
  * fifteen runs spread over the last two weeks (admin statistics, P-023), one temporary ban, one moderation note, four
  * entries in the deletion log (P-026, no personal data), three bug reports with placeholder
  * screenshots (P-033), a character (appearance, P-034) for players 1-8, account XP from a few
- * runs each (D-188, levels 1 to about 8), three cloud worlds of player 1 (two active, one
- * archived, one backup each; KF8) and the matching audit entries, so the
+ * runs each (D-188, levels 1 to about 8, each run at the danger level of its time, D-194), three
+ * cloud worlds of player 1 (two active, one archived, one backup each; KF8), an account state of
+ * player 1 (talents, spell, seen flags; KF3b) and the matching audit entries, so the
  * website leaderboards and every admin page show data locally.
  *
  * Idempotent: every record has a fixed key (email, device id, steam id, guild tag, run seed, ban
- * reason, note text, deletion log id, bug report id, XP run id, cloud world and backup id);
+ * reason, note text, deletion log id, bug report id, XP run id, cloud world and backup id,
+ * account state per player);
  * re-running only adds what is missing and never overwrites changes made through the admin panel
  * (existing admin accounts keep their password, e.g. one changed under "Mein Konto").
  * Refuses to run with NODE_ENV=production.
@@ -19,7 +21,7 @@
  * soulwick-admin-local). The same variable feeds the base seed (seed.ts, DEFAULT_ADMIN_EMAIL);
  * locally both use admin@soulwick.local, so they create the same account and neither resets it.
  *
- *   bun run db:seed:dev                   (repo root; DATABASE_URL from the root .env.local)
+ *   bun run db:seed:dev                   (repo root; DATABASE_URL from the root .env)
  *   DEFAULT_ADMIN_PASSWORD=<min. 12 chars> bun run db:seed:dev   (default: soulwick-admin-local)
  *   In the Docker image (development environment only):
  *   NODE_ENV=development bun apps/api/src/scripts/seed-dev.ts
@@ -30,6 +32,7 @@ import {
   type BugReportKind,
   type BugReportMark,
   type BugReportPlatform,
+  dangerLevel,
   levelForXp,
   type PlayerAppearance,
   PlayerCharacter,
@@ -695,11 +698,15 @@ const seedXpRunId = (n: number, i: number) =>
 
 /**
  * XP entries of one seeded player, oldest first, computed like POST /me/xp: record bonus from the
- * running account record, one first-run-of-the-day bonus per UTC day, co-op every third run.
+ * running account record, one first-run-of-the-day bonus per UTC day, co-op every third run, each
+ * run at the danger level the account had before it (D-194, KF3b).
  */
 function seedXpEntries(n: number, playerId: string) {
   const count = XP_RUNS[n] ?? 0;
   let record = 0;
+  let total = 0;
+  /** Deepest rooms so far, newest first. */
+  const recent: number[] = [];
   const bonusDays = new Set<string>();
   return Array.from({ length: count }, (_, i) => {
     const rooms = 3 + ((i * 7 + n) % 14);
@@ -714,6 +721,7 @@ function seedXpEntries(n: number, playerId: string) {
     const players = i % 3 === 2 ? 2 : 1;
     const bosses = deepestRoom >= 15 ? 1 : 0;
     const champions = i % 3;
+    const danger = dangerLevel(levelForXp(total), recent);
     const xp = runXp({
       rooms,
       champions,
@@ -722,7 +730,10 @@ function seedXpEntries(n: number, playerId: string) {
       endReason,
       firstRunOfDay,
       players,
+      danger,
     }).total;
+    total += xp;
+    recent.unshift(deepestRoom);
     return {
       playerId,
       runId: seedXpRunId(n, i),
@@ -735,6 +746,7 @@ function seedXpEntries(n: number, playerId: string) {
       firstRunOfDay,
       endReason,
       players,
+      danger,
       durationSeconds: rooms * 60,
       gameVersion: "1.0.0",
       endedAt,
@@ -779,6 +791,18 @@ const SEED_WORLDS = [
   },
 ] as const;
 const SEED_WORLD_PLAYER = 1;
+
+/**
+ * Account state of player 1 (D-194, KF3b): a small build (6 talent points, one spell) and a few
+ * seen flags. Ids are placeholders until the game's talent tree (KE7) names them.
+ */
+const SEED_ACCOUNT_STATE = {
+  n: 1,
+  talents: { wind_light_foot: 3, ember_vitality: 2, soul_light_flash: 1 },
+  spells: ["light_flash"],
+  seen: ["explain.danger", "explain.forge", "explain.trader", "tutorial.done"],
+  changedDaysAgo: 2,
+};
 const seedWorldId = (n: number) =>
   `5eed0001-0000-4000-8000-${n.toString(16).padStart(12, "0")}`;
 const seedWorldRowId = (n: number) =>
@@ -839,6 +863,7 @@ interface Summary {
   newWorlds: number;
   newXpEntries: number;
   noteCreated: boolean;
+  stateCreated: boolean;
 }
 
 /**
@@ -909,6 +934,7 @@ async function seed(tx: Tx): Promise<Summary> {
     newBugReports: 0,
     newXpEntries: 0,
     newWorlds: 0,
+    stateCreated: false,
   };
 
   // --- admins --------------------------------------------------------------------------------
@@ -1162,6 +1188,22 @@ async function seed(tx: Tx): Promise<Summary> {
     set xp = coalesce((select sum(e.xp) from xp_entries e where e.player_id = p.id), 0)
     where p.id in (${Prisma.join(PLAYERS.map((spec) => Prisma.sql`${player(spec.n).id}::uuid`))})`;
 
+  // --- account state (D-194, KF3b): only created when missing, so PUT /me/state changes stay ---
+  const { count: newStates } = await tx.accountState.createMany({
+    data: [
+      {
+        playerId: player(SEED_ACCOUNT_STATE.n).id,
+        talents: SEED_ACCOUNT_STATE.talents,
+        spells: SEED_ACCOUNT_STATE.spells,
+        changedAt: daysAgo(SEED_ACCOUNT_STATE.changedDaysAgo),
+        seen: SEED_ACCOUNT_STATE.seen,
+        updatedAt: daysAgo(SEED_ACCOUNT_STATE.changedDaysAgo),
+      },
+    ],
+    skipDuplicates: true,
+  });
+  summary.stateCreated = newStates > 0;
+
   // --- cloud worlds (D-188, KF8) ---------------------------------------------------------------
   const worldOwner = player(SEED_WORLD_PLAYER).id;
   const { count: newWorlds } = await tx.cloudWorld.createMany({
@@ -1227,8 +1269,9 @@ try {
       `  Deleted:  ${DELETIONS.length} entries in the deletion log (${summary.newDeletions} new)`,
       `  Bugs:     ${BUG_REPORTS.length} bug reports with placeholder screenshots (${summary.newBugReports} new)`,
       `  XP:       ${Object.values(XP_RUNS).reduce((a, b) => a + b, 0)} runs with account XP (${summary.newXpEntries} new), ${PLAYERS[0]?.name} level ${levelForXp(seedXpEntries(1, "").reduce((sum, e) => sum + e.xp, 0))}`,
+      `  State:    ${PLAYERS[0]?.name}: ${Object.keys(SEED_ACCOUNT_STATE.talents).length} talents, spell ${SEED_ACCOUNT_STATE.spells.join(", ")}, ${SEED_ACCOUNT_STATE.seen.length} seen flags${summary.stateCreated ? "" : " (existed)"}`,
       `  Worlds:   ${SEED_WORLDS.length} cloud worlds of ${PLAYERS[0]?.name} (2 active, 1 archived, 1 backup each; ${summary.newWorlds} new)`,
-      "  Web:      http://localhost:3100/ranglisten - Admin: http://localhost:3102",
+      "  Web:      http://localhost:3100/ranglisten - Admin: http://localhost:3101",
     ].join("\n")
   );
 } finally {

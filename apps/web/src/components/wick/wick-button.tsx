@@ -17,7 +17,7 @@ interface WickButtonProps {
   src: string | null;
 }
 
-/** Wick as a button: a tap or click makes it hop, flare up and say hello. */
+/** Flint as a button: a tap or click makes it hop, flare up and say hello. */
 export function WickButton({
   src,
   heroSrc,

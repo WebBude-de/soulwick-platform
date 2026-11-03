@@ -2,6 +2,7 @@ import {
   type ClientPlatform,
   HOST_PEER_ID,
   MAX_ROOM_PLAYERS,
+  type Rank,
   RELAY_CLOSE_CODES,
   RELAY_TARGET_ALL,
   type RelayBanPlayerResponse,
@@ -60,12 +61,16 @@ export interface RelayDeps {
 }
 
 interface PlayerInfo {
+  /** Danger level from the API at `hello` (D-194); null when the API was not reachable. */
+  danger: number | null;
   gameVersion: string;
   /** Account level from the API at `hello` (D-188); null when the API was not reachable. */
   level: number | null;
   name: string | null;
   platform: ClientPlatform;
   playerId: string;
+  /** Rank of `danger` from the API at `hello` (D-194); null when the API was not reachable. */
+  rank: Rank | null;
 }
 
 /** Error codes that can be triggered per game packet; their notices are throttled to 1/s. */
@@ -140,6 +145,8 @@ export class Client {
       name: this.player.name,
       platform: this.player.platform,
       level: this.player.level,
+      danger: this.player.danger,
+      rank: this.player.rank,
     };
   }
 }
@@ -545,6 +552,12 @@ export class Relay {
     if (client.closed) {
       return;
     }
+    // Only the message type: never its contents (tokens in hello, names, chat).
+    this.deps.logger.debug("message", {
+      conn: client.id,
+      room: client.room?.code,
+      type: message.type,
+    });
     switch (message.type) {
       case "hello":
         return this.hello(client, message);
@@ -608,6 +621,8 @@ export class Relay {
       playerId,
       name: result.kind === "ok" ? result.status.name : null,
       level: result.kind === "ok" ? (result.status.level ?? null) : null,
+      danger: result.kind === "ok" ? (result.status.danger ?? null) : null,
+      rank: result.kind === "ok" ? (result.status.rank ?? null) : null,
       platform: msg.platform,
       gameVersion: msg.gameVersion,
     };
@@ -623,6 +638,8 @@ export class Relay {
       playerId,
       name: client.player.name,
       level: client.player.level,
+      danger: client.player.danger,
+      rank: client.player.rank,
       protocolVersion: this.config.PROTOCOL_VERSION,
       maxFrameBytes: this.config.MAX_FRAME_BYTES,
       maxPlayers: MAX_ROOM_PLAYERS,
@@ -1171,7 +1188,7 @@ export class Relay {
 
   private closeSlowConsumer(target: Client, frameBytes: number, now: number) {
     this.deps.metrics.slowConsumersClosed += 1;
-    this.deps.logger.info("slow_consumer", {
+    this.deps.logger.warn("slow_consumer", {
       conn: target.id,
       playerId: target.player?.playerId,
       room: target.room?.code,
@@ -1209,10 +1226,11 @@ export class Relay {
     client: Client,
     code: RelayErrorCode,
     message: string,
-    request?: string
+    request?: string,
+    level: "info" | "warn" = "info"
   ) {
     this.deps.metrics.error(code);
-    this.deps.logger.info("client_error", {
+    this.deps.logger[level]("client_error", {
       conn: client.id,
       playerId: client.player?.playerId,
       room: client.room?.code,
@@ -1245,7 +1263,8 @@ export class Relay {
     closeCode: number,
     request?: string
   ) {
-    this.sendError(client, code, message, request);
+    // Refused or closed connection (bad hello, ban, rate limit): warn, the rest stays info.
+    this.sendError(client, code, message, request, "warn");
     this.disconnect(client, closeCode, code);
   }
 
@@ -1272,7 +1291,7 @@ export class Relay {
       return true;
     }
     if (reliable) {
-      this.deps.logger.info("rate_limited", {
+      this.deps.logger.warn("rate_limited", {
         conn: client.id,
         playerId: client.player?.playerId,
         reliable: true,
@@ -1294,7 +1313,7 @@ export class Relay {
     }
     client.lastLimitNoticeAt = now;
     client.strikes += 1;
-    this.deps.logger.info("rate_limited", {
+    this.deps.logger.warn("rate_limited", {
       conn: client.id,
       playerId: client.player?.playerId,
       strikes: client.strikes,

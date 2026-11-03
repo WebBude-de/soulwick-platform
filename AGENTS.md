@@ -8,7 +8,7 @@
 ## 1. Erst lesen
 
 1. [README.md](README.md): was das Repo ist, Aufbau, Schnellstart.
-2. `../soulwick/docs/PRODUKT.md`: Produktkontext für beide Repos (Zielgruppe, Ton, Maskottchen Wick,
+2. `../soulwick/docs/PRODUKT.md`: Produktkontext für beide Repos (Zielgruppe, Ton, Maskottchen Flint,
    Geschäftsmodell, Open Source); Begriffe in `../soulwick/docs/GLOSSAR.md`.
 3. [docs/PRD.md](docs/PRD.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md),
    [docs/TECHSTACK.md](docs/TECHSTACK.md), [docs/ROADMAP.md](docs/ROADMAP.md),
@@ -21,9 +21,9 @@
    [docs/design/admin/README.md](docs/design/admin/README.md)).
 5. Die README des Ordners, in dem gearbeitet wird (`apps/*/README.md`, `packages/contracts/README.md`).
 6. Produkt-Entscheidungen im Spiel-Repo `../soulwick/docs/DECISIONS.md` (v. a. D-080 bis D-085, D-093,
-   D-108, D-119, D-121, D-122 und D-173 bis D-179: Zielgruppe, Ton, Wick, Geschäftsmodell, Code offen
+   D-108, D-119, D-121, D-122 und D-173 bis D-179: Zielgruppe, Ton, Flint, Geschäftsmodell, Code offen
    und Inhalte geschützt, Doku-Regel, Reihenfolge), die Phasen-Übersicht `../soulwick/docs/ROADMAP.md`
-   und `../soulwick/docs/ROADMAP_MULTIPLAYER.md` (MP7–MP9).
+   und `../soulwick/docs/ROADMAP.md` (MP7–MP9).
 
 ## 2. Regeln
 
@@ -85,9 +85,9 @@ New environment variables, How verified (Befehle + Ergebnisse), Open points.
 
 Ablauf und Zugänge: [README.md](README.md) „Schnellstart lokal“. Kurz: `.env.example` kopieren →
 `bun install` → `bun run services:up` (nur Postgres, Port 5532) → `bun run db:deploy` →
-`bun run db:seed:dev` → `bun dev` (Web 3100, Admin 3102, API 3101, Relay 3103;
+`bun run db:seed:dev` → `bun dev` (Web 3100, Admin 3101, API 3102, Relay 3103;
 Port-Block 1, P-035). Läuft der Dev-Server des
-Projektmitglieds schon, eigene Instanzen auf anderen Ports starten (z. B. `PORT=3151`), nicht dessen
+Projektmitglieds schon, eigene Instanzen auf anderen Ports starten (z. B. `PORT=3152`), nicht dessen
 Prozesse beenden. Mehr zum Seed: [apps/api/README.md](apps/api/README.md).
 
 ## 6. Prüfen vor jedem Bericht

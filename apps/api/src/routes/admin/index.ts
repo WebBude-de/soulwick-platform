@@ -2,6 +2,7 @@ import {
   AdminChangeEmailRequest,
   AdminChangePasswordRequest,
   AdminLoginRequest,
+  AdminSetPasswordRequest,
   AuditQuery,
   CreateAdminUserRequest,
   Uuid,
@@ -21,6 +22,7 @@ import {
   createAdminUser,
   listAdminUsers,
   setAdminDisabled,
+  setAdminPassword,
   signInAdmin,
   signOut,
   toAdminSelf,
@@ -39,6 +41,8 @@ const OWN_ACCOUNT_REQUESTS_PER_MINUTE = 10;
 /** TESTWERT: wrong current passwords per account before both routes answer 429. */
 const WRONG_PASSWORDS_PER_ACCOUNT = 5;
 const WRONG_PASSWORD_WINDOW_MS = 15 * 60_000;
+/** TESTWERT: POST /admin/admins/:id/password per IP and minute. */
+const SET_PASSWORD_REQUESTS_PER_MINUTE = 10;
 
 export function adminRoutes(deps: Deps) {
   const app = new Hono<AppEnv>();
@@ -189,6 +193,27 @@ export function adminRoutes(deps: Deps) {
     });
   setDisabled(true);
   setDisabled(false);
+
+  /** New password for another account (forgotten password); the own one goes via /me/password. */
+  admins.post(
+    "/:id/password",
+    rateLimit({
+      limit: SET_PASSWORD_REQUESTS_PER_MINUTE,
+      trustProxy: deps.config.TRUST_PROXY,
+      name: "admin-set-password",
+    }),
+    async (c) => {
+      const id = parseParam(c, "id", Uuid);
+      const body = await parseBody(c, AdminSetPasswordRequest);
+      return c.json(
+        await setAdminPassword(deps.db, {
+          actorId: c.get("admin").id,
+          id,
+          newPassword: body.newPassword,
+        })
+      );
+    }
+  );
 
   app.route("/admins", admins);
   return app;

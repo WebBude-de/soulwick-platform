@@ -10,15 +10,15 @@ interface MeetWickProps {
 }
 
 /**
- * "Meet Wick" (D-175): your companion, a small living candle, and the chicken, both clickable,
- * plus the outfits (looks only, never power, D-176). Wick is drawn as a placeholder until
+ * "Meet Flint" (D-175): your companion, a small living candle, and the chicken, both clickable,
+ * plus the outfits (looks only, never power, D-176). Flint is drawn as a placeholder until
  * `brand/wick/*` exists; the delivered art replaces it automatically.
  */
 export function MeetWick({ art }: MeetWickProps) {
   const t = useTranslations("landing");
 
   return (
-    <section aria-labelledby="wick-title" className="meet-wick" id="wick">
+    <section aria-labelledby="wick-title" className="meet-wick" id="flint">
       <div className="container-site meet-wick-grid">
         <div className="meet-wick-stage">
           <span aria-hidden="true" className="meet-wick-light" />

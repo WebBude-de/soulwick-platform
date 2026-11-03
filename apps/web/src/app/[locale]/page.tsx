@@ -33,7 +33,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * The landing page describes Soulwick as it is at release (D-173, D-174, D-179): friends first,
- * then the wish bosses, Wick, the dungeon, the cozy village, guilds and boards, then what comes
+ * then the wish bosses, Flint, the dungeon, the cozy village, guilds and boards, then what comes
  * after the release, the latest news and short answers. `LIVE_FEATURES` only switches the live
  * functions (play, install, live boards); every description stays the same. Dark sections carry
  * one warm light each; the village is the only daylight.

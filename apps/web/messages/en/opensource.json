@@ -5,7 +5,7 @@
   },
   "title": "Soulwick is open source",
   "lead": "The code behind everything you play is out in the open on GitHub: every room, every enemy, every boss. See how Soulwick is made or lend a hand.",
-  "licenseNote": "The code is free under GPL-3.0. Graphics, music, the name Soulwick and the characters (Wick, the chicken) stay ours: all rights reserved.",
+  "licenseNote": "The code is free under GPL-3.0. Graphics, music, the name Soulwick and the characters (Flint, the chicken) stay ours: all rights reserved.",
   "repos": {
     "title": "Two places on GitHub",
     "game": {

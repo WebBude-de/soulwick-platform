@@ -15,7 +15,9 @@ import { signPlayerJwt, type TestKey, testTokenVerifier } from "./jwt.ts";
 export const GAME_VERSION = "1.0.0";
 
 export const silentLogger: Logger = {
+  debug: () => undefined,
   info: () => undefined,
+  warn: () => undefined,
   error: () => undefined,
 };
 

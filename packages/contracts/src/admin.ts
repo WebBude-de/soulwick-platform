@@ -531,6 +531,30 @@ export const CreateAdminUserRequest = z.object({
 export type CreateAdminUserRequest = z.infer<typeof CreateAdminUserRequest>;
 
 /**
+ * `POST /admin/admins/:id/password` (role admin only) `AdminSetPasswordRequest` -> 200
+ * `AdminSetPasswordResponse`: sets a new password for another admin or moderator account (a
+ * disabled account stays disabled) and ends all its sessions. Not for the own account (that is
+ * `POST /admin/me/password` with the current password). Audit `admin.password_reset` (target
+ * `admin_user`, details `email` and `revokedSessions`; never the password). The emergency script
+ * `bun run db:admin:password <email>` writes the same action with `adminId` null and
+ * `source: "script"`.
+ * Errors: 400 `cannot_change_self` (own id), 404 `not_found` (no admin account with this id or a
+ * malformed id), 400 `validation_error` (password shorter than 12 or longer than 256
+ * characters), 403 `forbidden` (moderator), 429 `rate_limited` (10 requests per minute and IP,
+ * TESTWERT).
+ */
+export const AdminSetPasswordRequest = z.object({
+  newPassword: AdminPassword,
+});
+export type AdminSetPasswordRequest = z.infer<typeof AdminSetPasswordRequest>;
+
+export const AdminSetPasswordResponse = z.object({
+  /** Number of sessions of the target account that were ended (all of them). */
+  revokedSessions: z.number().int().min(0),
+});
+export type AdminSetPasswordResponse = z.infer<typeof AdminSetPasswordResponse>;
+
+/**
  * Stable action names written to audit_log.action today. `AuditEntry.action` stays a plain
  * string, so rows with retired actions (`legal.refresh`, `legal.register_push_client`, removed
  * with P-025; `deletion_request.resolve`, removed with P-026) remain readable.
@@ -557,6 +581,7 @@ export const AuditAction = z.enum([
   "relay.kick",
   "admin.password_change",
   "admin.email_change",
+  "admin.password_reset",
   "bug_report.status",
   "bug_report.delete",
 ]);

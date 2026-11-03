@@ -14,7 +14,7 @@ Gegenstück im Spiel: `online/relay_peer.gd` (`MultiplayerPeerExtension` auf `We
 
 ```bash
 bun install                                   # im Repo-Wurzelordner
-cp apps/relay/.env.example apps/relay/.env.local   # API_INTERNAL_URL und RELAY_INTERNAL_KEY kommen aus der Wurzel-.env.local
+cp apps/relay/.env.example apps/relay/.env   # API_INTERNAL_URL und RELAY_INTERNAL_KEY kommen aus der Wurzel-.env
 bun run dev:relay                             # ws://localhost:3103/v1, http://localhost:3103/health
 bun run --cwd apps/relay dev --sim-latency=120 --sim-loss=5   # schlechtes Netz simulieren (nur lokal)
 ```
@@ -129,7 +129,8 @@ Die `/internal/*`-Endpunkte brauchen keine neue `PROTOCOL_VERSION` (nur der Grun
 | `HELLO_TIMEOUT_SECONDS` | nein | `5` | TESTWERT |
 | `HEARTBEAT_INTERVAL_SECONDS` / `HEARTBEAT_TIMEOUT_SECONDS` | nein | `15` / `30` | TESTWERTE |
 | `TRUST_PROXY` | nein | `true` | Client-IP aus `X-Forwarded-For` (hinter Traefik) |
-| `LOG_LEVEL` | nein | `info` | `info`, `error`, `silent`; JSON-Zeilen ohne Paketinhalte |
+| `LOG_LEVEL` | nein | `info` | `debug`, `info`, `warn`, `error`, `silent`; nie Paketinhalte oder Tokens. `debug` zeigt den Typ jeder Steuer-Nachricht (`message`), `warn` abgelehnte Verbindungen (`connection_rejected`, `client_error` mit Trennung), `rate_limited`, `slow_consumer` |
+| `LOG_FORMAT` / `LOG_DIR` / `LOG_RETENTION_DAYS` | nein | `pretty` (`production`: `json`) / lokal `<repo>/logs` (`production`: keine) / `7` | wie bei der API (`apps/api/README.md`); Dateien unter `<LOG_DIR>/relay/<YYYY-MM-DD>/` |
 | `RELAY_SIM_LATENCY_MS` / `RELAY_SIM_LOSS` | nein | `0` / `0` | Nur lokal (in `production` ignoriert): Verzögerung je Paket, Verlust in Prozent nur für unzuverlässige Pakete; auch als `--sim-latency=…`, `--sim-loss=…` |
 
 ## Befehle
@@ -140,7 +141,7 @@ Die `/internal/*`-Endpunkte brauchen keine neue `PROTOCOL_VERSION` (nur der Grun
 | `bun test apps/relay` | Tests (Protokoll, Räume, Anmeldung, Weiterleitung, Limits, Ende-zu-Ende mit echten WebSockets) |
 | `bun run --filter @soulwick/relay typecheck` | TypeScript prüfen |
 | `docker build -f apps/relay/Dockerfile -t soulwick-relay .` | Image bauen (Kontext = Repo-Wurzel) |
-| `docker run --rm -p 3103:8790 -e API_INTERNAL_URL=http://host.docker.internal:3101 soulwick-relay` | Image starten, `/health` prüfen |
+| `docker run --rm -p 3103:8790 -e API_INTERNAL_URL=http://host.docker.internal:3102 soulwick-relay` | Image starten, `/health` prüfen |
 
 **Betrieb:** genau **eine** Replica je Umgebung (Räume im Speicher). Ein Neustart schließt alle Räume
 (`room_closed` mit `shutdown`, dann Close 1001); das Spiel behandelt das wie einen Host-Abbruch.

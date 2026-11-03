@@ -179,7 +179,7 @@ export function startRelayServer(
         const ip = clientIp(req, srv, config.TRUST_PROXY);
         if (!ipLimiter.allow(ip, now())) {
           metrics.connectionsRejected += 1;
-          logger.info("connection_rejected", { ip, reason: "rate_limited" });
+          logger.warn("connection_rejected", { ip, reason: "rate_limited" });
           return json(
             { error: "rate_limited", message: "Too many connections" },
             429

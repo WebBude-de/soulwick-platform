@@ -1,6 +1,6 @@
 # ROADMAP – Soulwick Platform
 
-> **Stand:** 18.10.2026 · **Neu: Strang K (Konto und Fortschritt, D-188) mit KF3 → KF8 → KF5 → KF11.** **Fokus davor: Website zuerst**, davor die Umstellung auf Bun/Turbo/Prisma (P7, P8). Die Pakete P1–P6 entsprechen MP7, MP7b, MP8 und MP9 aus `soulwick/docs/ROADMAP_MULTIPLAYER.md`, hier nur der **Plattform-Teil**. Spielseitige Punkte (GDScript-Client, Gildengebäude, Anzeige im Spiel) bleiben in der Spiel-Roadmap. Das Zielbild Crossplay (Steam, Google Play, App Store) steht in `soulwick/docs/ROADMAP_CROSSPLAY.md` (D-108); die Architektur (Host + eigener Relay, Publisher WebBude) ist mit **D-119** entschieden (14.10.2026); released wird gemeinsam auf allen Versionen – Browser, Steam, Android und iOS (D-179, ersetzt die Reihenfolge Steam → Android → iOS aus D-119). Konzept für die Online-Pakete P13–P17: [KONZEPT_ONLINE.md](KONZEPT_ONLINE.md).
+> **Stand:** 18.10.2026 · **Neu: Strang K (Konto und Fortschritt, D-188) mit KF3 → KF8 → KF5 → KF11.** **Fokus davor: Website zuerst**, davor die Umstellung auf Bun/Turbo/Prisma (P7, P8). Die Pakete P1–P6 entsprechen MP7, MP7b, MP8 und MP9 aus `soulwick/docs/ROADMAP.md`, hier nur der **Plattform-Teil**. Spielseitige Punkte (GDScript-Client, Gildengebäude, Anzeige im Spiel) bleiben in der Spiel-Roadmap. Das Zielbild Crossplay (Steam, Google Play, App Store) steht in `soulwick/docs/ROADMAP.md` (D-108); die Architektur (Host + eigener Relay, Publisher WebBude) ist mit **D-119** entschieden (14.10.2026); released wird gemeinsam auf allen Versionen – Browser, Steam, Android und iOS (D-179, ersetzt die Reihenfolge Steam → Android → iOS aus D-119). Konzept für die Online-Pakete P13–P17: [KONZEPT_ONLINE.md](KONZEPT_ONLINE.md).
 > **Abhaken** nur mit Nachweis (Prüfbefehle grün, Datum). Jedes Paket ist für **einen Agenten** geschnitten und nennt seine Dateien; der Koordinator hakt nach Prüfung ab.
 
 ## Überblick und Reihenfolge
@@ -24,7 +24,7 @@
 | **P20** | Gast-Anmeldung je Gerät `POST /auth/device` (P-028) | **API fertig (15.10.2026)**; offen: Spiel-Client (Gast statt Dev-Schlüssel), Variablen in Dokploy prüfen, Hinweis „Konto verknüpfen“ im Spiel (CP1) | P14, P15 (Verknüpfungscode) |
 | **P21** | Bug-Meldungen aus dem Spiel mit Screenshot, Auswertung im Admin-Panel (P-033) | **API fertig (16.10.2026)**; offen: Admin-Seite (admin-dev), Absenden im Spiel (F9), Zusatz Datenschutzerklärung, Variablen in Dokploy | P19 (Sessions), P20 (Gastkonten) |
 | **P22** | Konto-Profil: ein Charakter (Name + Aussehen) je Konto (P-034, D-152) | **API fertig (16.10.2026)**; offen: Profil-Editor im Spiel, Anzeige im Admin-Panel (admin-dev), Namensfilter | P20 |
-| **P23** | Kosmetik im Profil (Plattform-Teil von WK2): Kosmetik von Spielfigur und Wick im Vertrag `PlayerAppearance`, Übertragung über `PATCH /me` | geplant | **WK0** (Spiel-Repo: Aussehen und Rolle von Wick, D-175 OFFEN), P22 |
+| **P23** | Kosmetik im Profil (Plattform-Teil von WK2): Kosmetik von Spielfigur und Flint im Vertrag `PlayerAppearance`, Übertragung über `PATCH /me` | geplant | **WK0** (Spiel-Repo: Aussehen und Rolle von Flint, D-175 OFFEN), P22 |
 | **P24** | Dorf-Schnappschuss (Plattform-Teil von WK6): Dorf mit Deko auf dem Server, Gilde und Freunde schauen es an (nur ansehen) | geplant | WK0, WK5 (Dorf-Deko im Spiel), P4 (Gilden, MP8) |
 | **KF3** | Strang K: Konto-XP und Level am Konto (`POST /me/xp`, `level` in Profil, Gilde, Rangliste, Lobby) | **fertig (18.10.2026)**, 405/405 Tests; offen: Spiel-Client KF4, Admin-Anzeige (admin-dev) | – |
 | **KF8** | Strang K: Cloud-Welten (= CP5): Vertrag, Tabelle, Routen, Sicherungen, Archiv | **fertig (18.10.2026)**, 420/420 Tests, P-038; offen: Spiel-Client KF9, Datenschutzerklärung/Store-Angaben | KF3 |
@@ -70,7 +70,7 @@ Die offenen Punkte sind in **P9** (Seiten, zwei Sprachen), **P10** (Rechtstexte)
 
 ## P4 – Gilden im Spiel nutzbar (MP8, zusammen mit dem Spiel-Repo)
 
-**Wartet ausdrücklich auf** die Multiplayer-Entscheidungen **MP0** (`soulwick/docs/ROADMAP_MULTIPLAYER.md`) und die Crossplay-Entscheidungen **CP0** (`soulwick/docs/ROADMAP_CROSSPLAY.md`): Lobby/Relay ist mit D-119 entschieden, das Konto-Modell mit D-121 und D-122 (ein Soulwick-Konto mit verknüpften Plattform-Identitäten, Regel zum Zusammenführen). Gilden-Runs laufen über den Relay im Modus `guild`; die Mitgliedschaft prüft der Relay über die API (**P13**, interner Endpunkt).
+**Wartet ausdrücklich auf** die Multiplayer-Entscheidungen **MP0** (`soulwick/docs/ROADMAP.md`) und die Crossplay-Entscheidungen **CP0** (`soulwick/docs/ROADMAP.md`): Lobby/Relay ist mit D-119 entschieden, das Konto-Modell mit D-121 und D-122 (ein Soulwick-Konto mit verknüpften Plattform-Identitäten, Regel zum Zusammenführen). Gilden-Runs laufen über den Relay im Modus `guild`; die Mitgliedschaft prüft der Relay über die API (**P13**, interner Endpunkt).
 
 - [x] *(15.10.2026; Migration `multi_guilds`, `db:verify` grün; `bun test` 306/306, live gegen eigene API 8797 und eigenen Relay 8798 mit Seed-Spielern geprüft)* **Gilden vollständig online (D-147, P-031):** bis zu 5 Gilden je Spieler (TESTWERT), `GET /me/guilds`, Gilden-Routen mit Gilden-ID (`/guilds/:id`, `…/leave`, `…/members/:playerId`, `…/invite-code`, `…/progress`), Rechte Gründer/Offizier/Mitglied, alte `/guilds/me*`-Routen entfernt (`API_VERSION` 1.1.0); Relay lässt in Gilden-Räume nur Mitglieder (`guildIds` im internen Status-Endpunkt, frische Nachfrage bei „kein Mitglied“); Konto verknüpfen und löschen mit mehreren Gilden; Dev-Seed mit zweiter Gilde „Aschenrunde“, Lumen in beiden.
 - [ ] Gilden-Wappen (8 Stück) und Wappen-Auswahl in Verträgen und API.
@@ -169,7 +169,7 @@ Die offenen Punkte sind in **P9** (Seiten, zwei Sprachen), **P10** (Rechtstexte)
 
 ## P11 – Konten für Crossplay (Grundlage jetzt, Routen später)
 
-**Ziel:** Vorbereitung für das Zielbild Steam + Google Play + App Store (D-108, `soulwick/docs/ROADMAP_CROSSPLAY.md`): Ein Spieler kann **mehrere Identitäten** haben. Jetzt nur die Datenbank-Grundlage (P-014); Verknüpfungs-Routen, Verknüpfungscodes und Google-/Apple-Prüfung erst nach den Entscheidungen CP0/CP1. Der HTTP-Vertrag für `/auth/dev` und `/auth/steam` bleibt unverändert.
+**Ziel:** Vorbereitung für das Zielbild Steam + Google Play + App Store (D-108, `soulwick/docs/ROADMAP.md`): Ein Spieler kann **mehrere Identitäten** haben. Jetzt nur die Datenbank-Grundlage (P-014); Verknüpfungs-Routen, Verknüpfungscodes und Google-/Apple-Prüfung erst nach den Entscheidungen CP0/CP1. Der HTTP-Vertrag für `/auth/dev` und `/auth/steam` bleibt unverändert.
 
 **Agent:** `api-dev` (kann mit P8 zusammengelegt werden). **Dateien:** `packages/db/prisma/schema.prisma` + Migration, `apps/api/src/services/identities.ts` (neu), `apps/api/src/routes/auth.ts`, `apps/api/src/routes/me.ts`, `apps/api/src/routes/admin/players.ts`, `apps/api/src/scripts/seed-dev.ts`, Tests. **Nicht:** `packages/contracts` (keine neuen Routen).
 
@@ -182,7 +182,7 @@ Die offenen Punkte sind in **P9** (Seiten, zwei Sprachen), **P10** (Rechtstexte)
 
 ## P12 – Website-Grafiken (Lieferung durch das Projektmitglied)
 
-**Wer:** das Projektmitglied mit Claude Design; Briefing `soulwick/docs/design/sprites/SPRITES_V5.md` §8 (ersetzt `soulwick/docs/design/sprites/SPRITES_V3.md` §6, jetzt WebP); neue Website-Grafiken (Wick, Dorf bei Tag, Teilen-Bilder): [design/web/BRIEFING_WEB.md](design/web/BRIEFING_WEB.md). **Ablage:** `apps/web/public/brand/` nach der dortigen README; Dateinamen exakt übernehmen, die Website lädt nach Namen und zeigt bis dahin Platzhalter.
+**Wer:** das Projektmitglied mit Claude Design; Briefing `soulwick/docs/design/sprites/delivered/SPRITES_V5.md` §8 (ersetzt `soulwick/docs/design/sprites/delivered/SPRITES_V3.md` §6, jetzt WebP); neue Website-Grafiken (Flint, Dorf bei Tag, Teilen-Bilder): [design/web/BRIEFING_WEB.md](design/web/BRIEFING_WEB.md). **Ablage:** `apps/web/public/brand/` nach der dortigen README; Dateinamen exakt übernehmen, die Website lädt nach Namen und zeigt bis dahin Platzhalter.
 
 - [ ] `logo.webp` (512×128), `logo_square.webp` (256×256), `keyart.webp` (1920×1080), `og_image.webp` (1200×630), `biome_crypt.webp`, `biome_slime_grotto.webp`, `biome_shadow_realm.webp`, `biome_ember_forge.webp` (je 640×360).
 - [ ] `hero_player_lantern.webp` (256×256) als Hero-Fallback ohne Keyart; `platform_pc.webp`, `platform_mobile.webp`, `platform_crossplay.webp` (je 32×32) für die Plattform-Chips (keine Markenlogos).
@@ -192,7 +192,7 @@ Die offenen Punkte sind in **P9** (Seiten, zwei Sprachen), **P10** (Rechtstexte)
 
 ## P13 – Relay `apps/relay`
 
-**Ziel:** Ein eigener Bun-Dienst mit WebSocket, der Räume mit Raumcode verwaltet und Spielpakete zwischen Host und Clients weiterleitet, ohne sie zu verstehen (D-119, P-016). Protokoll, Raum-Lebenszyklus und Schutz: [KONZEPT_ONLINE.md](KONZEPT_ONLINE.md) §2. Gegenstück im Spiel: `online/relay_peer.gd`, `online/lobby_client.gd` (`soulwick/docs/ROADMAP_CROSSPLAY.md` CP3).
+**Ziel:** Ein eigener Bun-Dienst mit WebSocket, der Räume mit Raumcode verwaltet und Spielpakete zwischen Host und Clients weiterleitet, ohne sie zu verstehen (D-119, P-016). Protokoll, Raum-Lebenszyklus und Schutz: [KONZEPT_ONLINE.md](KONZEPT_ONLINE.md) §2. Gegenstück im Spiel: `online/relay_peer.gd`, `online/lobby_client.gd` (`soulwick/docs/ROADMAP.md` CP3).
 
 **Agent:** zuerst `api-dev` für den Vertrag, dann ein neuer Agent `relay-dev` (Definition in `.claude/agents/` durch den Integrator, Vorschlag) oder `api-dev`. **Dateien:** `packages/contracts/src/lobby.ts` (neu, nur `api-dev`), `packages/contracts/src/index.ts` (Export), `apps/relay/**` (neu: `package.json`, `src/index.ts`, `src/config.ts`, `src/protocol.ts`, `src/rooms.ts`, `src/auth.ts`, `src/limits.ts`, `src/metrics.ts`, `test/*.test.ts`, `Dockerfile`, `.env.example`, `README.md`), `apps/api/src/routes/internal/relay.ts` (neu, interner Status-Endpunkt, nur `api-dev`), `apps/api/src/config.ts` (`RELAY_INTERNAL_KEY`). **Nicht:** Root-`package.json`, `turbo.json` (Integrator, falls der Workspace dort nicht automatisch erfasst wird).
 
@@ -359,7 +359,7 @@ Doku für alle Punkte fertig (14.10.2026) in [infra/DOKPLOY.md](../infra/DOKPLOY
 
 ## P23 – Kosmetik im Profil (Plattform-Teil von WK2)
 
-**Ziel:** Kosmetik (Spielfigur: Kopf, Rücken, Lichtfarbe; Wick: Hut, Flammenfarbe) reist wie das Aussehen über das Konto-Profil (`PATCH /me`, P-034), nie über Spielpakete, und ist nur Optik. Das Spiel-Paket WK2 (`soulwick/docs/ROADMAP.md`, Strang W; Konzept `soulwick/docs/KONZEPT_BEGLEITER_KOSMETIK.md` §5) braucht diesen Vertrag zuerst. Kaufbare Kosmetik und die serverseitige Besitzprüfung kommen erst mit CP6 (D-176, D-177).
+**Ziel:** Kosmetik (Spielfigur: Kopf, Rücken, Lichtfarbe; Flint: Hut, Flammenfarbe) reist wie das Aussehen über das Konto-Profil (`PATCH /me`, P-034), nie über Spielpakete, und ist nur Optik. Das Spiel-Paket WK2 (`soulwick/docs/ROADMAP.md`, Strang W; Konzept `soulwick/docs/KONZEPT.md` §5) braucht diesen Vertrag zuerst. Kaufbare Kosmetik und die serverseitige Besitzprüfung kommen erst mit CP6 (D-176, D-177).
 **Agent:** `api-dev`. **Dateien:** `packages/contracts/src/{common,player,guild}.ts` (`PlayerAppearance` nur ergänzen, abwärtskompatibel), `apps/api/src/routes/me.ts`, `services/profile.ts`, Test `apps/api/test/profile.test.ts`, Dev-Seed; Migration nur, falls `players.appearance` (jsonb) nicht reicht. **Wartet auf** WK0 (Plätze und Teile).
 
 - [ ] Vertrag: Kosmetik-Plätze und erlaubte Teile nach WK0; Profile ohne Kosmetik und ältere Spielversionen bleiben gültig.
@@ -368,7 +368,7 @@ Doku für alle Punkte fertig (14.10.2026) in [infra/DOKPLOY.md](../infra/DOKPLOY
 
 ## P24 – Dorf-Schnappschuss (Plattform-Teil von WK6)
 
-**Ziel:** Ein Spieler legt einen Schnappschuss seines Dorfs (Gebäudestufen, Deko mit Platz und Drehung, Zeitpunkt) auf dem Server ab; Gildenmitglieder und Freunde öffnen ihn und schauen das Dorf an, ohne etwas zu ändern. Danach baut `village-dev` die Spielseite (WK6, `soulwick/docs/ROADMAP.md`). Konzept: `soulwick/docs/KONZEPT_BEGLEITER_KOSMETIK.md` §7.
+**Ziel:** Ein Spieler legt einen Schnappschuss seines Dorfs (Gebäudestufen, Deko mit Platz und Drehung, Zeitpunkt) auf dem Server ab; Gildenmitglieder und Freunde öffnen ihn und schauen das Dorf an, ohne etwas zu ändern. Danach baut `village-dev` die Spielseite (WK6, `soulwick/docs/ROADMAP.md`). Konzept: `soulwick/docs/KONZEPT.md` §7.
 **Agent:** `api-dev`. **Dateien:** `packages/contracts` (neuer Bereich für den Schnappschuss), `packages/db/prisma/schema.prisma` + Migration, `apps/api/src/routes/`, `services/`, Tests, Dev-Seed. **Wartet auf** WK0 (wer schauen darf, OFFEN; Vorschlag: Gilde und wer den Besuchs-Link bekommt), WK5 (Deko im Spiel) und P4 (Gilden).
 
 - [ ] Vertrag: Format mit Version und Größengrenze (Vorschlag ≤ 16 KB, TESTWERT), keine Freitexte, kein Spielstand, kein Gold.
@@ -376,9 +376,17 @@ Doku für alle Punkte fertig (14.10.2026) in [infra/DOKPLOY.md](../infra/DOKPLOY
 - [ ] Melden und Ausblenden im Admin-Panel (admin-dev); Löschen mit dem Konto und Mitnehmen beim Zusammenführen.
 - [ ] Datenschutzerklärung um den Dorf-Schnappschuss ergänzen (Projektmitglied, eRecht24).
 
+## P25 – Run-Statistiken online (Wunsch des Projektmitglieds 22.10.2026, Spiel-Repo D-196)
+
+**Ziel:** Mehr von den eigenen Runs online sehen. Inhalt VORGESCHLAGEN, vor dem Bau mit dem Projektmitglied festlegen. **Agent:** `api-dev` (Vertrag und Routen), dann `web-dev` (Seiten). **Wartet auf** KF3b (Rang) und P5 (Ranglisten).
+
+- [ ] Vorschlag festlegen: Spielerseite mit den letzten 20 Runs (tiefster Raum, Biom, Ende, Dauer, Gefahrenstufe, Koop-Mitspieler), Bestwerten, Rang-Verlauf und Lieblingswaffe; Gildenseite mit den Gilden-Runs; nur Anzeigenamen, sichtbar nach Profil-Einstellung.
+- [ ] Vertrag und Route (aus Run-Berichten und XP-Einträgen, nichts Neues vom Spiel, wenn möglich), Tests.
+- [ ] Website-Seiten DE/EN, Datenschutzerklärung prüfen (Projektmitglied).
+
 ## Strang K – Konto und Fortschritt (D-188)
 
-**Ziel:** Ein Konto je Mensch mit allen Anmeldungen, Welten in der Cloud mit Mischregeln statt Konfliktdialog und ein Konto-Level, das bei jedem Run sichtbar steigt; alles zum Release auf allen Plattformen (D-188, D-179). Konzept, Feldtabelle und Spiel-Pakete (KF1, KF2, KF4, KF6, KF7, KF9, KF10) stehen im Spiel-Repo: `soulwick/docs/KONZEPT_KONTO_FORTSCHRITT.md` und `soulwick/docs/ROADMAP.md` (Strang K); hier nur der **Plattform-Teil**. Entscheidungen: D-188 (Spiel-Repo), P-036, P-037, P-038.
+**Ziel:** Ein Konto je Mensch mit allen Anmeldungen, Welten in der Cloud mit Mischregeln statt Konfliktdialog und ein Konto-Level, das bei jedem Run sichtbar steigt; alles zum Release auf allen Plattformen (D-188, D-179). Konzept, Feldtabelle und Spiel-Pakete (KF1, KF2, KF4, KF6, KF7, KF9, KF10) stehen im Spiel-Repo: `soulwick/docs/KONZEPT.md` und `soulwick/docs/ROADMAP.md` (Strang K); hier nur der **Plattform-Teil**. Entscheidungen: D-188 (Spiel-Repo), P-036, P-037, P-038.
 **Reihenfolge:** **ein `api-dev` nach dem anderen**, Verträge in `packages/contracts` immer zuerst: **KF3 → KF8 → KF5**, danach **KF11** (`web-dev`). Alle drei `api-dev`-Pakete teilen `packages/contracts`, `packages/db/prisma` und `services/account-link.ts`. Spiel: KF4 nach KF3, KF9 nach KF8, KF6 nach KF5 und KF11.
 
 ### KF3 – XP und Level am Konto ✔
@@ -393,6 +401,21 @@ Doku für alle Punkte fertig (14.10.2026) in [infra/DOKPLOY.md](../infra/DOKPLOY
 - [x] *(18.10.2026; `xp.test.ts` 10 Tests, Relay 102/102, gesamt 405/405; Seed zweimal hintereinander gegen eine Wegwerf-Datenbank, danach Login als Lumen, `POST /me/xp`, Gilde, Ranglisten geprüft)* Tests und Prüfung; Dev-Seed mit XP für Spieler 1–9.
 - [ ] Spiel KF4: offene Einträge aus `user://progress.cfg` mit `POST /me/xp` hochladen (älteste zuerst, höchstens 50 je Anfrage, `deferred` behalten), `PlayerSelf.xp` übernehmen, Level in Lobby-Platz (`RoomPeer.level`), Gildenliste und Rangliste; GDScript-Spiegel von `xpForLevel`, `levelForXp`, `runXp` (Spiel-Repo, `player-dev`).
 - [ ] Admin-Panel: Level und XP in Spielerliste und Spieler-Details zeigen (`AdminPlayerListItem.xp/level`; admin-dev).
+
+### KF3b – Rang und Konto-Zustand (D-194, D-196)
+
+**Agent:** `api-dev`, Welle 1 der Startaufstellung im Spiel-Repo. **Dateien:** `packages/contracts/src/{xp,player,guild,leaderboard,lobby,index}.ts`, neu `packages/contracts/src/account-state.ts`; `packages/db/prisma/schema.prisma` + Migration; `apps/api/src/routes/me.ts`, neu `services/account-state.ts`, `services/{xp,guilds,leaderboard,guild-rooms,account-link,account-deletion}.ts`; `apps/relay` (nur Rang durchreichen); Tests, Dev-Seed. **Prüfung:** `bun run check`, `typecheck`, `test`, `build`, `db:verify`.
+
+- [x] *(22.10.2026; neu `rank.ts`; Migration `20261022012447_account_state_rank`, nur Hinzufügen)* Vertrag: Gefahrenstufe und Rang als reine Funktionen (`dangerLevel`, `rankForDanger`, Formel wie im Spiel `meta/danger_rank.gd`, KONZEPT §3), `danger` und `rank` in `PlayerSelf`, `GuildMember`, `LeaderboardEntry` (dort `dangerRank`, weil `rank` der Platz ist), `GuildRoom`, Lobby/Relay-Peer, `welcome` und `RelayPlayerStatus` (ohne Protokoll-Erhöhung); letzte 5 Runs aus `xp_entries` (markierte zählen nicht). XP mit Gefahr: `XpEntry.danger` optional (Standard 0), `runXp` + ⌊(Summe + Koop) · 5 % · G⌋ vor dem Deckel, G bis 30 (TESTWERT).
+- [x] *(22.10.2026; `account-state.test.ts` 16 Tests, gesamt 436/436, `db:verify` grün mit 14 Migrationen, Dev-Seed zweimal gegen eine Wegwerf-Datenbank, danach Login als Lumen, `GET`/`PUT /me/state`, `POST /me/xp` mit `danger`, Gilde und Rangliste geprüft)* Konto-Zustand `GET`/`PUT /me/state` (neu `account-state.ts`, Tabelle `account_states`): Talente, ausgerüstete Zauber, Gesehen-Merker; Talente und Zauber „zuletzt geändert gewinnt“ (Zeitstempel gekappt), Gesehen-Merker Vereinigung; Größengrenze, Prüfung „Punkte ≤ Level − 1“; Zusammenführen und Löschen.
+- [ ] Spiel KF4 holt und schreibt den Zustand (Spiel-Repo, `player-dev`).
+
+### WEB1 – Namen auf der Website (Spiel-Repo D-196, korrigiert durch D-198)
+
+**Agent:** `web-dev`. **Stand D-198 (22.10.2026):** Der Docht-Begleiter und das Maskottchen heißen **Flint**, die Standard-Spielfigur (Code-ID `wick`) heißt **Wick** (Englisch und Deutsch). **Dateien:** `apps/web/src/**` außer `app/[locale]/login/**`, `apps/web/messages/{de,en}/*.json`, `apps/web/content/news/**`. **Prüfung:** `bun run check`, `typecheck`, `build`.
+
+- [x] *(22.10.2026)* Erste Fassung nach D-196 (Figur „Flint“, Maskottchen „Wick“) – durch D-198 überholt.
+- [x] *(22.10.2026; `biome check apps/web`, `typecheck`, `build` grün, Startseite, 404 und News auf Port 3100 in EN und DE geprüft)* Nach D-198: Maskottchen und Begleiter überall „Flint“, die vier Figuren „Wick, Ember, Moss, Frost“ (DE: Wick, Glut, Moos, Frost); Newsbeiträge und Alt-Texte mit.
 
 ### KF8 – Cloud-Welten (= CP5) ✔
 
@@ -412,7 +435,7 @@ Doku für alle Punkte fertig (14.10.2026) in [infra/DOKPLOY.md](../infra/DOKPLOY
 **Agent:** `api-dev` (3. von 3), nach KF8. **Dateien:** `packages/contracts/src/{identity,player}.ts`; `packages/db/prisma/schema.prisma` + Migration (Enum `identity_provider`, `player_identities.auth_account_id`, ggf. Benutzername); `apps/api/src/auth/{auth,player-plugin}.ts`, `routes/{auth,me}.ts`, `services/{identities,account-link,account-deletion,sessions}.ts`, neu Mail-Adapter in `lib/`, `config.ts`, `apps/api/.env.example`, README; Tests, Doku. **Prüfung:** `bun run check`, `typecheck`, `test` (je Anbieter mit Fake-`fetch`: Nachweis falsch, Identität vergeben, Zusammenführen, Sperre, Rate-Limit, kein Verknüpfen über E-Mail), `db:verify`.
 
 - [x] *(18.10.2026, Projektmitglied)* P-037 entschieden: Variante (a), `player_identities` als einzige Liste, `auth_accounts` nur Geheimnisse, E-Mail nur in `auth_users.email` (Admin und Spieler nicht mit derselben E-Mail).
-- [ ] Benutzername/Passwort (Plugin `username`), Magic Link (Plugin `magicLink`, Mail-Adapter; Anbieter OFFEN), Google, Apple, Discord (`socialProviders`), Steam OpenID 2.0 auf die `steam`-Identität; `accountLinking` aus.
+- [ ] Benutzername/Passwort (Plugin `username`), Magic Link (Plugin `magicLink`, Mail-Adapter; Standard Cloudflare Workers, Alternative Nodemailer/SMTP, Abhängigkeit nur nach Rückfrage; Spiel-Repo D-196), Google, Apple, Discord (`socialProviders`), Steam OpenID 2.0 auf die `steam`-Identität; `accountLinking` aus.
 - [ ] „Anmeldung hinzufügen“ mit Sitzung und Nachweis; Web-Anmeldung aus dem Spiel (`POST /auth/web-login`, Abholen); Sign in with Apple nativ (Identity-Token).
 - [ ] „Leeres Konto“ nach D-188 vollständig (Gilde, Runs, XP, Cloud-Welten); Apple-Token-Widerruf beim Löschen; Game-Center-Prüfung (P14); Rate-Limits.
 - [ ] Neue Variablen (OAuth-Clients je Umgebung, Mailversand) in `.env.example`, README und Bericht für `infra/DOKPLOY.md` (Integrator).
@@ -427,7 +450,7 @@ Doku für alle Punkte fertig (14.10.2026) in [infra/DOKPLOY.md](../infra/DOKPLOY
 
 ## Später
 
-- KI-Wunschbosse „Traumweber“ (Server-Teil laut `soulwick/docs/ROADMAP_KI_BOSS.md`).
+- KI-Wunschbosse „Traumweber“ (Server-Teil laut `soulwick/docs/ROADMAP.md`).
 - Rate-Limit über mehrere API-Container (z. B. Redis), falls nötig.
-- Crossplay: Relay, Anmeldung, Verknüpfung und Versionen sind jetzt P13–P17; Cloud-Save (CP5) gehört seit D-188 zum Release (KF8, Strang K); Käufe (CP6; Geschäftsmodell entschieden in D-176, serverseitige Prüfung D-177, Preise OFFEN) bleiben später: `soulwick/docs/ROADMAP_CROSSPLAY.md`.
-- Relay je Region (Raumcode mit Regions-Präfix, CP0 Frage 10, OFFEN); dedizierter Godot-Server als Container-Pool (`soulwick/docs/ROADMAP_CROSSPLAY.md` „Dedizierter Server (später)“).
+- Crossplay: Relay, Anmeldung, Verknüpfung und Versionen sind jetzt P13–P17; Cloud-Save (CP5) gehört seit D-188 zum Release (KF8, Strang K); Käufe (CP6; Geschäftsmodell entschieden in D-176, serverseitige Prüfung D-177, Preise OFFEN) bleiben später: `soulwick/docs/ROADMAP.md`.
+- Relay je Region (Raumcode mit Regions-Präfix, CP0 Frage 10, OFFEN); dedizierter Godot-Server als Container-Pool (`soulwick/docs/ROADMAP.md` „Dedizierter Server (später)“).

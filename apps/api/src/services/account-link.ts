@@ -11,6 +11,7 @@ import type { Db, Player } from "@soulwick/db";
 import { ApiError, isUniqueViolation, withCause } from "../lib/errors.ts";
 import { forEachSequential } from "../lib/sequential.ts";
 import { iso } from "../lib/validate.ts";
+import { mergeAccountState } from "./account-state.ts";
 import { findActiveBan } from "./bans.ts";
 import type { Tx } from "./db-types.ts";
 import { findMemberships, higherRole, removeMember } from "./guilds.ts";
@@ -196,7 +197,9 @@ const hasProgress = (s: { summary: AccountSummary; worldsProgress: boolean }) =>
  *   higher role remains; the rest are left with the founder hand-off of P-102;
  * - run participations move; a run both accounts took part in keeps one row; reporter moves;
  * - bug reports (P-033) and the name history (P-034) move; keep's name and appearance stay;
- * - XP entries move, a run id both accounts know counts once; keep's XP = sum (D-188);
+ * - XP entries move, a run id both accounts know counts once; keep's XP = sum (D-188); the danger
+ *   level and rank follow from the merged entries (D-194);
+ * - account state (KF3b): the build changed later stays, seen flags are united;
  * - cloud worlds move; a world id both accounts know stays one world with the other state as a
  *   pending-merge backup for the game, the limit archives the least recently played (P-038);
  * - name and `created_at` of keep stay, `last_seen_at` becomes the later of both.
@@ -243,6 +246,7 @@ async function absorbAccount(
   });
 
   await mergeXp(tx, keep.id, drop.id);
+  await mergeAccountState(tx, keep.id, drop.id, now);
   const worlds = await mergeWorlds(tx, keep.id, drop.id, now);
 
   if (drop.lastSeenAt > keep.lastSeenAt) {

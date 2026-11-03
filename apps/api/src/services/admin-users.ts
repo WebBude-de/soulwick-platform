@@ -2,6 +2,7 @@ import type {
   AdminLoginResponse,
   AdminRole,
   AdminSelf,
+  AdminSetPasswordResponse,
   AdminUser as AdminUserDto,
 } from "@soulwick/contracts";
 import type { Db, User } from "@soulwick/db";
@@ -252,4 +253,67 @@ export async function setAdminDisabled(
     return row;
   });
   return toAdminUserDto(updated);
+}
+
+/**
+ * Sets the password of an admin or moderator account and ends all its sessions, with the audit
+ * entry `admin.password_reset` (never the password) in the same transaction. For
+ * POST /admin/admins/:id/password (`actorId` = calling admin, never the target itself) and the
+ * emergency script `admin-password.ts` (`actorId` null, `source: "script"`). A disabled account
+ * stays disabled. A missing credential row (cannot happen for accounts created by the API) is
+ * created.
+ */
+export async function setAdminPassword(
+  db: Db,
+  input: {
+    actorId: string | null;
+    id: string;
+    newPassword: string;
+    source?: "script";
+  }
+): Promise<AdminSetPasswordResponse> {
+  const { actorId, id } = input;
+  if (id === actorId) {
+    throw new ApiError(
+      400,
+      "cannot_change_self",
+      "Change your own password under /admin/me/password"
+    );
+  }
+  const target = await db.user.findFirst({ where: { id, ...adminWhere } });
+  if (!target) {
+    throw notFound("Admin user");
+  }
+  // Hash outside the transaction: argon2id takes a moment.
+  const passwordHash = await hashPassword(input.newPassword);
+  const revokedSessions = await db.$transaction(async (tx) => {
+    const { count: updated } = await tx.account.updateMany({
+      where: { userId: id, providerId: "credential" },
+      data: { password: passwordHash },
+    });
+    if (updated === 0) {
+      await tx.account.create({
+        data: {
+          userId: id,
+          accountId: id,
+          providerId: "credential",
+          password: passwordHash,
+        },
+      });
+    }
+    const { count } = await tx.session.deleteMany({ where: { userId: id } });
+    await writeAudit(tx, {
+      adminId: actorId,
+      action: "admin.password_reset",
+      targetType: "admin_user",
+      targetId: id,
+      details: {
+        email: target.email,
+        revokedSessions: count,
+        ...(input.source ? { source: input.source } : {}),
+      },
+    });
+    return count;
+  });
+  return { revokedSessions };
 }

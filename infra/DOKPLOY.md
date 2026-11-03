@@ -39,7 +39,7 @@ Reihenfolge einhalten; jeder Schritt verweist auf den Abschnitt mit den Details.
 - [ ] **Code auf GitHub:** Das Repo `WebBude-de/soulwick-platform` ist **öffentlich** (Code GPL-3.0,
   Inhalte nach [LICENSE-ASSETS.md](../LICENSE-ASSETS.md)) und enthält den Stand. Commit und Push macht
   das Projektmitglied selbst (Agenten pushen nicht). Vorher `git status` prüfen: Es darf **keine**
-  `.env.local`, `.env.dev` oder `.env.prod` und kein Schlüssel dabei sein (nur `.env.example`;
+  `.env`, `.env.dev` oder `.env.prod` und kein Schlüssel dabei sein (nur `.env.example`;
   `.gitignore` deckt die `.env*`-Dateien ab).
 - [ ] **Branch für `development` festlegen:** `dev` (Application → Provider → Branch); `production`
   baut aus dem Branch `production` (§10).
@@ -132,7 +132,7 @@ Das Spiel wählt Dev oder Prod **beim Export**, nicht im laufenden Spiel (P-018;
 `soulwick`: `online/online_config.gd`, `online/environment.cfg`; Details in `soulwick/docs/MULTIPLAYER.md`):
 
 1. **Editor:** Der Godot-Editor (und jeder Start mit der Editor-EXE) nutzt immer `local` =
-   `http://localhost:3101` und `ws://localhost:3103/v1`, also `bun dev` aus diesem Repo (lokale Ports
+   `http://localhost:3102` und `ws://localhost:3103/v1`, also `bun dev` aus diesem Repo (lokale Ports
    nach P-035; die Container-Ports oben bleiben).
 2. **Exportierter Build:** Die Umgebung kommt aus dem Feature-Tag `env_development` bzw.
    `env_production` der Export-Vorlage, sonst aus `online/environment.cfg` (`[build] env="development"`
@@ -229,12 +229,12 @@ mehr; vorhandene Einträge in Dokploy dürfen weg.
 
 | Vorlage | Lokal | Dokploy (Kopie liegt lokal, gitignored) |
 | --- | --- | --- |
-| `.env.example` (Wurzel) | `.env.local` (gemeinsame Werte) | Variablen der Umgebung: `.env.dev` → `development`, `.env.prod` → `production` |
-| `apps/api/.env.example` | `apps/api/.env.local` | `soulwick-api` → **Environment**: `apps/api/.env.dev` bzw. `.env.prod` |
-| `apps/relay/.env.example` | `apps/relay/.env.local` | `soulwick-relay` → **Environment**: `apps/relay/.env.dev` bzw. `.env.prod` |
-| `apps/web/.env.example` | `apps/web/.env.local` | `soulwick-web` → **Environment**: `apps/web/.env.dev` bzw. `.env.prod` |
-| `apps/admin/.env.example` | `apps/admin/.env.local` | `soulwick-admin` → **Environment**: `apps/admin/.env.dev` bzw. `.env.prod` |
-| `infra/.env.example` | `infra/.env.local` (`POSTGRES_*`, `DB_PORT`) | – (auf den Servern nicht genutzt; Produktion: Datenbankserver) |
+| `.env.example` (Wurzel) | `.env` (gemeinsame Werte) | Variablen der Umgebung: `.env.dev` → `development`, `.env.prod` → `production` |
+| `apps/api/.env.example` | `apps/api/.env` | `soulwick-api` → **Environment**: `apps/api/.env.dev` bzw. `.env.prod` |
+| `apps/relay/.env.example` | `apps/relay/.env` | `soulwick-relay` → **Environment**: `apps/relay/.env.dev` bzw. `.env.prod` |
+| `apps/web/.env.example` | `apps/web/.env` | `soulwick-web` → **Environment**: `apps/web/.env.dev` bzw. `.env.prod` |
+| `apps/admin/.env.example` | `apps/admin/.env` | `soulwick-admin` → **Environment**: `apps/admin/.env.dev` bzw. `.env.prod` |
+| `infra/.env.example` | `infra/.env` (`POSTGRES_*`, `DB_PORT`) | – (auf den Servern nicht genutzt; Produktion: Datenbankserver) |
 
 Die Dateien `.env.dev` und `.env.prod` sind deine lokale Kopie dessen, was in Dokploy steht: Wurzel =
 Variablen der Umgebung, `apps/<app>/` = Environment des Services mit `${{environment.NAME}}`. Ändert
@@ -731,8 +731,11 @@ geändert hat), Zugänge ausgeschiedener Personen deaktivieren.
 
 ## 11. Betrieb und Monitoring
 
-- **Logs:** API und Relay schreiben JSON-Zeilen auf stdout (Anfragen, Fehler, Räume; der Relay **ohne**
-  Paketinhalte), in Dokploy unter **Logs**.
+- **Logs:** API und Relay schreiben in `production` JSON-Zeilen auf stdout (Anfragen, Fehler, Räume;
+  der Relay **ohne** Paketinhalte), in Dokploy unter **Logs**; Log-Dateien gibt es im Container nicht
+  (`LOG_DIR` leer lassen). Stufen: Anfragen mit 4xx und abgelehnte Relay-Verbindungen als `warn`, 5xx
+  als `error`; zur Fehlersuche kurz `LOG_LEVEL=debug` setzen (Relay: Typ jeder Steuer-Nachricht).
+  `LOG_FORMAT` nicht setzen (Standard `json`).
 - **Health:** `GET /health` von API (503 bei Datenbankfehler) und Relay (503 beim Herunterfahren) von
   außen überwachen, z. B. mit einem Uptime-Dienst im Minutentakt.
 - **Relay-Metriken:** `GET /metrics` mit `x-relay-key` liefert Räume, Spieler, Bytes/s ein und aus,

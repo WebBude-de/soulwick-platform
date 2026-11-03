@@ -31,7 +31,7 @@ describe("moderation in the relay core", () => {
     h.advance(2000);
     const a = await h.player("Ash", {
       platform: "android",
-      status: { level: 4 },
+      status: { level: 4, danger: 1, rank: { tier: "spark", step: 2 } },
     });
     await a.send({ type: "join", code: host.code });
     await host.send({ type: "start" });
@@ -66,6 +66,8 @@ describe("moderation in the relay core", () => {
         host: true,
         inRoomSeconds: 2 + RELAY_ROOM_RATE_WINDOW_SECONDS,
         level: null,
+        danger: null,
+        rank: null,
       },
       {
         peerId: 2,
@@ -75,6 +77,8 @@ describe("moderation in the relay core", () => {
         host: false,
         inRoomSeconds: RELAY_ROOM_RATE_WINDOW_SECONDS,
         level: 4,
+        danger: 1,
+        rank: { tier: "spark", step: 2 },
       },
     ]);
     const window = 2 + RELAY_ROOM_RATE_WINDOW_SECONDS;

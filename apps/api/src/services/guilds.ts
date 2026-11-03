@@ -26,6 +26,7 @@ import { iso } from "../lib/validate.ts";
 import type { Db, DbOrTx, Tx } from "./db-types.ts";
 import { findIdentities, steamIdOf } from "./identities.ts";
 import { appearanceOf } from "./profile.ts";
+import { accountDangers } from "./xp.ts";
 
 /**
  * Guilds (D-080, D-081, D-147, P-031): a player is in up to MAX_GUILDS_PER_PLAYER active guilds,
@@ -127,6 +128,7 @@ export async function toPlayerSelf(
     guilds,
     appearance: appearanceOf(player.appearance),
     ...accountLevel(player.xp),
+    ...(await accountDangers(db, [player])).get(player.id),
   };
 }
 
@@ -149,6 +151,10 @@ export async function listMembers(db: DbOrTx, guildId: string) {
     },
     orderBy: { joinedAt: "asc" },
   });
+  const dangers = await accountDangers(
+    db,
+    rows.map((r) => ({ id: r.playerId, xp: r.player.xp }))
+  );
   return rows
     .toSorted((a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role])
     .map((r) => ({
@@ -158,6 +164,7 @@ export async function listMembers(db: DbOrTx, guildId: string) {
       joinedAt: iso(r.joinedAt),
       appearance: appearanceOf(r.player.appearance),
       level: levelForXp(r.player.xp),
+      ...dangers.get(r.playerId),
     }));
 }
 

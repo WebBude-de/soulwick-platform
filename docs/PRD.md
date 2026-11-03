@@ -105,7 +105,7 @@ Das Spiel läuft komplett ohne Server. Die Plattform ergänzt nur, was einen Ser
 
 ### 3.7 Später
 
-- **KI-Wunschbosse „Traumweber“** (Spiel-Repo `docs/KONZEPT_KI_BOSS.md`): Erzeugung und Moderation auf
+- **KI-Wunschbosse „Traumweber“** (Spiel-Repo `docs/KONZEPT.md`): Erzeugung und Moderation auf
   dem Server. Noch OFFEN.
 - Discord-Benachrichtigung bei gemeldeten Runs.
 
@@ -121,7 +121,7 @@ Zielbild Crossplay über Steam, Google Play, App Store und Browser (D-108, D-148
 (D-119): Host-Modell plus eigener Relay, Publisher WebBude. Released wird gemeinsam auf allen Versionen –
 Browser, Steam, Android und iOS (D-179, ersetzt die Reihenfolge Steam → Android → iOS aus D-119). Konzept für
 Entwickler: [KONZEPT_ONLINE.md](KONZEPT_ONLINE.md); Spiel-Pakete:
-[`../soulwick/docs/ROADMAP_CROSSPLAY.md`](../../soulwick/docs/ROADMAP_CROSSPLAY.md); Plattform-Pakete:
+[`../soulwick/docs/ROADMAP.md`](../../soulwick/docs/ROADMAP.md); Plattform-Pakete:
 [ROADMAP.md](ROADMAP.md) P13–P20. Geschäftsmodell als Arbeitsentscheidung: Browser und Handy kostenlos, Steam mit kleinem Preis, verkauft werden nur
 Kosmetik und „Werbefrei“ (D-176, Preise OFFEN); Store-Zielgruppe ab 13 (D-173); Touch-Steuerung D-168. Noch OFFEN:
 Relay-Regionen, Ranglisten je Plattform (CP0 Frage 7); Stand in [KONZEPT_ONLINE.md](KONZEPT_ONLINE.md) §0 und §8.

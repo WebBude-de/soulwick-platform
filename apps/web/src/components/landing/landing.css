@@ -27,7 +27,7 @@
   }
 }
 
-/* ---------- Hero: the dark stage Wick lights up ---------- */
+/* ---------- Hero: the dark stage Flint lights up ---------- */
 .hero {
   position: relative;
   /* Walkers and the panicking chicken leave sideways. */
@@ -96,7 +96,7 @@
     bottom: 66px;
     width: 60%;
     height: auto;
-    /* Wick may leave the dungeon to the left and fly over the headline. */
+    /* Flint may leave the dungeon to the left and fly over the headline. */
     overflow: visible;
     border-bottom: 0;
   }
@@ -136,8 +136,8 @@
   line-height: 0;
   transform: translate(-50%, -100%);
 }
-/* Darkness with light holes: Wick (moving), the friends and the torches. Browsers without
-   mask compositing get one hole around Wick. */
+/* Darkness with light holes: Flint (moving), the friends and the torches. Browsers without
+   mask compositing get one hole around Flint. */
 .hero-dark {
   position: absolute;
   inset: 0;
@@ -221,7 +221,7 @@
   position: absolute;
   top: var(--wy);
   left: var(--wx);
-  /* Above the dark scene, below the copy: over the headline Wick glows behind the text. */
+  /* Above the dark scene, below the copy: over the headline Flint glows behind the text. */
   z-index: 1;
   line-height: 0;
   pointer-events: none;
@@ -254,7 +254,7 @@
   text-shadow: 1px 1px 0 var(--color-ink);
   pointer-events: none;
 }
-/* Only once Wick actually follows (JS running, motion allowed). */
+/* Only once Flint actually follows (JS running, motion allowed). */
 .hero-stage[data-live] .hero-hint {
   display: block;
 }
@@ -514,7 +514,7 @@
   color: var(--color-muted);
 }
 
-/* Ground strip under the hero: monsters chase the friends, the friends chase Wick, Wick chases
+/* Ground strip under the hero: monsters chase the friends, the friends chase Flint, Flint chases
    the chicken. One procession with fixed gaps, so nobody overlaps at any width. */
 .walkers {
   position: relative;
@@ -951,7 +951,7 @@
   }
 }
 
-/* ---------- Meet Wick ---------- */
+/* ---------- Meet Flint ---------- */
 .meet-wick {
   overflow-x: clip;
   background:
@@ -989,7 +989,7 @@
     min-height: 340px;
   }
 }
-/* The ground under Wick and the chicken: a soft shadow on the dark. */
+/* The ground under Flint and the chicken: a soft shadow on the dark. */
 .meet-wick-stage::after {
   position: absolute;
   bottom: 34px;

@@ -21,6 +21,14 @@ Das Konto-Profil (ein Charakter je Konto, P-034) steht in `src/common.ts` (`Play
 TESTWERT) und `POST /me/xp` (`AddXpRequest`, `AddXpResponse`). Spiel und Server rechnen mit denselben
 Funktionen; der GDScript-Client spiegelt sie. `PlayerLevel` (in `src/common.ts`) ist die Level-Zahl in
 `GuildMember`, `LeaderboardEntry`, `GuildRoom`, `RoomPeer` und `RelayPlayerStatus`.
+`src/rank.ts` enthält Gefahrenstufe und Rang (D-194, D-196, KF3b) als reine Funktionen wie im Spiel
+(`meta/danger_rank.gd`): `dangerFromLevel`, `medianRoom`, `dangerFromSkill`, `dangerLevel`,
+`rankForDanger` (`Rank` = `{ tier, step }`, Stufen `spark` … `beacon` I–III, dann `soul_master` G − 14) und
+`accountDanger`; `danger` und `rank` stehen in `PlayerSelf`, `GuildMember`, `GuildRoom`, `RoomPeer`,
+`welcome` und `RelayPlayerStatus`, in `LeaderboardEntry` als `danger` und `dangerRank`. `runXp` rechnet
+den Gefahr-Bonus mit (`XpEntry.danger`, `XP_DANGER_BONUS_PERCENT`, `DANGER_MAX`).
+`src/account-state.ts` enthält den Konto-Zustand `GET`/`PUT /me/state` (Talente, ausgerüstete Zauber,
+Gesehen-Merker; `talentPointsForLevel`, Grenzen TESTWERT).
 `src/world.ts` enthält die Cloud-Welten (D-188, KF8, P-038): Blob `WorldData` (Spielstand v5 als JSON,
 je ConfigFile-Abschnitt ein Objekt), `WorldSummary`, `WorldMeta` / `CloudWorld`, `PutWorldRequest` mit
 `baseRevision`, `discarded` (Sicherung der unterlegenen Seite) und `resolvedMerges`,

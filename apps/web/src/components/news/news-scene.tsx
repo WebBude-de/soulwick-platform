@@ -4,8 +4,8 @@ import { WickButton } from "@/components/wick/wick-button";
 import type { WickArt } from "@/lib/brand";
 
 /**
- * Little scene next to the news title: Wick and the chicken by a torch. Shows the delivered
- * `wick/wick_chicken.webp` when it exists, else the placeholder Wick and the game's chicken.
+ * Little scene next to the news title: Flint and the chicken by a torch. Shows the delivered
+ * `wick/wick_chicken.webp` when it exists, else the placeholder Flint and the game's chicken.
  */
 export function NewsScene({ art }: { art: WickArt }) {
   return (

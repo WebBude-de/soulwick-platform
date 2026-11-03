@@ -7,6 +7,7 @@ import {
   SeasonId,
   Uuid,
 } from "./common.ts";
+import { DangerLevel, Rank } from "./rank.ts";
 
 export const LeaderboardQuery = z.object({
   period: LeaderboardPeriod.default("all"),
@@ -38,6 +39,16 @@ export const LeaderboardEntry = z.object({
    * builds.
    */
   level: PlayerLevel.nullable().optional(),
+  /**
+   * Current danger level of the player (D-194, KF3b); null on the guild board. Optional for older
+   * API builds.
+   */
+  danger: DangerLevel.nullable().optional(),
+  /**
+   * Rank of `danger` (`{ tier, step }`, D-194). Named `dangerRank` here because `rank` is the
+   * place on the board. null on the guild board; optional for older API builds.
+   */
+  dangerRank: Rank.nullable().optional(),
 });
 export type LeaderboardEntry = z.infer<typeof LeaderboardEntry>;
 

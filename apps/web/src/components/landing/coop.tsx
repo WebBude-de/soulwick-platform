@@ -13,7 +13,7 @@ interface CoopProps {
 
 /**
  * "Rush in with your friends": co-op is the heart of Soulwick (D-173), shown as a little lobby
- * (room code, the four playable figures, Wick, the invite link) next to three short beats. Described as it is
+ * (room code, the four playable figures, Flint, the invite link) next to three short beats. Described as it is
  * at release, without a status chip.
  */
 export function Coop({ wickSrc }: CoopProps) {

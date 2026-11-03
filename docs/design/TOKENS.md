@@ -38,7 +38,7 @@ Biom-Töne (Karten, Hintergründe): Krypta `#4a4560`, Schleimgrotte `#3f5a4a`, S
 Die Website erzählt mit Licht: Dunkle Abschnitte haben genau eine warme Lichtquelle, das Dorf ist der einzige Abschnitt bei Tag. Im Code als Tailwind-Farben (`--color-*` in `apps/web/src/app/globals.css`).
 
 ```css
-/* Warmes Licht: Lichtkreise, Glow, Wick, Status „in Arbeit“ */
+/* Warmes Licht: Lichtkreise, Glow, Flint, Status „in Arbeit“ */
 --candle: #ffb54a; --candle-light: #ffe2a8; --candle-deep: #e07a2e;
 --night: #0c0a14;     /* tiefste Nacht: Hero, Dungeon-Ende */
 /* Tag: nur der Dorf-Abschnitt */

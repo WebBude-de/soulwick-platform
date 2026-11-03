@@ -5,6 +5,11 @@ import {
   PLAYER_JWKS_PATH,
   PROTOCOL_VERSION,
 } from "@soulwick/contracts";
+import {
+  DEFAULT_LOG_RETENTION_DAYS,
+  LOG_FORMATS,
+  LOG_THRESHOLDS,
+} from "@soulwick/logger";
 import { z } from "zod";
 
 const TRAILING_SLASHES = /\/+$/;
@@ -93,7 +98,22 @@ const ConfigSchema = z
       .enum(["true", "false", "1", "0"])
       .default("true")
       .transform((v) => v === "true" || v === "1"),
-    LOG_LEVEL: z.enum(["info", "error", "silent"]).default("info"),
+    /** Lowest level written: debug, info, warn, error or silent (tests). */
+    LOG_LEVEL: z.enum(LOG_THRESHOLDS).default("info"),
+    /** pretty (one readable line) or json; empty = pretty, in production json (Dokploy). */
+    LOG_FORMAT: z.union([z.literal(""), z.enum(LOG_FORMATS)]).default(""),
+    /**
+     * Log files logs/<app>/<YYYY-MM-DD>/ under this folder (relative = from the repo root); empty =
+     * <repo-root>/logs outside production and no files in production, "off" = no files.
+     */
+    LOG_DIR: z.string().trim().default(""),
+    /** TESTWERT: day folders of log files kept (today included). */
+    LOG_RETENTION_DAYS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(365)
+      .default(DEFAULT_LOG_RETENTION_DAYS),
 
     /** Local testing only (ignored with NODE_ENV=production): delay of every forwarded packet. */
     RELAY_SIM_LATENCY_MS: z.coerce.number().int().min(0).max(10_000).default(0),

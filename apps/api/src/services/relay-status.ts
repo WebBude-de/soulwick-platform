@@ -2,11 +2,12 @@ import { levelForXp, type RelayPlayerStatus } from "@soulwick/contracts";
 import { findActiveBan } from "./bans.ts";
 import type { DbOrTx } from "./db-types.ts";
 import { findMemberships } from "./guilds.ts";
+import { accountDangers } from "./xp.ts";
 
 /**
  * What the relay needs to admit a player (KONZEPT_ONLINE.md §2.7): ban status and guild
- * memberships (D-147, P-031: `guildIds` lists every active guild), and the account level for the
- * lobby (D-188). Null if the player does not
+ * memberships (D-147, P-031: `guildIds` lists every active guild), and the account level, danger
+ * level and rank for the lobby (D-188, D-194). Null if the player does not
  * exist (deleted account with a still valid token).
  */
 export async function getRelayPlayerStatus(
@@ -22,9 +23,10 @@ export async function getRelayPlayerStatus(
   if (!player) {
     return null;
   }
-  const [ban, memberships] = await Promise.all([
+  const [ban, memberships, dangers] = await Promise.all([
     findActiveBan(db, player.id, now),
     findMemberships(db, player.id),
+    accountDangers(db, [player]),
   ]);
   const guildIds = memberships.map((m) => m.guildId);
   return {
@@ -35,5 +37,6 @@ export async function getRelayPlayerStatus(
     guildMember: guildId === undefined ? null : guildIds.includes(guildId),
     guildIds,
     level: levelForXp(player.xp),
+    ...dangers.get(player.id),
   };
 }

@@ -1,12 +1,12 @@
 {
   "meta": {
     "title": "Soulwick – Grab your friends. Light the dark.",
-    "description": "Soulwick is the pixel roguelite you rush into with your friends. Every run is different, every boss is a clip – and you can wish for your own. Co-op for up to four, an endless dungeon, a cozy village and Wick, your companion."
+    "description": "Soulwick is the pixel roguelite you rush into with your friends. Every run is different, every boss is a clip – and you can wish for your own. Co-op for up to four, an endless dungeon, a cozy village and Flint, your companion."
   },
   "navLinks": [
     ["Co-op", "#koop"],
     ["Bosses", "#bosse"],
-    ["Wick", "#wick"],
+    ["Flint", "#flint"],
     ["Dungeon", "#spiel"],
     ["Village", "#dorf"],
     ["News", "news"],
@@ -54,9 +54,9 @@
       "google_play": "Google Play and the Google Play logo are trademarks of Google LLC.",
       "steam": "© {year} Valve Corporation. Steam and the Steam logo are trademarks and/or registered trademarks of Valve Corporation in the U.S. and/or other countries."
     },
-    "hintPointer": "Move your mouse: Wick lights the way.",
-    "hintTouch": "Tap the dark: Wick flies there.",
-    "walkersLabel": "Monsters chase four friends, the friends chase Wick, Wick chases the chicken."
+    "hintPointer": "Move your mouse: Flint lights the way.",
+    "hintTouch": "Tap the dark: Flint flies there.",
+    "walkersLabel": "Monsters chase Wick, Ember, Moss and Frost, the four chase Flint, Flint chases the chicken."
   },
   "coop": {
     "title": "Rush in with your friends",
@@ -68,7 +68,7 @@
       ],
       [
         "Up to four",
-        "Everyone picks a figure and a colour, everyone gets their own upgrades. The gold goes into one pot."
+        "Everyone picks a figure (Wick, Ember, Moss or Frost) and a colour, everyone gets their own upgrades. The gold goes into one pot."
       ],
       [
         "Nobody stays down",
@@ -81,7 +81,7 @@
     "linkLabel": "Invite link",
     "linkCopied": "copied",
     "host": "Host",
-    "vitrineAlt": "A co-op room: four friends as four different figures, Wick, the room code and the invite link"
+    "vitrineAlt": "A co-op room: four friends as Wick, Ember, Moss and Frost, their companion Flint, the room code and the invite link"
   },
   "bosses": {
     "title": "Wish for a boss",
@@ -123,18 +123,18 @@
       [
         "A chicken. But huge. And furious.",
         "The Elder Chicken",
-        "Wick knows this one. Wick is scared."
+        "Flint knows this one. Flint is scared."
       ]
     ]
   },
   "wick": {
-    "title": "Meet Wick",
-    "lead": "This is Wick, your companion. A tiny wick creature with a flame on its head that lights your way from your very first step into the dark.",
-    "text": "Where Wick goes, the chicken is never far behind. Nobody knows why. The chicken isn't telling.",
-    "outfitsTitle": "Outfits for you, Wick and your village",
+    "title": "Meet Flint",
+    "lead": "This is Flint, your companion. A tiny living candle with a flame on its head that flies ahead, lights your way into the dark and shows you everything new from your very first step.",
+    "text": "Where Flint goes, the chicken is never far behind. Nobody knows why. The chicken isn't telling.",
+    "outfitsTitle": "Outfits for you, Flint and your village",
     "outfitsText": "Pick colours and looks that suit your crew. Only looks, never power.",
-    "tryPointer": "Go on, click Wick.",
-    "tryTouch": "Go on, tap Wick."
+    "tryPointer": "Go on, click Flint.",
+    "tryTouch": "Go on, tap Flint."
   },
   "descent": {
     "title": "No two descents are alike",

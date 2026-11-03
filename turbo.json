@@ -3,6 +3,7 @@
   "ui": "tui",
   "agentGuidance": false,
   "globalEnv": ["NODE_ENV"],
+  "globalPassThroughEnv": ["LOG_*", "NO_COLOR"],
   "tasks": {
     "generate": {
       "inputs": ["prisma/schema.prisma", "prisma.config.ts"],

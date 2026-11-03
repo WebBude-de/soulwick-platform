@@ -178,7 +178,7 @@ export function createApiStatusSource(opts: {
   const forgotten = new Set<Promise<PlayerStatusResult>>();
 
   if (!(opts.apiUrl && opts.key)) {
-    opts.logger.info("status_source_disabled", {
+    opts.logger.warn("status_source_disabled", {
       reason: "API_INTERNAL_URL or RELAY_INTERNAL_KEY not set",
     });
     return { get: () => Promise.resolve({ kind: "unavailable" }) };

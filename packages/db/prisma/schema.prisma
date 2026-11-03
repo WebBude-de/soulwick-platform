@@ -109,6 +109,8 @@ model Player {
   xpEntries        XpEntry[]
   /// Cloud worlds (D-188, KF8): at most MAX_CLOUD_WORLDS active, the rest archived; deleted with the account.
   cloudWorlds      CloudWorld[]
+  /// Talents, equipped spells and seen flags of the account (D-194, KF3b); deleted with the account.
+  accountState     AccountState?
 
   @@map("players")
 }
@@ -537,12 +539,37 @@ model XpEntry {
   flagReason      String?  @map("flag_reason")
   /// Upload time: the daily cap counts the XP credited per UTC day of this column.
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  /// Danger level the run was played at as reported by the game (D-194, KF3b; 0 for older builds).
+  danger          Int      @default(0)
 
   player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
 
   @@unique([playerId, runId], map: "xp_entries_player_run_uq")
   @@index([playerId, createdAt], map: "xp_entries_player_id_created_at_idx")
+  /// The newest runs per account: skill part of the danger level and rank (D-194).
+  @@index([playerId, endedAt(sort: Desc)], map: "xp_entries_player_id_ended_at_idx")
   @@map("xp_entries")
+}
+
+/// Account state (D-194, KF3b; contract account-state.ts): the build (talents and equipped spells,
+/// last change wins by `changed_at`) and the seen flags (union). One row per account, created by
+/// the first PUT /me/state; no row = empty state.
+model AccountState {
+  playerId  String    @id @map("player_id") @db.Uuid
+  /// Talent id -> level (only levels >= 1).
+  talents   Json      @default("{}")
+  /// Equipped spell ids in slot order.
+  spells    String[]  @default([])
+  /// Device time of the last build change (capped to the server time); null = never.
+  changedAt DateTime? @map("changed_at") @db.Timestamptz(6)
+  /// Seen flags of one-time explanations (village tour, room intros), sorted.
+  seen      String[]  @default([])
+  /// Server time of the last write.
+  updatedAt DateTime  @map("updated_at") @db.Timestamptz(6)
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@map("account_states")
 }
 
 // ---------------------------------------------------------------------------

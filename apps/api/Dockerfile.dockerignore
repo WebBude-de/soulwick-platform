@@ -10,6 +10,7 @@
 !packages/config/**
 !packages/contracts/**
 !packages/db/**
+!packages/logger/**
 !apps/api/**
 **/node_modules
 **/.turbo

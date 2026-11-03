@@ -64,6 +64,7 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   "admin.enable": "Admin aktiviert",
   "admin.password_change": "Eigenes Passwort geändert",
   "admin.email_change": "Eigene E-Mail geändert",
+  "admin.password_reset": "Admin-Passwort neu gesetzt",
   // Legacy: retired actions (legal.* with P-025, deletion requests with P-026); old audit
   // entries stay readable.
   "legal.refresh": "Rechtstexte aktualisiert",

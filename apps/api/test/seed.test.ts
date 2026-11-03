@@ -192,7 +192,7 @@ describe("base seed", () => {
       SYSTEMROOT: process.env.SYSTEMROOT ?? "",
       DATABASE_URL: ctx.databaseUrl,
     };
-    // cwd outside the repo: Bun would otherwise load the developer's .env.local.
+    // cwd outside the repo: Bun would otherwise load the developer's .env.
     const run = (env: Record<string, string>) =>
       Bun.spawn([process.execPath, SEED_SCRIPT], {
         cwd: tmpdir(),

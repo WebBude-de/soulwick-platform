@@ -3,7 +3,7 @@ import { IsoDateTime, Uuid } from "./common.ts";
 import { ClientPlatform, GameVersion } from "./lobby.ts";
 
 /**
- * Cloud worlds (D-188, KF8 = CP5; game repo docs/KONZEPT_KONTO_FORTSCHRITT.md §4, P-038). One
+ * Cloud worlds (D-188, KF8 = CP5; game repo docs/KONZEPT.md §10, P-038). One
  * cloud world per local world (save format v5 with `[world] id`), offline first: the game always
  * plays from its local file, the server is the shared state between devices.
  *

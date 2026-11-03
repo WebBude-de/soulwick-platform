@@ -10,6 +10,7 @@ import {
   Uuid,
 } from "./common.ts";
 import { GameVersion, RoomCode } from "./lobby.ts";
+import { DangerLevel, Rank } from "./rank.ts";
 
 /** D-080 (TESTWERT). */
 export const MAX_GUILD_MEMBERS = 30;
@@ -63,6 +64,9 @@ export const GuildMember = z.object({
   appearance: PlayerAppearance.nullable().optional(),
   /** The member's account level (D-188). Optional for older API builds. */
   level: PlayerLevel.optional(),
+  /** The member's danger level and rank (D-194, KF3b). Optional for older API builds. */
+  danger: DangerLevel.optional(),
+  rank: Rank.optional(),
 });
 export type GuildMember = z.infer<typeof GuildMember>;
 
@@ -224,6 +228,12 @@ export const GuildRoom = z.object({
       host: z.boolean(),
       /** Current account level (D-188); null if the player no longer exists. Optional for older API builds. */
       level: PlayerLevel.nullable().optional(),
+      /**
+       * Current danger level and rank (D-194, KF3b); null if the player no longer exists.
+       * Optional for older API builds.
+       */
+      danger: DangerLevel.nullable().optional(),
+      rank: Rank.nullable().optional(),
     })
   ),
   createdAt: IsoDateTime,

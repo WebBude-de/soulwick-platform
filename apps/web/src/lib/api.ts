@@ -9,7 +9,7 @@ export type ApiResult<T> =
       error?: string;
     };
 
-const DEFAULT_API_URL = "http://localhost:3101";
+const DEFAULT_API_URL = "http://localhost:3102";
 const TIMEOUT_MS = 5000;
 
 /** Server-side GET against the Soulwick API (env API_URL). Never throws. */

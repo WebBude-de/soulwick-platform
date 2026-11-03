@@ -1,0 +1,19 @@
+{
+  "name": "@soulwick/logger",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared logger of the API and the relay: levels, pretty or JSON console lines, daily log files (consumed as TypeScript source).",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@soulwick/config": "workspace:*",
+    "@types/bun": "^1.4.2",
+    "typescript": "~6.0.3"
+  }
+}

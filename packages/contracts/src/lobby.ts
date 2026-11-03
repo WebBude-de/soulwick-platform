@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { IsoDateTime, PlayerLevel, Uuid } from "./common.ts";
+import { DangerLevel, Rank } from "./rank.ts";
 
 /**
  * Relay contract (apps/relay, KONZEPT_ONLINE.md §2, D-119, P-016).
@@ -165,6 +166,13 @@ export const RoomPeer = z.object({
    * the API was not reachable. Added without a protocol bump; optional for older relays.
    */
   level: PlayerLevel.nullable().optional(),
+  /**
+   * Danger level and rank from the API at `hello` (D-194, KF3b; fixed while connected); null when
+   * the API was not reachable. The host computes the group level from these (KONZEPT §3.2).
+   * Added without a protocol bump; optional for older relays.
+   */
+  danger: DangerLevel.nullable().optional(),
+  rank: Rank.nullable().optional(),
 });
 export type RoomPeer = z.infer<typeof RoomPeer>;
 
@@ -272,6 +280,9 @@ export const WelcomeMessage = z.object({
   name: z.string().nullable(),
   /** Own account level from the API (D-188), like `RoomPeer.level`. Optional for older relays. */
   level: PlayerLevel.nullable().optional(),
+  /** Own danger level and rank (D-194), like `RoomPeer.danger` / `.rank`. Optional for older relays. */
+  danger: DangerLevel.nullable().optional(),
+  rank: Rank.nullable().optional(),
   protocolVersion: z.number().int(),
   /** Largest accepted WebSocket message (header + payload) in bytes. */
   maxFrameBytes: z.number().int(),
@@ -548,6 +559,9 @@ export const RelayPlayerStatus = z.object({
   guildIds: z.array(Uuid).optional(),
   /** Account level (D-188) for `RoomPeer.level`. Optional: older APIs do not send it. */
   level: PlayerLevel.optional(),
+  /** Danger level and rank (D-194, KF3b) for `RoomPeer`. Optional: older APIs do not send them. */
+  danger: DangerLevel.optional(),
+  rank: Rank.optional(),
 });
 export type RelayPlayerStatus = z.infer<typeof RelayPlayerStatus>;
 
@@ -587,6 +601,9 @@ export const RelayRoomPlayer = z.object({
   host: z.boolean(),
   /** Account level at `hello` (D-188); null when the API was not reachable. Optional for older relays. */
   level: PlayerLevel.nullable().optional(),
+  /** Danger level and rank at `hello` (D-194); null when the API was not reachable. Optional for older relays. */
+  danger: DangerLevel.nullable().optional(),
+  rank: Rank.nullable().optional(),
   /** Seconds since the player created or joined the room. */
   inRoomSeconds: z.number().int().min(0),
 });

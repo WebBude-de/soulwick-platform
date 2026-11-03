@@ -64,6 +64,8 @@ describe("level curve and run XP (contract, D-188)", () => {
       portal: 0,
       firstRunOfDay: 25,
       coopBonus: 0,
+      danger: 0,
+      dangerBonus: 0,
       total: 95,
       capped: false,
     });
@@ -146,6 +148,8 @@ describe("POST /me/xp (KF3)", () => {
           portal: 0,
           firstRunOfDay: 25,
           coopBonus: 0,
+          danger: 0,
+          dangerBonus: 0,
           total: 95,
           capped: false,
         },
