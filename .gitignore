@@ -22,3 +22,6 @@ apps/*/AGENTS.md
 
 # Graphify knowledge graph (local, rebuild with: graphify update .)
 graphify-out/
+
+# Agent worktrees (git worktree add .worktrees/<name>), never next to the repo
+.worktrees/

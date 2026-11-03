@@ -59,6 +59,10 @@ Nur der Integrator oder ein Agent nach dem anderen ändert: Root-`package.json`,
 `turbo.json`, `bunfig.toml`, `biome.jsonc`, `packages/contracts`, `packages/db/prisma` (Schema und
 Migrationen), `infra/` (Compose und `DOKPLOY.md`), `docs/DECISIONS.md`.
 
+**Worktrees** (Projektmitglied 03.11.2026): nur im Repo unter `.worktrees/<name>` (gitignored,
+`git worktree add .worktrees/<name> -b <branch>`), **nie** als Ordner neben dem Repo; nach dem Merge
+oder Abbruch wieder entfernen, keine Reste aufheben.
+
 **Doku-Besitz:** `docs/design/<app>/HANDOFF_<APP>.md` und die Mockups schreibt nur das Projektmitglied
 (Ausgabe von Claude Design), Agenten lesen sie. `docs/design/TOKENS.md`, `docs/design/README.md` und
 `../soulwick/docs/PRODUKT.md` ändert nur der Integrator. Neue P-Nummer: vorher die höchste vorhandene in
