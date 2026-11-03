@@ -27,6 +27,7 @@ const SLUGS: Partial<Record<string, string>> = {
 };
 
 const PREFIX = /^\/(de|en)(?=\/|$)/;
+const LOGIN_PATH = /^\/login(?=\/|$)/;
 
 function redirectPrefixed(request: NextRequest): NextResponse {
   const { pathname, search } = request.nextUrl;
@@ -67,6 +68,11 @@ export function proxy(request: NextRequest) {
   const response = NextResponse.rewrite(url);
   // One address, two languages: shared caches must not hand one visitor's language to another.
   response.headers.set("Vary", "Cookie, Accept-Language");
+  if (LOGIN_PATH.test(pathname)) {
+    // Login pages may carry one-time secrets in the URL (`?confirm=`, `?token=`): never pass
+    // them on as Referer (KF11).
+    response.headers.set("Referrer-Policy", "no-referrer");
+  }
   return response;
 }
 

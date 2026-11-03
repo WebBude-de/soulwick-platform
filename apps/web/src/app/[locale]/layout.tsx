@@ -9,6 +9,7 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { isLocale, LOCALES, type Locale } from "@/i18n/locale";
 import { brand } from "@/lib/brand";
+import { FRAGMENT_SCRIPT } from "@/lib/login-protocol";
 import { ogLocale, SITE_URL } from "@/lib/metadata";
 import { fontVariables } from "../fonts";
 import "../globals.css";
@@ -79,6 +80,10 @@ export default async function RootLayout({ children, params }: Props) {
 
   return (
     <html className={fontVariables} lang={locale}>
+      <head>
+        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: constant script (login-protocol.ts) that hides the one-time key of the web login before the first paint (KF11). */}
+        <script dangerouslySetInnerHTML={{ __html: FRAGMENT_SCRIPT }} />
+      </head>
       <body className="flex min-h-screen flex-col">
         <NextIntlClientProvider>
           <SiteHeader />

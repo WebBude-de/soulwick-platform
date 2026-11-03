@@ -34,6 +34,30 @@ export async function apiGet<T>(
 }
 
 /**
+ * Server-side GET for per-visitor state that must never be cached (the web login of KF11).
+ * Never throws; failed responses carry the API's `error` code like `apiPost`.
+ */
+export async function apiGetFresh<T>(
+  path: string,
+  extraHeaders: Record<string, string> = {}
+): Promise<ApiResult<T>> {
+  const base = process.env.API_URL ?? DEFAULT_API_URL;
+  try {
+    const res = await fetch(new URL(path, base), {
+      cache: "no-store",
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+      headers: { ...extraHeaders, accept: "application/json" },
+    });
+    if (!res.ok) {
+      return { ok: false, status: res.status, error: await errorCode(res) };
+    }
+    return { ok: true, data: (await res.json()) as T };
+  } catch {
+    return { ok: false, status: "unreachable" };
+  }
+}
+
+/**
  * Server-side JSON POST against the Soulwick API (env API_URL), never cached. Never throws;
  * failed responses carry the API's `error` code so callers can show a fitting message.
  */

@@ -1,0 +1,219 @@
+{
+  "meta": {
+    "title": "Sign in",
+    "description": "Sign in to your Soulwick game: with Google, Apple, Discord, Steam or by e-mail.",
+    "magicTitle": "Your sign-in link",
+    "errorTitle": "Sign-in problem"
+  },
+  "eyebrow": "Soulwick account",
+  "loading": "One moment, checking your code…",
+  "noScript": "Signing in needs JavaScript. Turn it on for this page and open the link from the game again.",
+  "validFor": "{minutes, plural, =0 {Expires in less than a minute.} one {Valid for # more minute.} other {Valid for # more minutes.}}",
+  "level": "Level {level}",
+  "pending": {
+    "titleSignIn": "Sign in to your game",
+    "titleLink": "Add a sign-in",
+    "leadSignIn": "Your game is waiting. Pick how you want to sign in, then we ask for the code your game shows.",
+    "leadLink": "You're adding a sign-in to your account. With it you get into this account on every device.",
+    "warningTitle": "Did you just start this in the game yourself?",
+    "warning": "Only go on if you did. If someone sent you this link, close the page – otherwise they play with your account.",
+    "methodsTitle": "How do you want to sign in?",
+    "or": "or by e-mail",
+    "noMethods": "None of these ways is switched on here right now. Sign in right in the game or try again later.",
+    "newAccount": "New here? We set up an account for you. With Google, Apple, Discord and Steam we only keep an ID, no name and no e-mail address.",
+    "providersLabel": "Sign-in providers"
+  },
+  "providers": {
+    "google": "Continue with Google",
+    "apple": "Continue with Apple",
+    "discord": "Continue with Discord",
+    "steam": "Sign in through Steam"
+  },
+  "email": {
+    "label": "E-mail address",
+    "hint": "We send you a link that works once for {minutes} minutes. No password needed.",
+    "placeholder": "you@example.com",
+    "submit": "Send link",
+    "submitting": "Sending…",
+    "honeypot": "Leave this field empty",
+    "sentTitle": "Check your inbox",
+    "sentText": "If the address is right, your link lands there in a moment. Open it on this or any other device. Nothing there? Look in spam or send it again.",
+    "again": "Send again",
+    "notices": {
+      "invalid": "That doesn't look like an e-mail address.",
+      "rate_limited": "That was a lot of links. Wait a few minutes and try again.",
+      "not_configured": "Signing in by e-mail isn't switched on here. Pick another way.",
+      "unreachable": "We can't reach the Soulwick server right now. Try again in a moment.",
+      "closed": "This sign-in is already finished or expired. Start again in the game."
+    }
+  },
+  "confirm": {
+    "eyebrow": "Last step",
+    "titleSignIn": "Is this your game?",
+    "titleLink": "Add this sign-in?",
+    "signIn": "A game gets signed in to your account",
+    "signInNew": "A game gets signed in to a new account",
+    "link": "This account gets a new sign-in",
+    "newAccountHint": "This sign-in doesn't belong to an account yet. We set one up for you.",
+    "provider": "Signed in with {provider}",
+    "warningTitle": "Only go on if you started this yourself just now",
+    "warning": "Someone else's game would get your account. Not you? Close this page and nothing happens.",
+    "codeLabel": "Code from your game",
+    "codeHint": "Your game shows it right now: {length} letters and numbers, like ABC-DEF.",
+    "codePlaceholder": "ABC-DEF",
+    "submit": "Sign in",
+    "submitMerge": "Merge and sign in",
+    "submitting": "Checking…",
+    "notices": {
+      "format": "The code has {length} letters and numbers. Look at your game and type it again.",
+      "wrong_code": "That's not the code from your game. Look again closely.",
+      "attemptsLeft": "{count, plural, one {# try left.} other {# tries left.}}",
+      "rate_limited": "Too many tries in a short time. Wait a minute.",
+      "unreachable": "We can't reach the Soulwick server right now. Try again in a moment."
+    },
+    "waitingTitle": "This sign-in waits for its last step",
+    "waitingText": "Finish it in the browser tab where you signed in. Can't find it? Start again in the game.",
+    "absorbHint": "Your other account here has no progress yet. It merges into this one."
+  },
+  "merge": {
+    "title": "Two accounts become one",
+    "lead": "This sign-in already belongs to another account with progress. If you go on, both become one.",
+    "stays": "Stays",
+    "goes": "Merges in and disappears",
+    "runs": "{count, plural, =0 {No runs} one {# run} other {# runs}}",
+    "worlds": "{count, plural, =0 {No worlds} one {# world} other {# worlds}}",
+    "guilds": "Guilds",
+    "noGuild": "No guild",
+    "logins": "Sign-ins",
+    "whatTitle": "What happens",
+    "what": {
+      "name": "The account that stays keeps its name.",
+      "progress": "Runs, XP and sign-ins move over; levels add up.",
+      "worlds": "Worlds move over. If there's no room, they go to the archive, nothing is lost.",
+      "guilds": "Guild memberships move over as long as there's room.",
+      "final": "You can't undo this."
+    }
+  },
+  "done": {
+    "title": "Done! Back to the game",
+    "signedIn": "Your game is signed in. It continues on its own in a moment, you can close this tab.",
+    "linked": "Your account has a new sign-in. Back in the game it continues on its own, you can close this tab.",
+    "merged": "Your two accounts are one now.",
+    "via": "Signed in with {provider}",
+    "home": "To the website"
+  },
+  "problem": {
+    "again": "Start signing in again in the game. You get a new code.",
+    "home": "To the website",
+    "banReason": "Reason: {reason}",
+    "banUntil": "Banned until {date}.",
+    "banPermanent": "This ban has no end date."
+  },
+  "noKey": {
+    "title": "Open the link right from the game",
+    "text": "For your safety this page only works when the game opens it. In the game, choose to sign in in the browser again."
+  },
+  "magic": {
+    "eyebrow": "Your sign-in link",
+    "title": "Another device gets signed in",
+    "textSignIn": "This link signs in a Soulwick game – maybe on this device, maybe on another one. Next we ask for the code that game shows.",
+    "textLink": "This link adds your e-mail address as a sign-in to <account></account>. Next we ask for the code your game shows.",
+    "warningTitle": "Did you ask for this link yourself just now?",
+    "warning": "Only go on if you did. If not, close this page and nothing happens.",
+    "submit": "Continue",
+    "submitting": "One moment…",
+    "notices": {
+      "rate_limited": "Too many tries in a short time. Wait a minute, the link still works.",
+      "unreachable": "We can't reach the Soulwick server right now. Try again in a moment, the link still works."
+    }
+  },
+  "errorPage": {
+    "title": "Sign in from the game",
+    "text": "Signing in starts in your game: choose to sign in in the browser there and this page opens with your code."
+  },
+  "accountProviders": {
+    "steam": "Steam",
+    "device": "Device",
+    "google_play": "Google Play",
+    "game_center": "Game Center",
+    "password": "Username",
+    "email": "E-mail",
+    "google": "Google",
+    "apple": "Apple",
+    "discord": "Discord"
+  },
+  "errors": {
+    "web_login_not_found": {
+      "title": "Code not found",
+      "text": "This sign-in doesn't exist (any more)."
+    },
+    "web_login_claimed": {
+      "title": "Link already used",
+      "text": "This link from the game was already opened somewhere else."
+    },
+    "web_login_not_pending": {
+      "title": "Already finished",
+      "text": "This sign-in is already done or expired."
+    },
+    "expired": {
+      "title": "Code expired",
+      "text": "Codes are valid for {codeMinutes} minutes and work once."
+    },
+    "too_many_attempts": {
+      "title": "Too many wrong codes",
+      "text": "To keep your account safe, this sign-in has ended."
+    },
+    "invalid_state": {
+      "title": "Something got mixed up",
+      "text": "The sign-in didn't come back to the right place, maybe it was opened in another browser."
+    },
+    "provider_not_configured": {
+      "title": "Not available here",
+      "text": "This way of signing in isn't switched on here. Pick another one."
+    },
+    "cancelled": {
+      "title": "Cancelled",
+      "text": "You cancelled signing in. No problem, just pick a way again."
+    },
+    "provider_error": {
+      "title": "No answer",
+      "text": "Google, Apple, Discord or Steam didn't answer. Try again in a moment or pick another way."
+    },
+    "invalid_login": {
+      "title": "That didn't work",
+      "text": "We couldn't check your sign-in. Try again."
+    },
+    "banned": {
+      "title": "Account banned",
+      "text": "This account is banned and can't be signed in."
+    },
+    "merge_blocked_banned": {
+      "title": "Can't merge",
+      "text": "One of the two accounts is banned, so they can't become one."
+    },
+    "account_gone": {
+      "title": "Account gone",
+      "text": "The account you started this from doesn't exist any more."
+    },
+    "email_unavailable": {
+      "title": "Use another address",
+      "text": "This e-mail address can't be used for Soulwick. Take another one."
+    },
+    "invalid_magic_link": {
+      "title": "Link used or expired",
+      "text": "Each link works once for {linkMinutes} minutes."
+    },
+    "rate_limited": {
+      "title": "Slow down",
+      "text": "Too many tries in a short time. Wait a minute and try again."
+    },
+    "unreachable": {
+      "title": "Server not reachable",
+      "text": "We can't reach the Soulwick server right now. Try again in a moment."
+    },
+    "generic": {
+      "title": "Something went wrong",
+      "text": "That didn't work this time."
+    }
+  }
+}

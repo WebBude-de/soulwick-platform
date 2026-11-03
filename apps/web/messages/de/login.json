@@ -1,0 +1,219 @@
+{
+  "meta": {
+    "title": "Anmelden",
+    "description": "Melde dein Soulwick-Spiel an: mit Google, Apple, Discord, Steam oder per E-Mail.",
+    "magicTitle": "Dein Anmelde-Link",
+    "errorTitle": "Problem beim Anmelden"
+  },
+  "eyebrow": "Soulwick-Konto",
+  "loading": "Einen Moment, wir prüfen deinen Code …",
+  "noScript": "Zum Anmelden braucht diese Seite JavaScript. Schalte es hier ein und öffne den Link aus dem Spiel noch mal.",
+  "validFor": "{minutes, plural, =0 {Läuft in weniger als einer Minute ab.} one {Noch # Minute gültig.} other {Noch # Minuten gültig.}}",
+  "level": "Level {level}",
+  "pending": {
+    "titleSignIn": "Melde dein Spiel an",
+    "titleLink": "Anmeldung hinzufügen",
+    "leadSignIn": "Dein Spiel wartet. Such dir aus, wie du dich anmelden willst, danach fragen wir nach dem Code aus deinem Spiel.",
+    "leadLink": "Du fügst deinem Konto eine Anmeldung hinzu. Damit kommst du auf jedem Gerät hinein.",
+    "warningTitle": "Hast du das gerade selbst im Spiel gestartet?",
+    "warning": "Mach nur dann weiter. Hat dir jemand diesen Link geschickt, schließ die Seite – sonst spielt er mit deinem Konto.",
+    "methodsTitle": "Wie willst du dich anmelden?",
+    "or": "oder per E-Mail",
+    "noMethods": "Hier ist gerade keiner dieser Wege eingeschaltet. Melde dich direkt im Spiel an oder versuch es später.",
+    "newAccount": "Neu hier? Dann legen wir dir ein Konto an. Bei Google, Apple, Discord und Steam merken wir uns nur eine Kennung, keinen Namen und keine E-Mail-Adresse.",
+    "providersLabel": "Anmelde-Anbieter"
+  },
+  "providers": {
+    "google": "Weiter mit Google",
+    "apple": "Mit Apple fortfahren",
+    "discord": "Weiter mit Discord",
+    "steam": "Sign in through Steam"
+  },
+  "email": {
+    "label": "E-Mail-Adresse",
+    "hint": "Wir schicken dir einen Link, der einmal und {minutes} Minuten lang funktioniert. Kein Passwort nötig.",
+    "placeholder": "du@beispiel.de",
+    "submit": "Link schicken",
+    "submitting": "Wird geschickt …",
+    "honeypot": "Dieses Feld leer lassen",
+    "sentTitle": "Schau in dein Postfach",
+    "sentText": "Wenn die Adresse stimmt, ist dein Link gleich da. Öffne ihn auf diesem oder einem anderen Gerät. Nichts da? Schau im Spam nach oder schick ihn noch mal.",
+    "again": "Noch mal schicken",
+    "notices": {
+      "invalid": "Das sieht nicht nach einer E-Mail-Adresse aus.",
+      "rate_limited": "Das waren viele Links. Warte ein paar Minuten und versuch es dann noch mal.",
+      "not_configured": "Anmelden per E-Mail ist hier nicht eingeschaltet. Nimm einen anderen Weg.",
+      "unreachable": "Der Soulwick-Server ist gerade nicht erreichbar. Versuch es gleich noch mal.",
+      "closed": "Diese Anmeldung ist schon fertig oder abgelaufen. Starte sie im Spiel neu."
+    }
+  },
+  "confirm": {
+    "eyebrow": "Letzter Schritt",
+    "titleSignIn": "Ist das dein Spiel?",
+    "titleLink": "Anmeldung hinzufügen?",
+    "signIn": "Ein Spiel wird mit deinem Konto angemeldet",
+    "signInNew": "Ein Spiel wird mit einem neuen Konto angemeldet",
+    "link": "Dieses Konto bekommt eine neue Anmeldung",
+    "newAccountHint": "Zu dieser Anmeldung gibt es noch kein Konto. Wir legen dir eins an.",
+    "provider": "Angemeldet mit {provider}",
+    "warningTitle": "Mach nur weiter, wenn du das gerade selbst gestartet hast",
+    "warning": "Sonst bekommt das Spiel von jemand anderem dein Konto. Warst du das nicht? Schließ die Seite, dann passiert nichts.",
+    "codeLabel": "Code aus deinem Spiel",
+    "codeHint": "Dein Spiel zeigt ihn gerade an: {length} Buchstaben und Zahlen, z. B. ABC-DEF.",
+    "codePlaceholder": "ABC-DEF",
+    "submit": "Anmelden",
+    "submitMerge": "Zusammenführen und anmelden",
+    "submitting": "Wird geprüft …",
+    "notices": {
+      "format": "Der Code hat {length} Buchstaben und Zahlen. Schau in dein Spiel und tipp ihn noch mal ein.",
+      "wrong_code": "Das ist nicht der Code aus deinem Spiel. Schau noch mal genau hin.",
+      "attemptsLeft": "{count, plural, one {Noch # Versuch.} other {Noch # Versuche.}}",
+      "rate_limited": "Zu viele Versuche in kurzer Zeit. Warte eine Minute.",
+      "unreachable": "Der Soulwick-Server ist gerade nicht erreichbar. Versuch es gleich noch mal."
+    },
+    "waitingTitle": "Diese Anmeldung wartet auf den letzten Schritt",
+    "waitingText": "Schließ sie in dem Browser-Tab ab, in dem du dich angemeldet hast. Findest du ihn nicht? Starte die Anmeldung im Spiel neu.",
+    "absorbHint": "Dein anderes Konto hier hat noch keinen Fortschritt. Es geht in diesem auf."
+  },
+  "merge": {
+    "title": "Aus zwei Konten wird eins",
+    "lead": "Diese Anmeldung gehört schon zu einem anderen Konto mit Fortschritt. Machst du weiter, werden beide zu einem.",
+    "stays": "Bleibt",
+    "goes": "Geht darin auf und verschwindet",
+    "runs": "{count, plural, =0 {Keine Runs} one {# Run} other {# Runs}}",
+    "worlds": "{count, plural, =0 {Keine Welten} one {# Welt} other {# Welten}}",
+    "guilds": "Gilden",
+    "noGuild": "Keine Gilde",
+    "logins": "Anmeldungen",
+    "whatTitle": "Was passiert",
+    "what": {
+      "name": "Das Konto, das bleibt, behält seinen Namen.",
+      "progress": "Runs, XP und Anmeldungen ziehen um, die Level zählen zusammen.",
+      "worlds": "Welten ziehen mit um. Ist kein Platz mehr, landen sie im Archiv, nichts geht verloren.",
+      "guilds": "Gilden-Mitgliedschaften ziehen mit, solange Platz ist.",
+      "final": "Das lässt sich nicht rückgängig machen."
+    }
+  },
+  "done": {
+    "title": "Fertig! Zurück ins Spiel",
+    "signedIn": "Dein Spiel ist angemeldet und macht gleich von allein weiter. Diesen Tab kannst du schließen.",
+    "linked": "Dein Konto hat eine neue Anmeldung. Im Spiel geht es von allein weiter, diesen Tab kannst du schließen.",
+    "merged": "Deine zwei Konten sind jetzt eins.",
+    "via": "Angemeldet mit {provider}",
+    "home": "Zur Website"
+  },
+  "problem": {
+    "again": "Starte die Anmeldung im Spiel neu, dann bekommst du einen neuen Code.",
+    "home": "Zur Website",
+    "banReason": "Grund: {reason}",
+    "banUntil": "Gesperrt bis {date}.",
+    "banPermanent": "Diese Sperre hat kein Ende."
+  },
+  "noKey": {
+    "title": "Öffne den Link direkt aus dem Spiel",
+    "text": "Zu deiner Sicherheit funktioniert diese Seite nur, wenn das Spiel sie öffnet. Wähl im Spiel noch mal „Im Browser anmelden“."
+  },
+  "magic": {
+    "eyebrow": "Dein Anmelde-Link",
+    "title": "Ein anderes Gerät wird angemeldet",
+    "textSignIn": "Mit diesem Link meldest du ein Soulwick-Spiel an – vielleicht auf diesem Gerät, vielleicht auf einem anderen. Danach fragen wir nach dem Code, den dieses Spiel zeigt.",
+    "textLink": "Mit diesem Link bekommt <account></account> deine E-Mail-Adresse als Anmeldung. Danach fragen wir nach dem Code, den dein Spiel zeigt.",
+    "warningTitle": "Hast du diesen Link gerade selbst angefordert?",
+    "warning": "Mach nur dann weiter. Wenn nicht, schließ die Seite, dann passiert nichts.",
+    "submit": "Weiter",
+    "submitting": "Einen Moment …",
+    "notices": {
+      "rate_limited": "Zu viele Versuche in kurzer Zeit. Warte eine Minute, der Link funktioniert noch.",
+      "unreachable": "Der Soulwick-Server ist gerade nicht erreichbar. Versuch es gleich noch mal, der Link funktioniert noch."
+    }
+  },
+  "errorPage": {
+    "title": "Melde dich aus dem Spiel an",
+    "text": "Das Anmelden startet in deinem Spiel: Wähl dort „Im Browser anmelden“, dann öffnet sich diese Seite mit deinem Code."
+  },
+  "accountProviders": {
+    "steam": "Steam",
+    "device": "Gerät",
+    "google_play": "Google Play",
+    "game_center": "Game Center",
+    "password": "Benutzername",
+    "email": "E-Mail",
+    "google": "Google",
+    "apple": "Apple",
+    "discord": "Discord"
+  },
+  "errors": {
+    "web_login_not_found": {
+      "title": "Code nicht gefunden",
+      "text": "Diese Anmeldung gibt es nicht (mehr)."
+    },
+    "web_login_claimed": {
+      "title": "Link schon benutzt",
+      "text": "Dieser Link aus dem Spiel wurde schon woanders geöffnet."
+    },
+    "web_login_not_pending": {
+      "title": "Schon erledigt",
+      "text": "Diese Anmeldung ist schon fertig oder abgelaufen."
+    },
+    "expired": {
+      "title": "Code abgelaufen",
+      "text": "Codes gelten {codeMinutes} Minuten und funktionieren nur einmal."
+    },
+    "too_many_attempts": {
+      "title": "Zu viele falsche Codes",
+      "text": "Damit dein Konto sicher bleibt, ist diese Anmeldung beendet."
+    },
+    "invalid_state": {
+      "title": "Da ist was durcheinandergekommen",
+      "text": "Die Anmeldung kam nicht an der richtigen Stelle an, vielleicht wurde sie in einem anderen Browser geöffnet."
+    },
+    "provider_not_configured": {
+      "title": "Hier nicht verfügbar",
+      "text": "Dieser Weg zum Anmelden ist hier nicht eingeschaltet. Nimm einen anderen."
+    },
+    "cancelled": {
+      "title": "Abgebrochen",
+      "text": "Du hast das Anmelden abgebrochen. Kein Problem, such dir einfach wieder einen Weg aus."
+    },
+    "provider_error": {
+      "title": "Keine Antwort",
+      "text": "Google, Apple, Discord oder Steam haben nicht geantwortet. Versuch es gleich noch mal oder nimm einen anderen Weg."
+    },
+    "invalid_login": {
+      "title": "Das hat nicht geklappt",
+      "text": "Wir konnten deine Anmeldung nicht prüfen. Versuch es noch mal."
+    },
+    "banned": {
+      "title": "Konto gesperrt",
+      "text": "Dieses Konto ist gesperrt und kann nicht angemeldet werden."
+    },
+    "merge_blocked_banned": {
+      "title": "Zusammenführen geht nicht",
+      "text": "Eins der beiden Konten ist gesperrt, deshalb können sie nicht eins werden."
+    },
+    "account_gone": {
+      "title": "Konto weg",
+      "text": "Das Konto, mit dem du das gestartet hast, gibt es nicht mehr."
+    },
+    "email_unavailable": {
+      "title": "Nimm eine andere Adresse",
+      "text": "Diese E-Mail-Adresse geht für Soulwick nicht. Nimm eine andere."
+    },
+    "invalid_magic_link": {
+      "title": "Link benutzt oder abgelaufen",
+      "text": "Jeder Link funktioniert einmal und {linkMinutes} Minuten lang."
+    },
+    "rate_limited": {
+      "title": "Langsam",
+      "text": "Zu viele Versuche in kurzer Zeit. Warte eine Minute und versuch es dann noch mal."
+    },
+    "unreachable": {
+      "title": "Server nicht erreichbar",
+      "text": "Der Soulwick-Server ist gerade nicht erreichbar. Versuch es gleich noch mal."
+    },
+    "generic": {
+      "title": "Da ist was schiefgelaufen",
+      "text": "Das hat diesmal nicht geklappt."
+    }
+  }
+}
