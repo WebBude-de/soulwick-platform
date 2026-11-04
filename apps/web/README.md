@@ -17,7 +17,7 @@ braucht keine API.
 
 ```bash
 bun install                                    # im Repo-Wurzelordner
-cp apps/web/.env.example apps/web/.env   # API_URL anpassen
+cp apps/web/.env.example apps/web/.env.local   # API_URL anpassen
 bun run dev:web                                # http://localhost:3100 (alles zusammen: bun dev)
 ```
 

@@ -4,7 +4,7 @@
  * e-mail; an existing account is never changed (no password reset, no role change, no enabling).
  * Without the variables it prints a hint and exits 0. Later it can hold more base data.
  *
- *   bun run db:seed                           (repo root; DATABASE_URL from the root .env)
+ *   bun run db:seed                           (repo root; DATABASE_URL from the root .env.local)
  *   In the Docker image it runs on every container start, after the migrations (apps/api/Dockerfile).
  *
  * The dev seed (seed-dev.ts) is separate: test data, refuses production.

@@ -237,11 +237,11 @@ mehr; vorhandene Einträge in Dokploy dürfen weg.
 | Vorlage | Lokal | Dokploy (Kopie liegt lokal, gitignored) |
 | --- | --- | --- |
 | `.env.example` (Wurzel) | `.env` (gemeinsame Werte) | Variablen der Umgebung: `.env.dev` → `development`, `.env.prod` → `production` |
-| `apps/api/.env.example` | `apps/api/.env` | `soulwick-api` → **Environment**: `apps/api/.env.dev` bzw. `.env.prod` |
-| `apps/relay/.env.example` | `apps/relay/.env` | `soulwick-relay` → **Environment**: `apps/relay/.env.dev` bzw. `.env.prod` |
-| `apps/web/.env.example` | `apps/web/.env` | `soulwick-web` → **Environment**: `apps/web/.env.dev` bzw. `.env.prod` |
-| `apps/admin/.env.example` | `apps/admin/.env` | `soulwick-admin` → **Environment**: `apps/admin/.env.dev` bzw. `.env.prod` |
-| `infra/.env.example` | `infra/.env` (`POSTGRES_*`, `DB_PORT`) | – (auf den Servern nicht genutzt; Produktion: Datenbankserver) |
+| `apps/api/.env.example` | `apps/api/.env.local` | `soulwick-api` → **Environment**: `apps/api/.env.dev` bzw. `.env.prod` |
+| `apps/relay/.env.example` | `apps/relay/.env.local` | `soulwick-relay` → **Environment**: `apps/relay/.env.dev` bzw. `.env.prod` |
+| `apps/web/.env.example` | `apps/web/.env.local` | `soulwick-web` → **Environment**: `apps/web/.env.dev` bzw. `.env.prod` |
+| `apps/admin/.env.example` | `apps/admin/.env.local` | `soulwick-admin` → **Environment**: `apps/admin/.env.dev` bzw. `.env.prod` |
+| `infra/.env.example` | `infra/.env.local` (`POSTGRES_*`, `DB_PORT`) | – (auf den Servern nicht genutzt; Produktion: Datenbankserver) |
 
 Die Dateien `.env.dev` und `.env.prod` sind deine lokale Kopie dessen, was in Dokploy steht: Wurzel =
 Variablen der Umgebung, `apps/<app>/` = Environment des Services mit `${{environment.NAME}}`. Ändert

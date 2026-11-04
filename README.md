@@ -69,8 +69,8 @@ You need [Bun](https://bun.sh) 1.3, Node 24 (Next.js runs on it) and Docker.
 ```bash
 bun install                      # dependencies and Husky hooks
 cp .env.example .env       # then fill in BETTER_AUTH_SECRET, RELAY_INTERNAL_KEY, DEV_AUTH_KEY
-for app in api relay web admin; do cp apps/$app/.env.example apps/$app/.env; done
-cp infra/.env.example infra/.env
+for app in api relay web admin; do cp apps/$app/.env.example apps/$app/.env.local; done
+cp infra/.env.example infra/.env.local
 bun run services:up              # local Postgres (container soulwick-postgres, port 5532)
 bun run db:deploy                # apply migrations
 bun run db:seed:dev              # test data: admins, players, a guild, runs

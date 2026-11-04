@@ -94,7 +94,7 @@ Die Oberfläche funktioniert ohne Client-JavaScript.
 
 ```bash
 bun install                                        # im Repo-Wurzelordner
-cp apps/admin/.env.example apps/admin/.env   # API_URL anpassen
+cp apps/admin/.env.example apps/admin/.env.local   # API_URL anpassen
 bun run dev:admin                                  # http://localhost:3101 (alles zusammen: bun dev)
 ```
 

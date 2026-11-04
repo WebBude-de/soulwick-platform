@@ -53,7 +53,7 @@
 | Was | Befehl (im Repo-Root) |
 | --- | --- |
 | Abhängigkeiten | `bun install` (richtet auch die Husky-Hooks ein) |
-| Lokale Dienste starten / stoppen | `bun run services:up` / `bun run services:down` (Postgres `soulwick-postgres` auf Port 5532 aus `infra/docker-compose.yml`, Werte aus `infra/.env`) |
+| Lokale Dienste starten / stoppen | `bun run services:up` / `bun run services:down` (Postgres `soulwick-postgres` auf Port 5532 aus `infra/docker-compose.yml`, Werte aus `infra/.env.local`) |
 | Alle Apps entwickeln | `bun dev` (Turbo: API 3102, Web 3100, Admin 3101, Relay 3103, Port-Block 1 nach P-035; Postgres aus `services:up`) |
 | Einzeln | `bun run dev:api` / `bun run dev:web` / `bun run dev:admin` / `bun run dev:relay` |
 | Images bauen (wie Dokploy) | `docker build -f apps/api/Dockerfile .`, ebenso `apps/relay`, `apps/web`, `apps/admin` (kein Compose für die Apps) |
