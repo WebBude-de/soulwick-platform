@@ -68,17 +68,16 @@ You need [Bun](https://bun.sh) 1.3, Node 24 (Next.js runs on it) and Docker.
 
 ```bash
 bun install                      # dependencies and Husky hooks
-cp .env.example .env       # then fill in BETTER_AUTH_SECRET, RELAY_INTERNAL_KEY, DEV_AUTH_KEY
-for app in api relay web admin; do cp apps/$app/.env.example apps/$app/.env; done
-cp infra/.env.example infra/.env
+cp .env.example .env.local       # then fill in BETTER_AUTH_SECRET, RELAY_INTERNAL_KEY, DEV_AUTH_KEY
 bun run services:up              # local Postgres (container soulwick-postgres, port 5532)
 bun run db:deploy                # apply migrations
 bun run db:seed:dev              # test data: admins, players, a guild, runs
 bun dev                          # web 3100, admin 3101, API 3102, relay 3103
 ```
 
-Generate secrets with e.g. `openssl rand -base64 48`. Only the `.env.example` files are committed;
-every other `.env*` file is ignored by git. Stop the database with `bun run services:down` (data stays
+Generate secrets with e.g. `openssl rand -base64 48`. All apps, the Prisma CLI and docker compose read
+only the root `.env.local`; only `.env.example` is committed, every other `.env*` file is ignored by git
+(`.env.dev` and `.env.prod` are optional local copies of the Dokploy variables, read by nothing). Stop the database with `bun run services:down` (data stays
 in the Docker volume).
 
 **Local logins after the seed** (local test data only): admin `admin@soulwick.local`, moderator

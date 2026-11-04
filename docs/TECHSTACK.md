@@ -53,7 +53,7 @@
 | Was | Befehl (im Repo-Root) |
 | --- | --- |
 | Abhängigkeiten | `bun install` (richtet auch die Husky-Hooks ein) |
-| Lokale Dienste starten / stoppen | `bun run services:up` / `bun run services:down` (Postgres `soulwick-postgres` auf Port 5532 aus `infra/docker-compose.yml`, Werte aus `infra/.env`) |
+| Lokale Dienste starten / stoppen | `bun run services:up` / `bun run services:down` (Postgres `soulwick-postgres` auf Port 5532 aus `infra/docker-compose.yml`, Werte aus `.env.local`) |
 | Alle Apps entwickeln | `bun dev` (Turbo: API 3102, Web 3100, Admin 3101, Relay 3103, Port-Block 1 nach P-035; Postgres aus `services:up`) |
 | Einzeln | `bun run dev:api` / `bun run dev:web` / `bun run dev:admin` / `bun run dev:relay` |
 | Images bauen (wie Dokploy) | `docker build -f apps/api/Dockerfile .`, ebenso `apps/relay`, `apps/web`, `apps/admin` (kein Compose für die Apps) |
@@ -87,7 +87,7 @@ Mindestens vor jedem Bericht: `bun run check`, `bun run typecheck`, `bun test`, 
 | admin | `API_URL`, `ADMIN_COOKIE_SECURE` |
 | infra (Compose, nur lokal) | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `DB_PORT` (Standard 5532; kein Objektspeicher) |
 
-Vorlagen: `apps/*/.env.example`, `infra/.env.example`. Produktive Werte nur in Dokploy (zwei Umgebungen `development` und `production`, Variablen als `${{environment.NAME}}`; siehe [infra/DOKPLOY.md](../infra/DOKPLOY.md)).
+Vorlage: `.env.example` im Root, lokal eine `.env.local` für alles. Produktive Werte nur in Dokploy (zwei Umgebungen `development` und `production`, Variablen als `${{environment.NAME}}`; siehe [infra/DOKPLOY.md](../infra/DOKPLOY.md)).
 
 ## 6. Bewusst nicht im Stack
 

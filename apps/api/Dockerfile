@@ -3,7 +3,7 @@
 #   docker build -f apps/api/Dockerfile -t soulwick-api .
 # On start the container applies pending Prisma migrations (prisma migrate deploy), runs the base
 # seed (admin from DEFAULT_ADMIN_EMAIL / DEFAULT_ADMIN_PASSWORD, only if missing) and then serves
-# the API. Configuration comes from the platform at runtime (see apps/api/.env.example).
+# the API. Configuration comes from the platform at runtime (see the root .env.example).
 FROM oven/bun:1.3.14 AS build
 WORKDIR /app
 # Manifests first, so the install layer stays cached until dependencies change.
