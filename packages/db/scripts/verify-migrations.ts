@@ -175,7 +175,7 @@ function runSeed(url: string): void {
 async function main() {
   const base = process.env.DATABASE_URL;
   if (!base) {
-    fail("DATABASE_URL is not set (root .env.local).");
+    fail("DATABASE_URL is not set (root .env or packages/db/.env).");
   }
   const url = shadowUrl(base);
   const dirs = migrationDirs();

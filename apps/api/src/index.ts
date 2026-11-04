@@ -4,8 +4,8 @@ import { loadConfig } from "./config.ts";
 import { createLogger, initLogging } from "./lib/logger.ts";
 import { startHousekeeping } from "./services/housekeeping.ts";
 
-// Local development: `bun run dev:api` loads the root .env.local. In Docker/Dokploy the variables
-// are set directly, and the image applies
+// Local development: `bun run dev:api` loads the root .env (shared values) and
+// apps/api/.env on top. In Docker/Dokploy the variables are set directly, and the image applies
 // pending migrations (`prisma migrate deploy`) before this file starts, see the Dockerfile.
 const config = loadConfig();
 // Console plus (outside production) logs/api/<day>/; buffered lines are written out on exit.

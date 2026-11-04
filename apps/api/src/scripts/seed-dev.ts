@@ -22,7 +22,7 @@
  * soulwick-admin-local). The same variable feeds the base seed (seed.ts, DEFAULT_ADMIN_EMAIL);
  * locally both use admin@soulwick.local, so they create the same account and neither resets it.
  *
- *   bun run db:seed:dev                   (repo root; DATABASE_URL from the root .env.local)
+ *   bun run db:seed:dev                   (repo root; DATABASE_URL from the root .env)
  *   DEFAULT_ADMIN_PASSWORD=<min. 12 chars> bun run db:seed:dev   (default: soulwick-admin-local)
  *   In the Docker image (development environment only):
  *   NODE_ENV=development bun apps/api/src/scripts/seed-dev.ts

@@ -18,7 +18,8 @@ Handler ist nicht gemountet: Jeder Auth-Pfad ist eine Hono-Route, die `auth.api`
 ```bash
 bun install                                          # im Repo-Wurzelordner
 bun run services:up                                  # lokale Dienste (infra/docker-compose.yml: Postgres soulwick-postgres)
-cp .env.example .env.local                     # alle Werte (Wurzel): BETTER_AUTH_SECRET, DEV_AUTH_KEY …
+cp .env.example .env                           # gemeinsame Werte (Wurzel): BETTER_AUTH_SECRET, DEV_AUTH_KEY …
+cp apps/api/.env.example apps/api/.env         # Werte nur der API
 bun run db:deploy                                    # Migrationen anwenden (neue Migration: bun run db:migrate --name <name>)
 bun run db:seed                                      # Basis-Seed: Admin aus DEFAULT_ADMIN_EMAIL/-PASSWORD (siehe unten)
 bun run db:seed:dev                                  # Testdaten (siehe unten)
@@ -29,11 +30,11 @@ bun run services:down                                # Dienste stoppen (Daten bl
 **Logs lokal:** in der Konsole Zeilen im Stil von Next.js
 (`05:07:35.600 ⚠ GET /admin/me 401 in 1ms  ip=::1 code=unauthorized`), dazu Dateien in
 `logs/api/<YYYY-MM-DD>/` (`all.log` zum Lesen, `all.jsonl` und je Stufe `error.jsonl` …; 7 Tage).
-Mehr sehen: `LOG_LEVEL=debug` in `.env.local`. Gemeinsamer Logger: `packages/logger`.
+Mehr sehen: `LOG_LEVEL=debug` in der Wurzel-`.env`. Gemeinsamer Logger: `packages/logger`.
 
-Ist Port 5532 belegt, in `.env.local` `DB_PORT=<freier Port>` setzen und den Port in
-`DATABASE_URL` anpassen. Benutzer, Passwort und Datenbankname kommen aus `POSTGRES_*`
-(Standard `soulwick` / `soulwick-local-only` / `soulwick`).
+Ist Port 5532 belegt, in `infra/.env` `DB_PORT=<freier Port>` setzen und den Port in
+`DATABASE_URL` (Wurzel-`.env`) anpassen. Benutzer, Passwort und Datenbankname kommen aus
+`POSTGRES_*` in `infra/.env` (Standard `soulwick` / `soulwick-local-only` / `soulwick`).
 
 ## Basis-Seed (Start-Admin)
 
@@ -62,7 +63,7 @@ Mit Zugriff auf die Datenbank geht es direkter: `ADMIN_NEW_PASSWORD=<neu> bun ru
 Panel unter „Admins“ das Passwort neu oder legt einen Zugang an. Ein Zurücksetzen per E-Mail gibt es
 nicht (kein Mailversand).
 
-Lokal nutzen Basis-Seed und Dev-Seed dieselben Variablen (`.env.example`:
+Lokal nutzen Basis-Seed und Dev-Seed dieselben Variablen (`apps/api/.env.example`:
 `admin@soulwick.local` / `soulwick-admin-local`): Beide legen dasselbe Konto an, keiner setzt das
 Passwort des anderen zurück.
 
@@ -102,7 +103,7 @@ Der Seed **verweigert `NODE_ENV=production`**. Im Docker-Image ist er nur für d
 
 | Variable | Pflicht | Standard | Bedeutung |
 | --- | --- | --- | --- |
-| `DATABASE_URL` | ja | – | PostgreSQL-Verbindung (lokal `postgres://soulwick:soulwick-local-only@localhost:5532/soulwick`); `.env.local`; auch Prisma CLI und Tests lesen sie dort |
+| `DATABASE_URL` | ja | – | PostgreSQL-Verbindung (lokal `postgres://soulwick:soulwick-local-only@localhost:5532/soulwick`); Wurzel-`.env`; auch Prisma CLI und Tests lesen sie dort |
 | `TEST_DATABASE_URL` | nein | `DATABASE_URL` | Nur Tests: Postgres-Server für die Wegwerf-Datenbanken `soulwick_test_<zufall>` |
 | `BETTER_AUTH_SECRET` | ja | – | Better Auth (P-027): signiert Session-Tokens, verschlüsselt die JWT-Signierschlüssel; daraus abgeleitet der HMAC-Schlüssel für Verknüpfungs- und Löschcodes (≥ 32 Zeichen, je Umgebung, nur API) |
 | `BETTER_AUTH_URL` | nein | `http://localhost:3102` | Öffentliche Basis-URL der API (Aussteller `iss` der Relay-JWTs); in production `https://…` Pflicht |

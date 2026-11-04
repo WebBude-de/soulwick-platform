@@ -7,7 +7,7 @@
  *   ADMIN_NEW_PASSWORD=<new> bun run db:admin:password <email>
  *
  * The new password comes only from ADMIN_NEW_PASSWORD (never as an argument, so it stays out of
- * the shell history and process list) and is never printed. DATABASE_URL from the root .env.local
+ * the shell history and process list) and is never printed. DATABASE_URL from the root .env
  * (or the environment, which wins). In the API container: `bun apps/api/src/scripts/admin-password.ts`.
  */
 import { AdminEmail, AdminPassword } from "@soulwick/contracts";
