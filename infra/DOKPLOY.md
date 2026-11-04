@@ -234,18 +234,15 @@ mehr; vorhandene Einträge in Dokploy dürfen weg.
 
 ### Wo was hingehört
 
-| Vorlage | Lokal | Dokploy (Kopie liegt lokal, gitignored) |
-| --- | --- | --- |
-| `.env.example` (Wurzel) | `.env` (gemeinsame Werte) | Variablen der Umgebung: `.env.dev` → `development`, `.env.prod` → `production` |
-| `apps/api/.env.example` | `apps/api/.env` | `soulwick-api` → **Environment**: `apps/api/.env.dev` bzw. `.env.prod` |
-| `apps/relay/.env.example` | `apps/relay/.env` | `soulwick-relay` → **Environment**: `apps/relay/.env.dev` bzw. `.env.prod` |
-| `apps/web/.env.example` | `apps/web/.env` | `soulwick-web` → **Environment**: `apps/web/.env.dev` bzw. `.env.prod` |
-| `apps/admin/.env.example` | `apps/admin/.env` | `soulwick-admin` → **Environment**: `apps/admin/.env.dev` bzw. `.env.prod` |
-| `infra/.env.example` | `infra/.env` (`POSTGRES_*`, `DB_PORT`) | – (auf den Servern nicht genutzt; Produktion: Datenbankserver) |
+| Datei (Wurzel) | Wofür |
+| --- | --- |
+| `.env.example` | Vorlage im Repo: alle Schlüssel, lokale Werte, Abschnitte je App |
+| `.env.local` | lokal, eine Datei für alle Apps, Prisma und docker compose (gitignored) |
+| `.env.dev`, `.env.prod` | deine lokale Kopie von Dokploy `development` bzw. `production`, liest kein Programm (gitignored) |
 
-Die Dateien `.env.dev` und `.env.prod` sind deine lokale Kopie dessen, was in Dokploy steht: Wurzel =
-Variablen der Umgebung, `apps/<app>/` = Environment des Services mit `${{environment.NAME}}`. Ändert
-sich etwas in Dokploy, die Kopie mitziehen (und umgekehrt).
+`.env.dev` und `.env.prod` sind in Blöcke geteilt, die du einzeln kopierst: `# --- Umgebung ---` →
+Variablen der Umgebung, `# --- soulwick-api ---` usw. → **Environment** des Services (mit
+`${{environment.NAME}}`). Ändert sich etwas in Dokploy, die Kopie mitziehen (und umgekehrt).
 
 - Alle Variablen sind **Laufzeit-Variablen**: Web und Admin lesen `API_URL` nur serverseitig, nichts davon
   landet im Browser-Bundle. Geänderte Variablen wirken erst nach einem neuen **Deploy** des Services. Einziges
@@ -443,7 +440,7 @@ API_INTERNAL_URL=${{environment.API_INTERNAL_URL}}
 RELAY_INTERNAL_KEY=${{environment.RELAY_INTERNAL_KEY}}
 TRUST_PROXY=true
 LOG_LEVEL=info
-# Standardwerte (TESTWERTE) gelten ohne Eintrag; nur bei Bedarf setzen, siehe apps/relay/.env.example:
+# Standardwerte (TESTWERTE) gelten ohne Eintrag; nur bei Bedarf setzen, siehe .env.example (Abschnitt Relay):
 # JWKS_CACHE_SECONDS=600
 # STATUS_CACHE_SECONDS=30
 # CLIENT_ROUTING=host_only
@@ -880,5 +877,5 @@ Variablen der Umgebung (`.env.dev` / `.env.prod`); die Services lesen sie von do
   Laufzeit-Variable: Die Website zeigt dann „Im Browser spielen“ und „Web-App installieren“
   (`GAME_URL?install`) in Hero und Handy-Menü; nach dem Ändern neu deployen.
 - **`soulwick-api` → Environment:** `CORS_ORIGINS=${{environment.WEB_URL}},${{environment.ADMIN_URL}},${{environment.GAME_URL}}`
-  (schon in `apps/api/.env.dev` / `.env.prod`), weil das Spiel im Browser die API direkt aufruft.
+  (schon im Block `soulwick-api` von `.env.dev` / `.env.prod`), weil das Spiel im Browser die API direkt aufruft.
   Ohne den Eintrag geht im Browser nur Einzelspieler. Gilt in production auch vor der Freischaltung.
