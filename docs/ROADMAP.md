@@ -29,7 +29,7 @@
 | **KF3** | Strang K: Konto-XP und Level am Konto (`POST /me/xp`, `level` in Profil, Gilde, Rangliste, Lobby) | **fertig (18.10.2026)**, 405/405 Tests; offen: Spiel-Client KF4, Admin-Anzeige (admin-dev) | – |
 | **KF8** | Strang K: Cloud-Welten (= CP5): Vertrag, Tabelle, Routen, Sicherungen, Archiv | **fertig (18.10.2026)**, 420/420 Tests, P-038; offen: Spiel-Client KF9, Datenschutzerklärung/Store-Angaben | KF3 |
 | **KF5** | Strang K: Better Auth für Spieler (Benutzername, Magic Link, Google, Apple, Discord, Steam OpenID), Anmeldung hinzufügen, Web-Anmeldung (P-036, P-037, P-039) | **fertig (03.11.2026)**, mit Sicherheitsfix 528/528 Tests, P-039; offen: Mail-Worker und Anbieter-Konten (Projektmitglied), Dokploy-Variablen, Spiel KF6/KF7, Website KF11 | – |
-| **KF11** | Strang K: Anmeldeseiten der Website (DE/EN) | **fertig (03.11.2026)**, Browser-Durchlauf DE/EN gegen eigene API mit Dev-Seed; offen: Valves Knopfbild `steam_signin.webp` (Projektmitglied), Spiel KF6 | KF5 (Routen und Verträge) |
+| **KF11** | Strang K: Anmeldeseiten der Website (DE/EN) | **fertig (03.11.2026)**, Browser-Durchlauf DE/EN gegen eigene API mit Dev-Seed; Valves Knopfbild `steam_signin.webp` übernommen (04.11.2026, sits_01 verlustfrei als WebP), Spiel KF6 fertig (Spiel-PR #16) | KF5 (Routen und Verträge) |
 | P2 | Online gehen (Dokploy) | geplant | P7, P8 (Images auf Bun, Prisma-Migrationen) |
 | P3 | Website fertig (alte Fassung) | offene Punkte gehen in P9, P10, P12 auf | – |
 | P4 | Gilden im Spiel nutzbar | geplant | **MP0** (Spiel-Repo), **CP0** (Fragen 3/4 entschieden, D-119), P13 (Gilden-Räume) |
