@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Soulwick admin panel (Next.js).",
   "scripts": {
-    "dev": "bun --env-file=../../.env.local run next dev --port 3101",
+    "dev": "next dev --port 3101",
     "build": "next build",
     "start": "next start --port 3101",
     "typecheck": "next typegen && tsc --noEmit"

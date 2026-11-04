@@ -3,8 +3,8 @@ import { loadConfig } from "./config.ts";
 import { createLogger, initLogging } from "./logger.ts";
 import { startRelayServer } from "./server.ts";
 
-// Local development: `bun run dev:relay` loads the root .env.local. In Docker/Dokploy the
-// variables are set directly.
+// Local development: `bun run dev:relay` loads the root .env.local (shared values) and
+// apps/relay/.env.local on top. In Docker/Dokploy the variables are set directly.
 const config = loadConfig(process.env, process.argv.slice(2));
 // Console plus (outside production) logs/relay/<day>/; buffered lines are written out on exit.
 const logOutput = initLogging(config);

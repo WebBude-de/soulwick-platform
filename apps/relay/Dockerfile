@@ -2,7 +2,7 @@
 # Relay image (Bun WebSocket service). Build context: repository root.
 #   docker build -f apps/relay/Dockerfile -t soulwick-relay .
 # Rooms live in memory: run exactly one replica per environment. Configuration comes from the
-# platform at runtime (see the root .env.example); the relay has no database.
+# platform at runtime (see apps/relay/.env.example); the relay has no database.
 FROM oven/bun:1.3.14 AS build
 WORKDIR /app
 # Manifests first, so the install layer stays cached until dependencies change.

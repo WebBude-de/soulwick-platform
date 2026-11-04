@@ -87,7 +87,7 @@ New environment variables, How verified (Befehle + Ergebnisse), Open points.
 
 ## 5. Lokal arbeiten
 
-Ablauf und Zugänge: [README.md](README.md) „Schnellstart lokal“. Kurz: `.env.example` nach `.env.local` kopieren (eine Datei im Root für alles) →
+Ablauf und Zugänge: [README.md](README.md) „Schnellstart lokal“. Kurz: `.env.example` kopieren →
 `bun install` → `bun run services:up` (nur Postgres, Port 5532) → `bun run db:deploy` →
 `bun run db:seed:dev` → `bun dev` (Web 3100, Admin 3101, API 3102, Relay 3103;
 Port-Block 1, P-035). Läuft der Dev-Server des

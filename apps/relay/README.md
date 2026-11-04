@@ -14,7 +14,7 @@ Gegenstück im Spiel: `online/relay_peer.gd` (`MultiplayerPeerExtension` auf `We
 
 ```bash
 bun install                                   # im Repo-Wurzelordner
-cp .env.example .env.local                    # einmal für alle Apps (Wurzel)
+cp apps/relay/.env.example apps/relay/.env.local   # API_INTERNAL_URL und RELAY_INTERNAL_KEY kommen aus der Wurzel-.env.local
 bun run dev:relay                             # ws://localhost:3103/v1, http://localhost:3103/health
 bun run --cwd apps/relay dev --sim-latency=120 --sim-loss=5   # schlechtes Netz simulieren (nur lokal)
 ```

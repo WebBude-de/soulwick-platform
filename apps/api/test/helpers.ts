@@ -15,9 +15,10 @@ const LINE_BREAK = /\r?\n/;
 const MIGRATIONS_DIR = fileURLToPath(
   new URL("../../../packages/db/prisma/migrations", import.meta.url)
 );
-/** The local env file (same as `bun run dev:api`). */
+/** Local env files, later ones win (same order as `bun run dev:api`). */
 const ENV_FILES = [
   fileURLToPath(new URL("../../../.env.local", import.meta.url)),
+  fileURLToPath(new URL("../.env.local", import.meta.url)),
 ];
 
 /** Minimal KEY=VALUE reader: `bun test` runs from the repo root, where Bun loads no .env file. */
@@ -50,7 +51,7 @@ function readEnvFile(path: string): Record<string, string> {
 
 /**
  * Postgres server for the throwaway test databases (P-011): TEST_DATABASE_URL, else DATABASE_URL,
- * each from the environment first and then from the root .env.local. The database named in the URL is
+ * each from the environment first and then from the root .env.local and apps/api/.env.local. The database named in the URL is
  * only used for the admin connection that creates and drops `soulwick_test_<random>`.
  */
 function baseDatabaseUrl(): string {
