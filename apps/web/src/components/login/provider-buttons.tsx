@@ -1,4 +1,4 @@
-import { Roboto } from "next/font/google";
+import localFont from "next/font/local";
 import { LOGIN_API, type LoginProvider } from "@/lib/login-protocol";
 
 /**
@@ -15,9 +15,10 @@ import { LOGIN_API, type LoginProvider } from "@/lib/login-protocol";
  *   when it is in `public/brand/login/steam_signin.webp`, until then a text button in Steam's
  *   colours without the Steam logo.
  */
-const roboto = Roboto({
-  subsets: ["latin"],
-  weight: "500",
+/** Roboto (OFL) self-hosted like the site's faces (`src/app/fonts.ts`); the button uses weight 500. */
+const roboto = localFont({
+  src: "../../../public/brand/fonts/Roboto-Variable.ttf",
+  weight: "100 900",
   display: "swap",
 });
 

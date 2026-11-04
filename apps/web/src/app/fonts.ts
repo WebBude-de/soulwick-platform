@@ -1,4 +1,3 @@
-import { DM_Sans } from "next/font/google";
 import localFont from "next/font/local";
 
 /**
@@ -14,9 +13,13 @@ export const pixel = localFont({
   display: "swap",
 });
 
-export const body = DM_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
+/**
+ * Body face (OFL), self-hosted: next/font/google breaks on Google's `/l/font?kit=` URLs ("queries have
+ * exactly one entry") in dev and in the Docker build, and local files need no request to Google.
+ */
+export const body = localFont({
+  src: "../../public/brand/fonts/DMSans-Variable.ttf",
+  weight: "100 1000",
   variable: "--font-dm-sans",
   display: "swap",
 });

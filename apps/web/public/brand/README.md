@@ -18,6 +18,8 @@ danach gelöscht. PNG bleiben nur `favicon-32.png`, `sprites/cursor.png` (alter 
 | `cursor/pointer*.png`, `cursor/crosshair*.png` | Mauszeiger aus dem Spiel, 1× wie im Spiel plus 1,5×, 2×, 3× (`scripts/sync-cursor.ts`) | ganze Seite (Pfeil), Dungeon im Hero (Fadenkreuz) |
 | `sprites/*.webp` | Website-Sprites (Streifen und Icons, inkl. `chip_*`, `divider`, `tile_*`, `arrow_loop`, `soul_flame_6f`) | überall, über `src/lib/sprite-manifest.ts` |
 | `fonts/PixelifySans-Variable.ttf` + OFL | Display-Schrift | `next/font/local` |
+| `fonts/DMSans-Variable.ttf` + OFL | Fließtext (aus google/fonts, selbst gehostet statt `next/font/google`) | `next/font/local` |
+| `fonts/Roboto-Variable.ttf` + OFL | Google-Anmeldeknopf (Roboto Medium, Markenregel) | `next/font/local` |
 | `stores/` | Offizielle Store-Badges, **unverändert** (siehe unten) | Hero, erst mit `LIVE_FEATURES` und Store-Adresse |
 | `copy.de.json`, `copy.en.json` | Texte der Landingpage | Quelle für `messages/*/landing.json` |
 
